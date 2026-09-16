@@ -1,0 +1,38 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "Kanji %@, meaning %@" : {
+      "comment" : "Etichetta VoiceOver del glifo: carattere e significato.",
+      "localizations" : {
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kanji %1$@, significato %2$@"
+          }
+        }
+      }
+    },
+    "Next kanji" : {
+      "localizations" : {
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Prossimo kanji"
+          }
+        }
+      }
+    },
+    "Tap for stroke order" : {
+      "comment" : "Suggerimento sotto il glifo e hint VoiceOver.",
+      "localizations" : {
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tocca per l'ordine dei tratti"
+          }
+        }
+      }
+    }
+  },
+  "version" : "1.0"
+}

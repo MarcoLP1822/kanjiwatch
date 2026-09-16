@@ -19,6 +19,7 @@ let package = Package(
         .library(name: "KanjiDomain", targets: ["KanjiDomain"]),
         .library(name: "KanjiData", targets: ["KanjiData"]),
         .library(name: "DesignSystem", targets: ["DesignSystem"]),
+        .library(name: "StudyFeature", targets: ["StudyFeature"]),
     ],
     targets: [
         // Entità, regole pure e porte. Dipende solo da Foundation: è la regola
@@ -37,10 +38,27 @@ let package = Package(
         // così resta riusabile e testabile da solo.
         .target(name: "DesignSystem", swiftSettings: ui),
 
+        // Le schermate: glifo → animazione → letture, e la long look della notifica.
+        // Vede il dominio e il design system, mai i dati: chi costruisce i
+        // repository è il target app.
+        .target(
+            name: "StudyFeature",
+            dependencies: ["KanjiDomain", "DesignSystem"],
+            resources: [.process("Resources")],
+            swiftSettings: ui
+        ),
+
         .testTarget(name: "KanjiDomainTests", dependencies: ["KanjiDomain"], swiftSettings: base),
         .testTarget(name: "KanjiDataTests", dependencies: ["KanjiData"], swiftSettings: base),
         // Dipende da KanjiData solo nei test: il parser va verificato sui tratti veri
         // di tutti e 300 i kanji, non su tre stringhe scelte da me.
         .testTarget(name: "DesignSystemTests", dependencies: ["DesignSystem", "KanjiData"], swiftSettings: ui),
+        // DesignSystem serve solo qui nei test, per renderizzare le schermate coi
+        // token veri invece che con valori inventati.
+        .testTarget(
+            name: "StudyFeatureTests",
+            dependencies: ["StudyFeature", "DesignSystem"],
+            swiftSettings: ui
+        ),
     ]
 )
