@@ -37,6 +37,12 @@ struct TokenContrastTests {
         #expect(contrast(Palette.indigoLight, Palette.night) > accent)
     }
 
+    /// Il bottone primario: testo chiaro su indaco pieno. Non arriva a 4.5, ed è per
+    /// questo che il suo testo è grande e in grassetto, dove WCAG chiede 3:1.
+    @Test func primaryButtonLabelClearsTheLargeTextThreshold() {
+        #expect(contrast(Palette.frost, Palette.indigo) >= 3.0)
+    }
+
     @Test func raisedSurfaceStaysVisibleOverTheBackground() {
         #expect(contrast(Palette.nightRaised, Palette.night) > 1.1)
     }

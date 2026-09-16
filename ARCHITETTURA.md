@@ -61,7 +61,7 @@ KanjiWatch/
 │   │   │   ├── StrokeRendering/      SVGPathParser, StrokeGlyph
 │   │   │   └── Components/           KanjiGlyphView, ...
 │   │   ├── KanjiPurchases/           RevenueCat, e nient'altro → KanjiDomain
-│   │   ├── StudyFeature/             glifo → animazione → letture, long look
+│   │   ├── StudyFeature/             kanji → tratti → letture → DONE/NEXT, long look
 │   │   ├── SettingsFeature/          mazzi, intervallo, silenzio, permessi, fonti
 │   │   ├── PaywallFeature/           i tre piani, prova, ripristino acquisti
 │   │   ├── ComplicationFeature/      il kanji sul quadrante, senza WidgetKit
@@ -227,8 +227,23 @@ misurato lì.
 notifica → la tocchi → si apre l'app → l'app cancella tutto e rischedula le prossime 60
 ```
 
-Finché usi l'app, la coda non si svuota mai. Rischedula in tre punti:
-all'avvio, al ritorno in foreground, e alla gestione di una notifica toccata.
+Finché usi l'app, la coda non si svuota mai. Rischedula in quattro punti:
+all'avvio, al ritorno in foreground, alla gestione di una notifica toccata e dopo
+ogni NEXT. Una rischedulazione alla volta: all'apertura da una notifica ne partono
+due insieme, e due code rifatte in parallelo mescolerebbero le loro notifiche.
+
+### Il ritmo della giornata: intervallo e tetto
+
+L'intervallo dà il ritmo, il **numero di kanji nuovi al giorno** il tetto (default 10).
+Contano le notifiche arrivate e i NEXT; raggiunto il numero, le notifiche di quel
+giorno si fermano e riprendono il giorno dopo. Il conteggio è per giorno di
+calendario e sta nello stato salvato: prima di rifare la coda si contano le notifiche
+già arrivate, altrimenti il tetto non saprebbe quante ne sono passate.
+
+NEXT non inventa un kanji in più: **anticipa** quello della prossima notifica, che
+esce dalla coda, e fa ripartire l'intervallo da quel minuto. L'ancora vale solo per
+la finestra in cui l'hai premuto; dal giorno dopo la griglia torna agganciata
+all'inizio della fascia.
 
 ### Il caso "la ignoro per due giorni"
 
@@ -250,6 +265,9 @@ public enum FireDates {
                             after start: Date,
                             everyMinutes: Int,
                             activeHours: ActiveHours,   // 8→22, oppure 22→6
+                            anchor: Date? = nil,        // l'ultimo NEXT
+                            dailyLimit: Int? = nil,
+                            usedToday: Int = 0,         // notifiche arrivate e NEXT di oggi
                             calendar: Calendar = .current) -> [Date]
 }
 ```
@@ -360,38 +378,42 @@ arrivi la prima risposta, quindi nell'init dell'app, non in `onAppear` di una vi
 ## 8. Interazione nell'app
 
 ```
-        ┌──────────┐   tap    ┌───────────┐   tap / fine   ┌──────────┐
-   ┌───▶│  static  │─────────▶│ animating │───────────────▶│ readings │
-   │    └──────────┘          └───────────┘                └──────────┘
-   │                                │  tap durante l'animazione            │
-   │                                └──────── salta alla fine              │
-   └──────────────────────────── tap ─────────────────────────────────────┘
+  kanji ──tocco──▶ tratti ──tocco──▶ letture ──DONE──▶ attesa ──NEXT──┐
+                     │                  │                  │           │
+                     │                  └──NEXT────────────┴──────────▶ kanji successivo
+                     └─ tocco durante il disegno: lo completa, non salta avanti
 ```
 
 ```swift
-// StudyFeature/StudyState.swift: la macchina sta fuori dalla view e si prova
-// senza SwiftUI e senza orologi.
-enum Phase { case glyph, readings }
+// StudyFeature/StudyState.swift: la macchina dei tocchi, senza SwiftUI né orologi.
+enum Phase { case kanji, strokes, readings }
+// KanjiDomain/StudyLoop.swift: DONE, NEXT e il kanji in gioco, sullo stato salvato.
 ```
 
-Due fasi bastano: "statico" e "in disegno" sono lo stesso stato con un progresso
-diverso (da 0 a `strokeCount`), ed è quel singolo numero ad animare tutto.
+Ogni passo è un tocco e **niente avanza da solo**: la prima stesura passava alle
+letture mezzo secondo dopo la fine del disegno, e toccare le letture riportava ai
+tratti — chi toccava lo schermo per scorrere si ritrovava indietro.
 
-Dettagli che fanno la differenza:
-
-- Un tap **durante** l'animazione la completa istantaneamente, non passa alle letture.
-  Chi tocca due volte veloce non vuole saltare il contenuto. Il passaggio alle letture
-  resta quello normale: fine del disegno, mezzo secondo di pausa sul glifo intero, poi
-  le letture.
-- `.onTapGesture` su una `ZStack`, **non** `Button`: su watchOS `Button` impone lo stile
-  di sistema e si mangia l'area utile.
+- **Letture.** I tocchi non fanno niente: si esce solo con i due bottoni. DONE è pieno
+  (indaco), il gesto normale; NEXT è solo contornato. Raggiunto il numero del giorno,
+  al posto di NEXT c'è "Per oggi è tutto".
+- **DONE** chiude il giro: la schermata d'attesa mostra il kanji appena fatto in
+  piccolo, "Prossimo kanji alle HH:MM" e NEXT per non aspettare. All'ora della
+  notifica il suo kanji compare da solo, senza lasciare a schermo un orario passato.
+- **NEXT** mette subito in gioco il kanji della prossima notifica e rifà la coda da
+  adesso (§6). Conta nel numero del giorno.
+- **Il kanji in gioco** è salvato: riaprendo l'app lo ritrovi, anche chiuso con DONE.
+  Una notifica arrivata nel frattempo prende il suo posto; toccarla lo riapre da capo.
+  Se una notifica arriva *mentre* studi, DONE non chiude lei (non l'hai vista) e NEXT
+  la mostra invece di anticiparne un'altra.
+- `.onTapGesture` sul glifo, **non** `Button`: su watchOS `Button` impone lo stile di
+  sistema e si mangia l'area utile. I due bottoni delle letture sono invece bottoni
+  veri, con lo stile del design system (`.dsPrimary`, `.dsSecondary`).
 - `.digitalCrownRotation` legata al progresso dei tratti: scorrerli a mano con la corona
-  è la cosa che rende l'app *tua* e non un esercizio da tutorial. Girare la corona
-  interrompe l'animazione e **non** rivela le letture: lì comandi tu.
-- Swipe verticale sul glifo → kanji successivo o precedente. **Dalle letture no**, al
-  contrario di quanto diceva la prima stesura: lì c'è una `ScrollView`, e un gesto
-  verticale che significa due cose diverse a seconda di quanto testo c'è è un gesto
-  rotto. In fondo alle letture c'è un bottone esplicito.
+  è la cosa che rende l'app *tua* e non un esercizio da tutorial. Girarla interrompe
+  l'animazione e vale come aver guardato i tratti: il tocco dopo porta alle letture.
+- Niente swipe per cambiare kanji: con NEXT sarebbero due modi per la stessa cosa, e
+  un gesto verticale sopra una `ScrollView` è un gesto rotto.
 
 ---
 
@@ -457,12 +479,14 @@ database.
 
 | Chiave | Contenuto | Default |
 |---|---|---|
-| `reminder.settings` | intervallo, fascia attiva, modalità discreta | 60 min, 8→22, spenta |
-| `reminder.state` | permutazione del mazzo, posizione, coda programmata | mazzo mescolato, coda vuota |
+| `reminder.settings` | intervallo, fascia attiva, modalità discreta, gradi, kanji al giorno | 60 min, 8→22, spenta, 1-2, 10 |
+| `reminder.state` | permutazione del mazzo, posizione, coda programmata, kanji in gioco, conteggio del giorno, ancora dell'ultimo NEXT | mazzo mescolato, coda vuota |
 
-Due chiavi e non sei: posizione nel mazzo e coda programmata si leggono e si
-scrivono **insieme**, ed è proprio quella coppia che evita di bruciare il mazzo a
-ogni rischedulazione. Tenerle separate vorrebbe dire poterle disallineare.
+Due chiavi e non sei: posizione nel mazzo, coda programmata e conteggio del giorno
+si leggono e si scrivono **insieme**, ed è proprio questo che evita di bruciare il
+mazzo a ogni rischedulazione o di contare due volte una notifica. Tenerli separati
+vorrebbe dire poterli disallineare. I campi aggiunti dopo si decodificano con un
+default, così un aggiornamento dell'app non perde il punto del giro.
 I significati restano in inglese: KANJIDIC2 non ha l'italiano (solo en/fr/es/pt),
 quindi non c'è nessuna impostazione di lingua da salvare.
 
@@ -511,7 +535,8 @@ Non è un parere legale. Se pensi di monetizzare, leggi le licenze per intero pr
 | **F5** | Long look | ✅ il kanji si vede grande **dentro** la notifica |
 | **F6** | Impostazioni | ✅ intervallo, fascia attiva, modalità discreta, permessi, fonti |
 | **F7** | Abbonamenti | ✅ jōyō per grado, paywall, RevenueCat — manca solo l'account |
-| **F8** | Complication | ✅ il kanji dell'ultima notifica sul quadrante, tocco → app |
+| **F8** | Complication | ✅ il kanji in gioco sul quadrante, tocco → app |
+| **F9** | Loop di studio | ✅ un tocco per passo, DONE/NEXT, attesa, kanji al giorno |
 
 F2 è già un'app che usi a mano. F5 è il momento in cui diventa quello che avevi in
 mente. Non invertire: se parti dalle notifiche, debugghi lo scheduler prima di aver
@@ -526,8 +551,9 @@ toccando "Attiva le notifiche" nelle impostazioni del simulatore.
 successiva, portandosi dietro l'allargamento del mazzo: 300 kanji non reggono un
 abbonamento, 2.136 sì.
 
-- **Gratis:** classi 1 e 2 (240 kanji), un promemoria all'ora dalle 8 alle 22,
-  modalità discreta. **Premium:** tutti i gradi, intervallo e fascia oraria liberi.
+- **Gratis:** classi 1 e 2 (240 kanji), un promemoria all'ora dalle 8 alle 22, 10
+  kanji al giorno, modalità discreta. **Premium:** tutti i gradi, intervallo, fascia
+  oraria e numero di kanji al giorno liberi.
 - La regola sta in `AccessPolicy`, nel dominio. Scheduler e caricamento del mazzo
   leggono le impostazioni *effettive*; quelle scelte restano salvate intatte, così
   se l'abbonamento scade e poi si rinnova le scelte tornano da sole.

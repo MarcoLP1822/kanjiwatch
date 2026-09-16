@@ -49,18 +49,4 @@ struct ComplicationTimelineTests {
 
         #expect(entries.map(\.character) == ["日", "国"])
     }
-
-    @Test func findsTheLastNotificationAlreadyDelivered() {
-        let state = ReminderState(
-            cycle: DeckCycle(order: [], position: 0),
-            scheduled: [
-                ScheduledReminder(fireDate: date("2026-05-10 08:00"), codepoint: "065e5"),
-                ScheduledReminder(fireDate: date("2026-05-10 09:00"), codepoint: "04e00"),
-                ScheduledReminder(fireDate: date("2026-05-10 10:00"), codepoint: "056fd"),
-            ]
-        )
-
-        #expect(state.lastDelivered(before: date("2026-05-10 09:12"))?.codepoint == "04e00")
-        #expect(state.lastDelivered(before: date("2026-05-10 07:00")) == nil)
-    }
 }

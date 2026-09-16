@@ -10,43 +10,55 @@ struct StudyStateTests {
 
     @Test func startsOnTheWholeKanji() {
         let state = makeState()
-        #expect(state.phase == .glyph)
+        #expect(state.phase == .kanji)
         #expect(state.progress == 4)
         #expect(!state.isDrawing)
     }
 
-    @Test func tapRedrawsFromTheFirstStroke() {
+    /// Il giro completo, un tocco per passo: kanji → tratti → letture.
+    @Test func eachTapIsOneStep() {
         var state = makeState()
+
         #expect(state.handle(.tapped) == .startDrawing)
+        #expect(state.phase == .strokes)
         #expect(state.progress == 0)
-        #expect(state.isDrawing)
+
+        state.handle(.drawingFinished)
+        #expect(state.phase == .strokes)
+        #expect(state.isComplete)
+
+        #expect(state.handle(.tapped) == .none)
+        #expect(state.phase == .readings)
+    }
+
+    /// Il disegno finito non porta da solo alle letture: si aspetta il tocco.
+    @Test func nothingAdvancesByItself() {
+        var state = makeState()
+        state.handle(.tapped)
+        state.handle(.drawingAdvanced(to: 4))
+        state.handle(.drawingFinished)
+        #expect(state.phase == .strokes)
     }
 
     /// Chi tocca due volte di fretta vuole il kanji finito, non le letture.
     @Test func tapDuringDrawingCompletesItWithoutRevealing() {
         var state = makeState()
         state.handle(.tapped)
-        #expect(state.handle(.tapped) == .holdThenReveal)
+        #expect(state.handle(.tapped) == .stopDrawing)
         #expect(state.progress == 4)
-        #expect(state.phase == .glyph)
+        #expect(state.phase == .strokes)
     }
 
-    @Test func readingsAppearOnlyAfterTheHold() {
-        var state = makeState()
-        state.handle(.tapped)
-        #expect(state.handle(.drawingFinished) == .holdThenReveal)
-        #expect(state.phase == .glyph)
-        state.handle(.holdElapsed)
-        #expect(state.phase == .readings)
-    }
-
-    @Test func tapFromReadingsGoesBackToTheWholeKanji() {
+    /// Nelle letture si esce solo con DONE o NEXT: un tocco qualsiasi non torna ai tratti.
+    @Test func tapsOnTheReadingsDoNothing() {
         var state = makeState()
         state.handle(.tapped)
         state.handle(.drawingFinished)
-        state.handle(.holdElapsed)
+        state.handle(.tapped)
+
         #expect(state.handle(.tapped) == .none)
-        #expect(state.phase == .glyph)
+        #expect(state.phase == .readings)
+        #expect(state.handle(.crownMoved(to: 1)) == .none)
         #expect(state.progress == 4)
     }
 
@@ -60,6 +72,7 @@ struct StudyStateTests {
 
         state.handle(.crownMoved(to: 3))
         state.handle(.drawingAdvanced(to: 2))
+        state.handle(.drawingFinished)
         #expect(state.progress == 3)
     }
 
@@ -71,22 +84,15 @@ struct StudyStateTests {
         #expect(!state.isDrawing)
     }
 
-    @Test func crownStaysWithinTheStrokesAndRevealsNothing() {
+    /// Scorrere i tratti con la corona vale come averli guardati: il tocco dopo
+    /// porta alle letture invece di ridisegnare.
+    @Test func crownOnTheKanjiCountsAsLookingAtTheStrokes() {
         var state = makeState()
         #expect(state.handle(.crownMoved(to: 9)) == .none)
         #expect(state.progress == 4)
-        #expect(state.phase == .glyph)
-    }
+        #expect(state.phase == .strokes)
 
-    /// L'attesa arriva sempre in ritardo: se nel frattempo hai fatto ripartire il
-    /// disegno, non deve portarti alle letture sotto il naso.
-    @Test func staleHoldIsIgnoredWhenDrawingStartedAgain() {
-        var state = makeState()
         state.handle(.tapped)
-        state.handle(.drawingFinished)
-        state.handle(.tapped)
-        state.handle(.holdElapsed)
-        #expect(state.phase == .glyph)
-        #expect(state.isDrawing)
+        #expect(state.phase == .readings)
     }
 }

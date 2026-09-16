@@ -4,74 +4,108 @@ import KanjiDomain
 import Observation
 import SwiftUI
 
-/// Tiene insieme il kanji corrente, i suoi tratti già interpretati e la macchina
-/// a stati. Qui stanno i tempi — i task del disegno e dell'attesa — perché la
-/// logica in `StudyState` deve restare provabile senza far girare un orologio.
+/// Tiene insieme il kanji in gioco, i suoi tratti già interpretati e la macchina a
+/// stati. Qui stanno i tempi — il task del disegno e l'attesa della prossima
+/// notifica — perché la logica in `StudyState` e `StudyLoop` deve restare provabile
+/// senza far girare un orologio.
 @Observable
 public final class StudyViewModel {
-    public private(set) var kanji: Kanji
+    /// Il kanji in gioco, se il suo giro è chiuso e quando arriva il prossimo.
+    public private(set) var snapshot: StudyLoop.Snapshot
     /// Nil solo se i tracciati fossero illeggibili: la view mostra il carattere
     /// come testo invece di una schermata vuota.
     public private(set) var glyph: StrokeGlyph?
     public private(set) var state: StudyState
 
-    private var queue: [Kanji]
-    private var viewBox: Double
-    private var index: Int
+    private var loop: StudyLoop
     @ObservationIgnored private var drawing: Task<Void, Never>?
-    @ObservationIgnored private var hold: Task<Void, Never>?
 
-    /// Scatta la prima volta che un'animazione arriva in fondo. Serve a chiedere
-    /// il permesso notifiche quando l'utente ha già capito cosa fa l'app, invece
-    /// che al primo avvio davanti a una schermata che non gli dice niente.
-    @ObservationIgnored public var onFirstDrawingCompleted: (() -> Void)?
-    @ObservationIgnored private var hasCompletedADrawing = false
+    /// NEXT ha messo in gioco un altro kanji: la coda delle notifiche va rifatta da adesso.
+    @ObservationIgnored public var onAdvance: (() -> Void)?
+    /// Scatta la prima volta che arrivi alle letture. Serve a chiedere il permesso
+    /// notifiche quando l'utente ha già capito cosa fa l'app, invece che al primo
+    /// avvio davanti a una schermata che non gli dice niente.
+    @ObservationIgnored public var onReadingsFirstShown: (() -> Void)?
+    @ObservationIgnored private var hasShownReadings = false
 
-    public init(deck: KanjiDeck, startAt codepoint: String? = nil) {
-        precondition(!deck.isEmpty, "il mazzo nel bundle non può essere vuoto")
-        let cards = deck.kanji
-        let start = codepoint.flatMap { wanted in cards.firstIndex { $0.codepoint == wanted } } ?? 0
-        queue = cards
-        viewBox = deck.viewBox
-        index = start
-        kanji = cards[start]
-        glyph = try? StrokeGlyph(svgPaths: cards[start].strokes, viewBox: deck.viewBox)
-        state = StudyState(strokeCount: cards[start].strokeCount)
+    public init(loop: StudyLoop) {
+        guard let snapshot = loop.current() else {
+            preconditionFailure("il mazzo nel bundle non può essere vuoto")
+        }
+        self.loop = loop
+        self.snapshot = snapshot
+        glyph = try? StrokeGlyph(svgPaths: snapshot.current.strokes, viewBox: loop.deck.viewBox)
+        state = StudyState(strokeCount: snapshot.current.strokeCount)
     }
 
-    // Niente deinit: i task tengono `self` debole e finiscono da soli in meno di
-    // un secondo. Un deinit isolato al MainActor, qui, costerebbe più di quanto vale.
+    // Niente deinit: il task tiene `self` debole e finisce da solo in pochi secondi.
+    // Un deinit isolato al MainActor, qui, costerebbe più di quanto vale.
+
+    public var kanji: Kanji { snapshot.current }
 
     public func send(_ event: StudyState.Event) {
         perform(state.handle(event))
+        if state.phase == .readings, !hasShownReadings {
+            hasShownReadings = true
+            onReadingsFirstShown?()
+        }
     }
 
-    /// Dalla notifica: apre direttamente sul kanji che hai guardato al polso.
-    public func show(codepoint: String) {
-        guard let position = queue.firstIndex(where: { $0.codepoint == codepoint }) else { return }
-        show(at: position)
+    public func done() {
+        apply(loop.done(kanji.codepoint))
     }
 
-    public func showNext() {
-        show(at: (index + 1) % queue.count)
+    public func next() {
+        let previousTurn = snapshot.startedAt
+        apply(loop.next(after: kanji.codepoint))
+        if snapshot.startedAt != previousTurn {
+            onAdvance?()
+        }
     }
 
-    public func showPrevious() {
-        show(at: (index - 1 + queue.count) % queue.count)
+    /// Dalla notifica o dalla complication: il kanji che hai guardato al polso, da capo.
+    public func open(codepoint: String) {
+        apply(loop.open(codepoint: codepoint))
     }
 
-    /// Sono cambiati i mazzi attivi. Se il kanji sullo schermo c'è ancora si resta
-    /// lì: toglierti da sotto le dita quello che stai guardando è peggio che
-    /// ricominciare dal primo.
-    public func replaceDeck(_ deck: KanjiDeck) {
-        guard !deck.isEmpty else { return }
-        let onScreen = kanji.codepoint
-        queue = deck.kanji
-        viewBox = deck.viewBox
-        show(at: queue.firstIndex { $0.codepoint == onScreen } ?? 0)
+    /// Al ritorno in primo piano e dopo ogni rischedulazione: una notifica arrivata
+    /// nel frattempo mette in gioco il suo kanji, e l'orario del prossimo può essere
+    /// cambiato.
+    public func refresh() {
+        apply(loop.current())
+    }
+
+    /// Sono cambiati i mazzi attivi. Se il kanji in gioco c'è ancora si resta lì:
+    /// toglierti da sotto le dita quello che stai guardando è peggio che ricominciare.
+    public func replace(loop: StudyLoop) {
+        self.loop = loop
+        refresh()
+    }
+
+    /// Sulla schermata d'attesa: all'ora della prossima notifica il suo kanji
+    /// compare da solo, senza lasciare a schermo un orario già passato.
+    public func waitForNextArrival() async {
+        guard snapshot.isDone, let arrival = snapshot.nextArrival else { return }
+        // Un secondo di margine: svegliarsi un soffio prima dell'orario lascerebbe la
+        // notifica non ancora arrivata, e l'attesa ferma lì.
+        try? await Task.sleep(for: .seconds(max(arrival.timeIntervalSinceNow, 0) + 1))
+        guard !Task.isCancelled else { return }
+        refresh()
     }
 
     // MARK: - Effetti
+
+    /// Un turno nuovo riparte dal kanji intero; lo stesso turno resta dov'è, anche
+    /// se nel frattempo è cambiato l'orario della prossima notifica.
+    private func apply(_ new: StudyLoop.Snapshot?) {
+        guard let new else { return }
+        let isNewTurn = new.startedAt != snapshot.startedAt || new.current != snapshot.current
+        snapshot = new
+        guard isNewTurn else { return }
+        drawing?.cancel()
+        glyph = try? StrokeGlyph(svgPaths: new.current.strokes, viewBox: loop.deck.viewBox)
+        state = StudyState(strokeCount: new.current.strokeCount)
+    }
 
     private func perform(_ effect: StudyState.Effect) {
         switch effect {
@@ -82,8 +116,6 @@ public final class StudyViewModel {
         case .stopDrawing:
             drawing?.cancel()
             drawing = nil
-        case .holdThenReveal:
-            holdThenReveal()
         }
     }
 
@@ -92,7 +124,6 @@ public final class StudyViewModel {
     /// progresso dentro `withAnimation` e aspettare.
     private func startDrawing() {
         drawing?.cancel()
-        hold?.cancel()
         guard let glyph else {
             send(.drawingFinished)
             return
@@ -108,28 +139,5 @@ public final class StudyViewModel {
             guard !Task.isCancelled else { return }
             self?.send(.drawingFinished)
         }
-    }
-
-    private func holdThenReveal() {
-        drawing?.cancel()
-        hold?.cancel()
-        if !hasCompletedADrawing {
-            hasCompletedADrawing = true
-            onFirstDrawingCompleted?()
-        }
-        hold = Task { [weak self] in
-            try? await Task.sleep(for: .seconds(DS.Motion.completionHold))
-            guard !Task.isCancelled else { return }
-            self?.send(.holdElapsed)
-        }
-    }
-
-    private func show(at position: Int) {
-        drawing?.cancel()
-        hold?.cancel()
-        index = position
-        kanji = queue[position]
-        glyph = try? StrokeGlyph(svgPaths: kanji.strokes, viewBox: viewBox)
-        state = StudyState(strokeCount: kanji.strokeCount)
     }
 }

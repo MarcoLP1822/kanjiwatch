@@ -11,6 +11,9 @@ extension Font {
     public static let dsReading = Font.system(.title3)
     /// La parola di esempio.
     public static let dsWord = Font.system(.headline)
+    /// Il testo dei bottoni: grassetto perché, su indaco pieno, il contrasto regge
+    /// solo come testo grande (vedi TokenContrastTests).
+    public static let dsButton = Font.system(.body, weight: .semibold)
     /// Etichette brevi: ON, KUN, numero di tratti.
     public static let dsLabel = Font.system(.caption2, weight: .semibold)
 }

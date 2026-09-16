@@ -18,6 +18,14 @@ extension DS {
         public static let m: CGFloat = 10
     }
 
+    /// Token di componente per i bottoni.
+    public enum Control {
+        /// L'altezza dei bottoni di sistema su watchOS: sotto, il dito manca il bersaglio.
+        public static let height: CGFloat = 44
+        public static let borderWidth: CGFloat = 1.5
+        public static let pressedOpacity: Double = 0.6
+    }
+
     /// Token di componente per il glifo: valori legati al sistema di coordinate
     /// di KanjiVG, non a una dimensione in pixel.
     public enum Stroke {

@@ -31,6 +31,8 @@ public enum ReminderPlanner {
         previous: [ScheduledReminder] = [],
         cycle: inout DeckCycle,
         using generator: inout some RandomNumberGenerator,
+        anchor: Date? = nil,
+        usedToday: Int = 0,
         calendar: Calendar = .current
     ) -> [ScheduledReminder] {
         // I kanji già estratti per notifiche che non sono mai arrivate tornano in
@@ -42,8 +44,9 @@ public enum ReminderPlanner {
             .sorted { $0.fireDate < $1.fireDate }
             .map(\.codepoint)
 
+        let dates = fireDates(now: now, settings: settings, anchor: anchor, usedToday: usedToday, calendar: calendar)
         var reminders: [ScheduledReminder] = []
-        for fireDate in fireDates(now: now, settings: settings, calendar: calendar) {
+        for fireDate in dates {
             guard let codepoint = unshown.isEmpty ? cycle.next(using: &generator) : unshown.removeFirst() else {
                 break
             }
@@ -52,12 +55,21 @@ public enum ReminderPlanner {
         return reminders
     }
 
-    private static func fireDates(now: Date, settings: ReminderSettings, calendar: Calendar) -> [Date] {
+    private static func fireDates(
+        now: Date,
+        settings: ReminderSettings,
+        anchor: Date?,
+        usedToday: Int,
+        calendar: Calendar
+    ) -> [Date] {
         var dates = FireDates.next(
             count: systemLimit - recoveryOffsetsInHours.count,
             after: now,
             everyMinutes: settings.intervalMinutes,
             activeHours: settings.activeHours,
+            anchor: anchor,
+            dailyLimit: settings.dailyLimit,
+            usedToday: usedToday,
             calendar: calendar
         )
         guard let lastRegular = dates.last else { return dates }
@@ -77,6 +89,9 @@ public enum ReminderPlanner {
                 dates.append(slot)
             }
         }
-        return dates.sorted()
+
+        // Anche i promemoria di recupero rispettano il tetto del giorno in cui cadono.
+        var tally = DailyTally(limit: settings.dailyLimit, today: now, usedToday: usedToday, calendar: calendar)
+        return dates.sorted().filter { tally.admit($0) }
     }
 }

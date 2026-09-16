@@ -22,10 +22,18 @@ final class AppContainer {
     /// Il mazzo dei gradi che valgono adesso. Cambia quando nelle impostazioni si
     /// accende o si spegne un grado, o quando cambia l'abbonamento.
     private(set) var deck: KanjiDeck
-    let study: StudyViewModel
 
-    /// Pigra perché la sua callback deve poter vedere `self`, e dentro `init` non si
-    /// può ancora.
+    /// Pigri perché le loro callback devono poter vedere `self`, e dentro `init` non
+    /// si può ancora.
+    lazy var study: StudyViewModel = {
+        let model = StudyViewModel(loop: makeStudyLoop())
+        model.onAdvance = { [weak self] in self?.reschedule() }
+        model.onReadingsFirstShown = { [weak self] in
+            Task { await self?.askForPermissionIfNeverAsked() }
+        }
+        return model
+    }()
+
     lazy var settings = SettingsViewModel(
         store: settingsStore,
         authorization: scheduler,
@@ -46,6 +54,7 @@ final class AppContainer {
     private let subscriptions = AppContainer.makeSubscriptionGateway()
     private var subscription: SubscriptionStatus
     private var loadedGrades: Set<Int>
+    private var lastReschedule: Task<Void, Never>?
 
     private init() {
         let repository = BundledDeckRepository()
@@ -82,11 +91,6 @@ final class AppContainer {
         self.deck = deck
         self.subscription = subscription
         self.loadedGrades = grades
-        study = StudyViewModel(deck: deck)
-
-        study.onFirstDrawingCompleted = { [weak self] in
-            Task { await self?.askForPermissionIfNeverAsked() }
-        }
     }
 
     /// Senza chiave RevenueCat l'SDK non va nemmeno configurato: l'app gira gratuita.
@@ -96,22 +100,20 @@ final class AppContainer {
             : RevenueCatSubscriptionGateway(apiKey: AppConfiguration.revenueCatAPIKey)
     }
 
-    /// All'avvio, al ritorno in primo piano e quando si tocca una notifica:
-    /// finché usi l'app la coda non si svuota mai.
-    func reschedule() {
-        Task { await rescheduleAndPublish() }
-    }
-
-    /// All'avvio e al ritorno in primo piano: l'abbonamento può essere scaduto,
-    /// rinnovato o ripristinato su un altro dispositivo.
-    func refreshSubscription() {
+    /// All'avvio e a ogni ritorno in primo piano. È il ciclo che si autoalimenta:
+    /// finché apri l'app, la coda resta piena.
+    func becameActive() {
+        // Le notifiche arrivate mentre eri via possono aver messo in gioco un altro kanji.
+        study.refresh()
+        reschedule()
+        // L'abbonamento può essere scaduto, rinnovato o ripristinato altrove.
         Task { await subscriptionDidChange(await subscriptions.currentStatus()) }
     }
 
     /// Dalla notifica o dalla complication: apre sul kanji che hai guardato al polso
     /// e rimette in moto la coda.
     func open(codepoint: String) {
-        study.show(codepoint: codepoint)
+        study.open(codepoint: codepoint)
         reschedule()
     }
 
@@ -139,26 +141,37 @@ final class AppContainer {
         if wanted != loadedGrades, let reloaded = try? repository.loadDeck(grades: wanted), !reloaded.isEmpty {
             deck = reloaded
             loadedGrades = wanted
-            study.replaceDeck(reloaded)
+            study.replace(loop: makeStudyLoop())
         }
         await rescheduleAndPublish()
     }
 
-    /// Rifà la coda e poi la timeline del quadrante, sempre insieme e in quest'ordine:
-    /// notifica e complication devono mostrare lo stesso kanji.
-    private func rescheduleAndPublish() async {
-        let previous = stateStore.load()
-        await rescheduleReminders().execute()
-        publishComplication(previous: previous)
+    private func reschedule() {
+        Task { await rescheduleAndPublish() }
     }
 
-    private func publishComplication(previous: ReminderState) {
-        let now = Date()
-        // Sul quadrante va l'ultimo kanji arrivato al polso; se non ne è ancora
-        // arrivato nessuno, quello che l'app sta mostrando.
-        let current = previous.lastDelivered(before: now).flatMap { deck[$0.codepoint] } ?? study.kanji
+    /// Rifà la coda, poi aggiorna schermata e quadrante, sempre in quest'ordine:
+    /// notifica, app e complication devono dire la stessa cosa.
+    ///
+    /// Una alla volta: all'apertura da una notifica ne partono due insieme, e due
+    /// code rifatte in parallelo mescolerebbero le loro notifiche.
+    private func rescheduleAndPublish() async {
+        let previous = lastReschedule
+        let current = Task {
+            await previous?.value
+            await rescheduleReminders().execute()
+            study.refresh()
+            publishComplication()
+        }
+        lastReschedule = current
+        await current.value
+    }
+
+    /// Sul quadrante il kanji in gioco, poi uno per ogni notifica in coda.
+    private func publishComplication() {
         complicationStore.save(
-            ComplicationTimeline.entries(now: now, current: current, upcoming: stateStore.load().scheduled, deck: deck)
+            ComplicationTimeline.entries(
+                now: Date(), current: study.kanji, upcoming: stateStore.load().scheduled, deck: deck)
         )
         WidgetCenter.shared.reloadAllTimelines()
     }
@@ -167,6 +180,10 @@ final class AppContainer {
     /// salvate intatte: al rinnovo tornano da sole.
     private var effectiveSettings: PolicyAppliedSettings {
         PolicyAppliedSettings(base: settingsStore, status: { [weak self] in self?.subscription ?? .free })
+    }
+
+    private func makeStudyLoop() -> StudyLoop {
+        StudyLoop(deck: deck, settings: effectiveSettings, state: stateStore)
     }
 
     /// Costruito al momento e non tenuto da parte: è una struct da niente, e così

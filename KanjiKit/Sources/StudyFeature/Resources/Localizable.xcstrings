@@ -1,6 +1,17 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "Done" : {
+      "comment" : "Bottone principale: chiude il giro e aspetta la prossima notifica.",
+      "localizations" : {
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fatto"
+          }
+        }
+      }
+    },
     "Kanji %@, meaning %@" : {
       "comment" : "Etichetta VoiceOver del glifo: carattere e significato.",
       "localizations" : {
@@ -12,12 +23,57 @@
         }
       }
     },
-    "Next kanji" : {
+    "Next" : {
+      "comment" : "Bottone secondario: un altro kanji subito, senza aspettare.",
       "localizations" : {
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Prossimo kanji"
+            "value" : "Avanti"
+          }
+        }
+      }
+    },
+    "Next kanji at %@" : {
+      "comment" : "Schermata d'attesa, oggi. %@ è l'ora.",
+      "localizations" : {
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Prossimo kanji alle %@"
+          }
+        }
+      }
+    },
+    "Next kanji tomorrow at %@" : {
+      "comment" : "Schermata d'attesa, domani. %@ è l'ora.",
+      "localizations" : {
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Prossimo kanji domani alle %@"
+          }
+        }
+      }
+    },
+    "Notifications are off" : {
+      "comment" : "Schermata d'attesa senza notifiche in arrivo.",
+      "localizations" : {
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Notifiche disattivate"
+          }
+        }
+      }
+    },
+    "Tap for readings" : {
+      "comment" : "Suggerimento sotto i tratti disegnati e hint VoiceOver.",
+      "localizations" : {
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tocca per le letture"
           }
         }
       }
@@ -29,6 +85,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Tocca per l'ordine dei tratti"
+          }
+        }
+      }
+    },
+    "That's all for today" : {
+      "comment" : "Al posto di Avanti, raggiunto il numero di kanji del giorno.",
+      "localizations" : {
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Per oggi è tutto"
           }
         }
       }

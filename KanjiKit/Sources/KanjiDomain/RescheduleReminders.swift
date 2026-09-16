@@ -2,8 +2,8 @@ import Foundation
 
 /// Rifà la coda delle notifiche da zero.
 ///
-/// Si chiama in tre punti: all'avvio, al ritorno in primo piano e quando si tocca
-/// una notifica. Finché usi l'app la coda non si svuota mai — ed è per questo che
+/// Si chiama all'avvio, al ritorno in primo piano, quando si tocca una notifica e
+/// dopo ogni NEXT. Finché usi l'app la coda non si svuota mai — ed è per questo che
 /// il ciclo si autoalimenta.
 public struct RescheduleReminders {
     public enum Outcome: Equatable, Sendable {
@@ -41,25 +41,38 @@ public struct RescheduleReminders {
 
     @discardableResult
     public func execute() async -> Outcome {
-        guard await authorization.authorizationStatus() == .authorized else {
+        let isAuthorized = await authorization.authorizationStatus() == .authorized
+
+        // Tra lettura e salvataggio dello stato non c'è nessun `await`: un NEXT
+        // premuto mentre la coda si rifà non può finire sovrascritto.
+        let moment = now()
+        let preferences = settings.load()
+        var current = state.load()
+        var generator = SystemRandomNumberGenerator()
+        // Le notifiche già arrivate contano nella giornata prima di rifare la coda,
+        // altrimenti il tetto giornaliero non saprebbe quante ne sono passate.
+        current.catchUp(with: deck, now: moment, using: &generator, calendar: calendar)
+
+        guard isAuthorized else {
+            // Non arriverà niente: la schermata d'attesa non deve promettere un orario.
+            current.scheduled = []
+            state.save(current)
             await scheduler.cancelAll()
             return .notAuthorized
         }
 
-        let preferences = settings.load()
-        var current = state.load()
-        var generator = SystemRandomNumberGenerator()
-        // Un aggiornamento dell'app può aver cambiato il mazzo sotto il ciclo.
-        current.cycle.reconcile(with: deck.codepoints, using: &generator)
-
         let reminders = ReminderPlanner.plan(
-            now: now(),
+            now: moment,
             settings: preferences,
             previous: current.scheduled,
             cycle: &current.cycle,
             using: &generator,
+            anchor: current.anchor,
+            usedToday: current.today.count(on: moment, calendar: calendar),
             calendar: calendar
         )
+        current.scheduled = reminders
+        state.save(current)
         guard !reminders.isEmpty else { return .emptyDeck }
 
         let notifications = reminders.compactMap { reminder in
@@ -68,9 +81,6 @@ public struct RescheduleReminders {
             }
         }
         await scheduler.replacePending(with: notifications, isPassive: preferences.isPassive)
-
-        current.scheduled = reminders
-        state.save(current)
         return .scheduled(reminders.count)
     }
 }

@@ -42,17 +42,22 @@ public struct ReminderSettings: Equatable, Sendable, Codable {
     public var isPassive: Bool
     /// I gradi scolastici da ripassare, cioè i mazzi attivi.
     public var grades: Set<Int>
+    /// Quanti kanji nuovi al giorno, tra notifiche arrivate e NEXT. L'intervallo dà
+    /// il ritmo, questo il tetto: raggiunto il numero, la giornata è finita.
+    public var dailyLimit: Int
 
     public init(
         intervalMinutes: Int,
         activeHours: ActiveHours,
         isPassive: Bool,
-        grades: Set<Int> = KanjiLevel.freeGrades
+        grades: Set<Int> = KanjiLevel.freeGrades,
+        dailyLimit: Int = ReminderSettings.defaultDailyLimit
     ) {
         self.intervalMinutes = intervalMinutes
         self.activeHours = activeHours
         self.isPassive = isPassive
         self.grades = grades
+        self.dailyLimit = dailyLimit
     }
 
     public init(from decoder: any Decoder) throws {
@@ -60,22 +65,28 @@ public struct ReminderSettings: Equatable, Sendable, Codable {
         intervalMinutes = try container.decode(Int.self, forKey: .intervalMinutes)
         activeHours = try container.decode(ActiveHours.self, forKey: .activeHours)
         isPassive = try container.decode(Bool.self, forKey: .isPassive)
-        // Impostazioni salvate prima che esistessero i mazzi: senza questo la
-        // decodifica fallirebbe e si perderebbero anche intervallo e fascia oraria.
+        // Impostazioni salvate prima dei campi nuovi: senza i default la decodifica
+        // fallirebbe, e con lei si perderebbero intervallo e fascia oraria.
         grades = try container.decodeIfPresent(Set<Int>.self, forKey: .grades) ?? KanjiLevel.freeGrades
+        dailyLimit = try container.decodeIfPresent(Int.self, forKey: .dailyLimit) ?? Self.defaultDailyLimit
     }
 
-    /// Default del documento: un kanji all'ora, dalle 8 alle 22, mazzo gratuito.
-    /// Senza fascia di silenzio l'app ti sveglia alle 3 di notte e la disinstalli
-    /// il giorno dopo.
+    public static let defaultDailyLimit = 10
+
+    /// Default: un kanji all'ora dalle 8 alle 22, al massimo dieci al giorno, mazzo
+    /// gratuito. Senza fascia di silenzio l'app ti sveglia alle 3 di notte e la
+    /// disinstalli il giorno dopo.
     public static let `default` = ReminderSettings(
         intervalMinutes: 60,
         activeHours: ActiveHours(startHour: 8, endHour: 22),
         isPassive: false,
-        grades: KanjiLevel.freeGrades
+        grades: KanjiLevel.freeGrades,
+        dailyLimit: defaultDailyLimit
     )
 
     /// Gli intervalli proposti nelle impostazioni: pochi e tondi, si scelgono
     /// con la corona in due giri.
     public static let offeredIntervals = [15, 30, 45, 60, 90, 120, 180, 240]
+
+    public static let offeredDailyLimits = [3, 5, 10, 15, 20, 30]
 }

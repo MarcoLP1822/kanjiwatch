@@ -37,9 +37,9 @@ public struct GlanceEntry: Equatable, Sendable, Codable {
 
 /// La sequenza di kanji da mostrare sul quadrante.
 public enum ComplicationTimeline {
-    /// Adesso l'ultimo kanji arrivato al polso, poi uno per ogni notifica in coda,
-    /// ciascuno dal momento in cui arriva la sua notifica: quadrante e notifica
-    /// dicono sempre la stessa cosa.
+    /// Adesso il kanji in gioco, poi uno per ogni notifica in coda, ciascuno dal
+    /// momento in cui arriva la sua notifica: quadrante, app e notifica dicono sempre
+    /// la stessa cosa.
     public static func entries(
         now: Date,
         current: Kanji,
@@ -53,15 +53,5 @@ public enum ComplicationTimeline {
             // Un kanji uscito dal mazzo dopo la programmazione si salta.
             .compactMap { reminder in deck[reminder.codepoint].map { GlanceEntry(date: reminder.fireDate, kanji: $0) } }
         return [GlanceEntry(date: now, kanji: current)] + queued
-    }
-}
-
-extension ReminderState {
-    /// L'ultima notifica già arrivata: è il kanji che il quadrante deve mostrare
-    /// adesso, prima che arrivi la prossima.
-    public func lastDelivered(before now: Date) -> ScheduledReminder? {
-        scheduled
-            .filter { $0.fireDate <= now }
-            .max { $0.fireDate < $1.fireDate }
     }
 }

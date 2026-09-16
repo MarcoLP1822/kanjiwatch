@@ -2,10 +2,10 @@ import DesignSystem
 import KanjiDomain
 import SwiftUI
 
-/// La schermata di ripasso: il glifo, poi le letture.
+/// La schermata di ripasso: il kanji, i tratti, le letture; poi l'attesa del prossimo.
 ///
-/// Il tocco sta su una `ZStack` e non su un `Button` di proposito: su watchOS il
-/// bottone impone lo stile di sistema e si mangia l'area utile del quadrante.
+/// Il tocco sul glifo sta su una `ZStack` e non su un `Button` di proposito: su
+/// watchOS il bottone impone lo stile di sistema e si mangia l'area utile del quadrante.
 public struct StudyView: View {
     private let model: StudyViewModel
     @State private var crown: Double = 0
@@ -18,28 +18,32 @@ public struct StudyView: View {
         ZStack {
             Color.dsBackground.ignoresSafeArea()
 
-            switch model.state.phase {
-            case .glyph:
-                glyph
-            case .readings:
+            if model.snapshot.isDone {
+                waiting
+            } else if model.state.phase == .readings {
                 readings
+            } else {
+                glyph
             }
         }
         .animation(DS.Motion.phase, value: model.state.phase)
+        .animation(DS.Motion.phase, value: model.snapshot.isDone)
         .onAppear { crown = model.state.progress }
+        .onChange(of: model.snapshot.startedAt) { _, _ in crown = model.state.progress }
     }
 
-    // MARK: - Glifo
+    // MARK: - Kanji e tratti
 
     private var glyph: some View {
         VStack(spacing: DS.Spacing.s) {
             drawing
                 .frame(maxHeight: .infinity)
 
-            if !model.state.isDrawing, model.state.isComplete {
-                Text("Tap for stroke order", bundle: .module)
+            if let hint {
+                hint
                     .font(.dsLabel)
                     .foregroundStyle(.dsInkSecondary)
+                    .multilineTextAlignment(.center)
                     .transition(.opacity)
             }
         }
@@ -54,21 +58,25 @@ public struct StudyView: View {
                 model.send(.crownMoved(to: turned))
             }
         }
-        .onChange(of: model.kanji.codepoint) { _, _ in crown = model.state.progress }
-        .gesture(
-            // Scorciatoia per il ripasso attivo: su per il prossimo, giù per tornare.
-            DragGesture(minimumDistance: 24)
-                .onEnded { drag in
-                    if drag.translation.height < -24 {
-                        model.showNext()
-                    } else if drag.translation.height > 24 {
-                        model.showPrevious()
-                    }
-                }
-        )
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(Text("Kanji \(model.kanji.character), meaning \(meanings)", bundle: .module))
-        .accessibilityHint(Text("Tap for stroke order", bundle: .module))
+        .accessibilityLabel(
+            Text("Kanji \(model.kanji.character), meaning \(model.kanji.shortMeaning)", bundle: .module)
+        )
+        .accessibilityHint(hint ?? Text(verbatim: ""))
+        .accessibilityAddTraits(.isButton)
+    }
+
+    /// Cosa fa il prossimo tocco. Durante il disegno niente scritta: il tocco lo
+    /// completa soltanto, e dirlo sarebbe rumore.
+    private var hint: Text? {
+        switch model.state.phase {
+        case .kanji:
+            Text("Tap for stroke order", bundle: .module)
+        case .strokes where !model.state.isDrawing:
+            Text("Tap for readings", bundle: .module)
+        case .strokes, .readings:
+            nil
+        }
     }
 
     @ViewBuilder
@@ -84,19 +92,34 @@ public struct StudyView: View {
         }
     }
 
-    // MARK: - Letture
+    // MARK: - Letture e attesa
 
+    /// Qui i tocchi non fanno niente: si esce solo con DONE o NEXT.
     private var readings: some View {
         ScrollView {
-            ReadingsContent(kanji: model.kanji, glyph: model.glyph, onNext: model.showNext)
-                .padding(DS.Spacing.m)
+            ReadingsContent(
+                kanji: model.kanji,
+                glyph: model.glyph,
+                dailyLimitReached: model.snapshot.dailyLimitReached,
+                onDone: model.done,
+                onNext: model.next
+            )
+            .padding(DS.Spacing.m)
         }
-        .contentShape(.rect)
-        .onTapGesture { model.send(.tapped) }
     }
 
-    private var meanings: String {
-        model.kanji.shortMeaning
+    private var waiting: some View {
+        ScrollView {
+            WaitingContent(
+                kanji: model.kanji,
+                glyph: model.glyph,
+                nextArrival: model.snapshot.nextArrival,
+                dailyLimitReached: model.snapshot.dailyLimitReached,
+                onNext: model.next
+            )
+            .padding(DS.Spacing.m)
+        }
+        .task(id: model.snapshot.nextArrival) { await model.waitForNextArrival() }
     }
 }
 
@@ -107,6 +130,8 @@ public struct StudyView: View {
 struct ReadingsContent: View {
     let kanji: Kanji
     let glyph: StrokeGlyph?
+    let dailyLimitReached: Bool
+    let onDone: () -> Void
     let onNext: () -> Void
 
     var body: some View {
@@ -116,7 +141,7 @@ struct ReadingsContent: View {
                     KanjiGlyphView(glyph: glyph, progress: Double(glyph.strokeCount))
                         .frame(width: 44, height: 44)
                 }
-                Text(verbatim: meanings)
+                Text(verbatim: kanji.shortMeaning)
                     .font(.dsTitle)
                     .foregroundStyle(.dsInk)
             }
@@ -133,17 +158,80 @@ struct ReadingsContent: View {
                 )
             }
 
-            Button(action: onNext) {
-                Text("Next kanji", bundle: .module)
-                    .frame(maxWidth: .infinity)
+            VStack(spacing: DS.Spacing.m) {
+                // DONE è il gesto normale e sta in evidenza; NEXT è per chi ne vuole un altro subito.
+                Button(action: onDone) {
+                    Text("Done", bundle: .module)
+                }
+                .buttonStyle(.dsPrimary)
+
+                NextAction(dailyLimitReached: dailyLimitReached, action: onNext)
             }
-            .buttonStyle(.borderedProminent)
-            .tint(.dsAccent)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
+}
 
-    private var meanings: String {
-        kanji.shortMeaning
+/// Dopo DONE: il kanji appena fatto in piccolo, quando arriva il prossimo e, se la
+/// giornata lo permette, NEXT per non aspettare.
+struct WaitingContent: View {
+    let kanji: Kanji
+    let glyph: StrokeGlyph?
+    let nextArrival: Date?
+    let dailyLimitReached: Bool
+    let onNext: () -> Void
+
+    var body: some View {
+        VStack(spacing: DS.Spacing.l) {
+            VStack(spacing: DS.Spacing.s) {
+                if let glyph {
+                    KanjiGlyphView(glyph: glyph, progress: Double(glyph.strokeCount))
+                        .frame(width: 56, height: 56)
+                }
+                Text(verbatim: kanji.shortMeaning)
+                    .font(.dsLabel)
+                    .foregroundStyle(.dsInkSecondary)
+            }
+
+            arrival
+                .font(.dsBody)
+                .foregroundStyle(.dsInk)
+                .multilineTextAlignment(.center)
+
+            NextAction(dailyLimitReached: dailyLimitReached, action: onNext)
+        }
+        .frame(maxWidth: .infinity)
+    }
+
+    /// L'ora basta: la prossima notifica arriva al più tardi domani, all'inizio della
+    /// fascia attiva.
+    private var arrival: Text {
+        guard let nextArrival else {
+            return Text("Notifications are off", bundle: .module)
+        }
+        let time = nextArrival.formatted(date: .omitted, time: .shortened)
+        return Calendar.current.isDateInToday(nextArrival)
+            ? Text("Next kanji at \(time)", bundle: .module)
+            : Text("Next kanji tomorrow at \(time)", bundle: .module)
+    }
+}
+
+/// NEXT, o il motivo per cui non c'è.
+private struct NextAction: View {
+    let dailyLimitReached: Bool
+    let action: () -> Void
+
+    var body: some View {
+        if dailyLimitReached {
+            Text("That's all for today", bundle: .module)
+                .font(.dsLabel)
+                .foregroundStyle(.dsInkSecondary)
+                .frame(maxWidth: .infinity)
+        } else {
+            Button(action: action) {
+                Text("Next", bundle: .module)
+            }
+            .buttonStyle(.dsSecondary)
+        }
     }
 }

@@ -1,4 +1,6 @@
+import Foundation
 import KanjiDomain
+import StudyFeature
 
 #if os(macOS)
 import AppKit
@@ -25,6 +27,18 @@ let waterKanji = Kanji(
 )
 
 let waterDeck = KanjiDeck(viewBox: 109, attribution: "", kanji: [waterKanji])
+
+/// Un modello su archivi in memoria e con l'orologio in mano al test.
+@MainActor
+func makeStudyModel(
+    deck: KanjiDeck = waterDeck,
+    state: InMemoryStore<ReminderState> = InMemoryStore(.empty),
+    now: @escaping () -> Date = Date.init
+) -> StudyViewModel {
+    StudyViewModel(
+        loop: StudyLoop(deck: deck, settings: InMemoryStore(ReminderSettings.default), state: state, now: now)
+    )
+}
 
 #if os(macOS)
 /// Apple Watch Series 10 da 46 mm, in punti.

@@ -16,29 +16,43 @@ import Testing
 @MainActor
 struct StudyViewRenderingTests {
 
-    @Test func drawsBothPhasesDifferently() throws {
-        let glyph = try renderWatchSized(StudyView(model: StudyViewModel(deck: waterDeck)), named: "study-glyph")
+    @Test func everyStepDrawsSomethingDifferent() throws {
+        let kanji = try renderWatchSized(StudyView(model: makeStudyModel()), named: "study-kanji")
 
-        let model = StudyViewModel(deck: waterDeck)
-        model.send(.tapped)
-        model.send(.drawingFinished)
-        model.send(.holdElapsed)
-        #expect(model.state.phase == .readings)
-
+        let model = makeStudyModel()
         // Il contenuto senza ScrollView: dentro una ScrollView ImageRenderer
         // restituisce un'immagine vuota.
-        let revealed = try renderWatchSized(
-            ReadingsContent(kanji: model.kanji, glyph: model.glyph, onNext: {})
+        let readings = try renderWatchSized(
+            ReadingsContent(kanji: model.kanji, glyph: model.glyph, dailyLimitReached: false, onDone: {}, onNext: {})
                 .padding(DS.Spacing.m)
                 .background(Color.dsBackground),
             named: "study-readings"
         )
+        let waiting = try renderWatchSized(
+            WaitingContent(
+                kanji: model.kanji,
+                glyph: model.glyph,
+                nextArrival: Date().addingTimeInterval(3600),
+                dailyLimitReached: false,
+                onNext: {}
+            )
+            .padding(DS.Spacing.m)
+            .background(Color.dsBackground),
+            named: "study-waiting"
+        )
+        let dayOver = try renderWatchSized(
+            WaitingContent(
+                kanji: model.kanji, glyph: model.glyph, nextArrival: nil, dailyLimitReached: true, onNext: {}
+            )
+            .padding(DS.Spacing.m)
+            .background(Color.dsBackground),
+            named: "study-day-over"
+        )
 
-        // Le due fasi devono disegnare cose diverse, e nessuna delle due può
-        // essere una schermata vuota.
-        #expect(inkPixels(glyph) > 500)
-        #expect(inkPixels(revealed) > 500)
-        #expect(inkPixels(glyph) != inkPixels(revealed))
+        // Nessun passo può essere una schermata vuota, e nessuno uguale a un altro.
+        let ink = [kanji, readings, waiting, dayOver].map(inkPixels)
+        #expect(ink.allSatisfy { $0 > 500 })
+        #expect(Set(ink).count == ink.count)
     }
 }
 #endif

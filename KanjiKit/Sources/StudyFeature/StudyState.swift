@@ -1,21 +1,25 @@
 import Foundation
 
-/// La macchina a stati dei tap, senza SwiftUI e senza orologi.
+/// La macchina a stati dei tocchi, senza SwiftUI e senza orologi.
 ///
-///     glifo intero --tap--> disegno --fine--> attesa --> letture --tap--> glifo intero
-///                              `--tap--> completo, e poi la stessa attesa
+///     kanji --tocco--> tratti --tocco--> letture  (poi DONE o NEXT)
+///                        `--tocco durante il disegno: lo completa
 ///
-/// Un tap durante il disegno lo completa e basta: chi tocca due volte di fretta
-/// non vuole saltare il contenuto, vuole vedere subito il kanji finito.
-/// Lo stato non avvia timer né animazioni: dice alla view cosa fare con `Effect`.
+/// Ogni passo è un tocco e niente avanza da solo. Nelle letture i tocchi non fanno
+/// niente: lì decidono DONE e NEXT, che non sono affare di questa macchina ma del
+/// loop nel dominio. Lo stato non avvia timer né animazioni: dice alla view cosa
+/// fare con `Effect`.
 public struct StudyState: Equatable, Sendable {
     public enum Phase: Equatable, Sendable {
-        case glyph
+        /// Il kanji intero, com'era nella notifica.
+        case kanji
+        /// L'ordine dei tratti: in disegno, oppure fermo dove l'ha lasciato la corona.
+        case strokes
         case readings
     }
 
     public let strokeCount: Int
-    public private(set) var phase: Phase = .glyph
+    public private(set) var phase: Phase = .kanji
     /// Da 0 a `strokeCount`: la parte intera sono i tratti finiti, la decimale
     /// è quanto è disegnato quello in corso.
     public private(set) var progress: Double
@@ -37,7 +41,6 @@ extension StudyState {
         /// Il disegno è arrivato alla fine del tratto `to`.
         case drawingAdvanced(to: Double)
         case drawingFinished
-        case holdElapsed
     }
 
     /// Cosa deve fare la view dopo l'evento.
@@ -45,8 +48,6 @@ extension StudyState {
         case none
         case startDrawing
         case stopDrawing
-        /// Tiene il glifo intero un istante, poi rimanda `holdElapsed`.
-        case holdThenReveal
     }
 
     @discardableResult
@@ -56,56 +57,55 @@ extension StudyState {
             return handleTap()
 
         case .crownMoved(let value):
-            return scrub(to: value)
+            // Fra le letture la corona scorre il testo, non i tratti.
+            guard phase != .readings else { return .none }
+            // Girare la corona è guardare i tratti a mano: il passo è fatto, e il
+            // prossimo tocco porta alle letture invece di ridisegnare.
+            phase = .strokes
+            let wasDrawing = isDrawing
+            isDrawing = false
+            progress = clamped(value)
+            return wasDrawing ? .stopDrawing : .none
 
         case .drawingAdvanced(let value):
             // Se hai toccato o girato la corona, il disegno che continua ad arrivare
             // dal task non deve rimettere indietro le lancette.
             guard isDrawing else { return .none }
-            progress = min(max(value, 0), Double(strokeCount))
+            progress = clamped(value)
             return .none
 
         case .drawingFinished:
             guard isDrawing else { return .none }
             isDrawing = false
             progress = Double(strokeCount)
-            return .holdThenReveal
-
-        case .holdElapsed:
-            // Se nel frattempo hai toccato o girato la corona, l'attesa non vale più.
-            guard phase == .glyph, !isDrawing, isComplete else { return .none }
-            phase = .readings
             return .none
         }
     }
 
     private mutating func handleTap() -> Effect {
-        switch (phase, isDrawing) {
-        case (.readings, _):
-            phase = .glyph
-            progress = Double(strokeCount)
-            return .none
-
-        case (.glyph, true):
-            // Salta alla fine; il passaggio alle letture resta quello normale.
-            isDrawing = false
-            progress = Double(strokeCount)
-            return .holdThenReveal
-
-        case (.glyph, false):
+        switch phase {
+        case .kanji:
+            phase = .strokes
             progress = 0
             isDrawing = true
             return .startDrawing
+
+        case .strokes where isDrawing:
+            // Chi tocca durante il disegno vuole il kanji finito, non saltare alle letture.
+            isDrawing = false
+            progress = Double(strokeCount)
+            return .stopDrawing
+
+        case .strokes:
+            phase = .readings
+            return .none
+
+        case .readings:
+            return .none
         }
     }
 
-    private mutating func scrub(to value: Double) -> Effect {
-        // Fra le letture la corona scorre il testo, non i tratti.
-        guard phase == .glyph else { return .none }
-        let wasDrawing = isDrawing
-        isDrawing = false
-        progress = min(max(value, 0), Double(strokeCount))
-        // Con la corona comandi tu: arrivare in fondo non rivela le letture.
-        return wasDrawing ? .stopDrawing : .none
+    private func clamped(_ value: Double) -> Double {
+        min(max(value, 0), Double(strokeCount))
     }
 }

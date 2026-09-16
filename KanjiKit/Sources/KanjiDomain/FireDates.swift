@@ -7,6 +7,9 @@ import Foundation
 /// orari calcolati "da adesso" ogni sguardo all'app sposterebbe in avanti la
 /// notifica successiva — aprendola ogni tanto, non arriverebbe mai. Ancorata alla
 /// finestra, la griglia è la stessa a ogni ricalcolo.
+///
+/// L'unica eccezione è voluta: NEXT fa ripartire il ritmo da quando l'hai premuto
+/// (`anchor`), ma solo nella finestra in cui l'hai premuto.
 public enum FireDates {
 
     /// Quanti giorni al massimo si guarda avanti prima di arrendersi: con 64
@@ -19,11 +22,15 @@ public enum FireDates {
         after start: Date,
         everyMinutes: Int,
         activeHours: ActiveHours,
+        anchor: Date? = nil,
+        dailyLimit: Int? = nil,
+        usedToday: Int = 0,
         calendar: Calendar = .current
     ) -> [Date] {
         guard count > 0, everyMinutes > 0 else { return [] }
 
         var dates: [Date] = []
+        var tally = DailyTally(limit: dailyLimit, today: start, usedToday: usedToday, calendar: calendar)
         // Una finestra che attraversa la mezzanotte può essere cominciata ieri:
         // alle 01:00, con 22→6, lo slot buono appartiene alla finestra di ieri sera.
         let firstDay =
@@ -36,9 +43,11 @@ public enum FireDates {
             guard let window = window(startingOn: day, activeHours: activeHours, calendar: calendar) else {
                 break
             }
-            var slot = window.start
+            // Dopo un NEXT la finestra in cui l'hai premuto riparte da quel momento;
+            // dal giorno dopo la griglia torna ancorata all'inizio della fascia.
+            var slot = anchor.flatMap { $0 >= window.start && $0 < window.end ? $0 : nil } ?? window.start
             while slot < window.end {
-                if slot > start {
+                if slot > start, tally.admit(slot) {
                     dates.append(slot)
                     if dates.count == count { return dates }
                 }

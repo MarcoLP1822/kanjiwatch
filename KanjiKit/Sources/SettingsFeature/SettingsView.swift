@@ -58,12 +58,25 @@ public struct SettingsView<Premium: View>: View {
                     } label: {
                         Text("Interval", bundle: .module)
                     }
+                    Picker(selection: $model.dailyLimit) {
+                        ForEach(ReminderSettings.offeredDailyLimits, id: \.self) { count in
+                            Text(count, format: .number).tag(count)
+                        }
+                    } label: {
+                        Text("New kanji per day", bundle: .module)
+                    }
                 } else {
                     lockedValue(
                         Text("Interval", bundle: .module), value: intervalLabel(model.effective.intervalMinutes))
+                    lockedValue(
+                        Text("New kanji per day", bundle: .module), value: model.effective.dailyLimit.formatted())
                 }
             } header: {
                 Text("Reminders", bundle: .module)
+            } footer: {
+                Text(
+                    "Kanji opened with Next count too. Once the number is reached, reminders stop until tomorrow.",
+                    bundle: .module)
             }
 
             Section {

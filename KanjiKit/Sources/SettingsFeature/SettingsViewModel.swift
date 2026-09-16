@@ -13,6 +13,7 @@ public final class SettingsViewModel {
     public var startHour: Int { didSet { settingsChanged() } }
     public var endHour: Int { didSet { settingsChanged() } }
     public var isPassive: Bool { didSet { settingsChanged() } }
+    public var dailyLimit: Int { didSet { settingsChanged() } }
 
     /// I mazzi disponibili nel bundle, dal catalogo.
     public let levels: [KanjiLevel]
@@ -52,6 +53,7 @@ public final class SettingsViewModel {
         startHour = current.activeHours.startHour
         endHour = current.activeHours.endHour
         isPassive = current.isPassive
+        dailyLimit = current.dailyLimit
         grades = current.grades
     }
 
@@ -106,6 +108,7 @@ public final class SettingsViewModel {
         settings.intervalMinutes = intervalMinutes
         settings.activeHours = ActiveHours(startHour: startHour, endHour: endHour)
         settings.isPassive = isPassive
+        settings.dailyLimit = dailyLimit
         settings.grades = grades
         store.save(settings)
 

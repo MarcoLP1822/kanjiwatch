@@ -19,11 +19,8 @@ struct KanjiWatchApp: App {
                     }
                 }
                 .onChange(of: scenePhase, initial: true) { _, phase in
-                    // All'avvio e a ogni ritorno in primo piano. È il ciclo che si
-                    // autoalimenta: finché apri l'app, la coda resta piena.
                     if phase == .active {
-                        container.reschedule()
-                        container.refreshSubscription()
+                        container.becameActive()
                     }
                 }
         }

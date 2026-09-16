@@ -56,6 +56,18 @@
         "it" : { "stringUnit" : { "state" : "translated", "value" : "Intervallo" } }
       }
     },
+    "Kanji opened with Next count too. Once the number is reached, reminders stop until tomorrow." : {
+      "comment" : "Nota sotto i promemoria: spiega il numero di kanji al giorno.",
+      "localizations" : {
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Contano anche quelli aperti con Avanti. Raggiunto il numero, le notifiche riprendono domani." } }
+      }
+    },
+    "New kanji per day" : {
+      "comment" : "Quanti kanji nuovi al massimo in una giornata, notifiche e Avanti insieme.",
+      "localizations" : {
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Kanji nuovi al giorno" } }
+      }
+    },
     "Notifications" : {
       "localizations" : {
         "it" : { "stringUnit" : { "state" : "translated", "value" : "Notifiche" } }

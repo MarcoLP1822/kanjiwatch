@@ -4,13 +4,6 @@ import Testing
 
 @testable import SettingsFeature
 
-private final class InMemoryStore: ValueStore {
-    var value: ReminderSettings
-    init(_ value: ReminderSettings = .default) { self.value = value }
-    func load() -> ReminderSettings { value }
-    func save(_ value: ReminderSettings) { self.value = value }
-}
-
 private final class FakeAuthorizer: NotificationAuthorizing {
     var status: NotificationAuthorization
     var requested = false
@@ -37,7 +30,7 @@ struct SettingsViewModelTests {
     ]
 
     private func makeModel(
-        store: InMemoryStore = InMemoryStore(),
+        store: InMemoryStore<ReminderSettings> = InMemoryStore(.default),
         authorizer: FakeAuthorizer = FakeAuthorizer(.notDetermined),
         subscription: SubscriptionStatus = .premium,
         spy: RescheduleSpy = RescheduleSpy()
@@ -58,7 +51,8 @@ struct SettingsViewModelTests {
                 intervalMinutes: 90,
                 activeHours: ActiveHours(startHour: 7, endHour: 23),
                 isPassive: true,
-                grades: [2, 3]
+                grades: [2, 3],
+                dailyLimit: 20
             )
         )
         let spy = RescheduleSpy()
@@ -69,21 +63,24 @@ struct SettingsViewModelTests {
         #expect(model.endHour == 23)
         #expect(model.isPassive)
         #expect(model.grades == [2, 3])
+        #expect(model.dailyLimit == 20)
         #expect(spy.count == 0)
     }
 
     @Test func savesEveryChangeImmediately() {
-        let store = InMemoryStore()
+        let store = InMemoryStore(ReminderSettings.default)
         let model = makeModel(store: store)
 
         model.intervalMinutes = 30
         model.startHour = 9
         model.isPassive = true
+        model.dailyLimit = 5
         model.setGrade(3, enabled: true)
 
         #expect(store.value.intervalMinutes == 30)
         #expect(store.value.activeHours.startHour == 9)
         #expect(store.value.isPassive)
+        #expect(store.value.dailyLimit == 5)
         #expect(store.value.grades == [1, 2, 3])
     }
 
@@ -101,7 +98,7 @@ struct SettingsViewModelTests {
     }
 
     @Test func aFreeUserCannotTurnOnAPaidDeck() {
-        let store = InMemoryStore()
+        let store = InMemoryStore(ReminderSettings.default)
         let model = makeModel(store: store, subscription: .free)
 
         model.setGrade(3, enabled: true)
@@ -116,9 +113,11 @@ struct SettingsViewModelTests {
     @Test func aFreeUserSeesTheEffectiveRhythm() {
         var chosen = ReminderSettings.default
         chosen.intervalMinutes = 30
+        chosen.dailyLimit = 30
         let model = makeModel(store: InMemoryStore(chosen), subscription: .free)
 
         #expect(model.effective.intervalMinutes == AccessPolicy.freeIntervalMinutes)
+        #expect(model.effective.dailyLimit == AccessPolicy.freeDailyLimit)
     }
 
     @Test func subscribingUnlocksThePaidDecks() {

@@ -10,8 +10,6 @@ extension DS {
         public static let strokeDurationRange: ClosedRange<Double> = 0.18...0.9
         /// Respiro tra un tratto e il successivo: senza, l'ordine non si legge.
         public static let strokePause: Double = 0.07
-        /// Quanto resta fermo il glifo completo prima di passare alle letture.
-        public static let completionHold: Double = 0.55
         /// Cambio di fase (glifo → letture).
         public static let phase: Animation = .smooth(duration: 0.28)
 

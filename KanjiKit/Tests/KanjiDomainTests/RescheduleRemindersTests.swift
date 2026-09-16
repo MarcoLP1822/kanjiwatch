@@ -115,6 +115,59 @@ struct RescheduleRemindersTests {
         #expect(scheduler.isPassive)
     }
 
+    /// Dopo un NEXT la coda riparte da quel momento, e i kanji già avuti oggi
+    /// occupano posti del tetto giornaliero.
+    @Test func nextAndTodaysKanjiShapeTheQueue() async {
+        var settings = ReminderSettings.default
+        settings.dailyLimit = 3
+        let now = date("2026-05-10 09:12")
+        let state = InMemoryStore(
+            ReminderState(
+                cycle: DeckCycle(order: [], position: 0),
+                today: DailyCount(day: calendar.startOfDay(for: now), count: 2),
+                anchor: date("2026-05-10 09:05")
+            )
+        )
+        let (useCase, _, scheduler) = makeUseCase(deck: makeDeck(), settings: settings, state: state)
+
+        await useCase.execute()
+
+        #expect(
+            scheduler.notifications.prefix(2).map { label($0.fireDate) } == ["2026-05-10 10:05", "2026-05-11 08:00"])
+    }
+
+    /// Un grado spento lascia in coda kanji che non ci sono più: vanno tolti, non
+    /// rimandati a ogni rischedulazione.
+    @Test func kanjiRemovedFromTheDeckLeaveTheQueue() async {
+        let deck = makeDeck()
+        let state = InMemoryStore(
+            ReminderState(
+                cycle: DeckCycle(order: [], position: 0),
+                scheduled: [ScheduledReminder(fireDate: date("2026-05-10 10:00"), codepoint: "0ffff")]
+            )
+        )
+        let (useCase, _, scheduler) = makeUseCase(deck: deck, state: state)
+
+        await useCase.execute()
+
+        #expect(!state.value.scheduled.contains { $0.codepoint == "0ffff" })
+        #expect(scheduler.notifications.count == ReminderPlanner.systemLimit)
+    }
+
+    /// Senza permesso non arriverà niente: la schermata d'attesa non deve promettere orari.
+    @Test func withoutPermissionNothingIsPromised() async {
+        let state = InMemoryStore(
+            ReminderState(
+                cycle: DeckCycle(order: [], position: 0),
+                scheduled: [ScheduledReminder(fireDate: date("2026-05-10 10:00"), codepoint: "04e01")]
+            )
+        )
+        let (useCase, _, _) = makeUseCase(deck: makeDeck(), state: state, authorization: FakeAuthorizer(.denied))
+
+        #expect(await useCase.execute() == .notAuthorized)
+        #expect(state.value.scheduled.isEmpty)
+    }
+
     @Test func anEmptyDeckSchedulesNothing() async {
         let (useCase, _, scheduler) = makeUseCase(deck: KanjiDeck(viewBox: 109, attribution: "", kanji: []))
 

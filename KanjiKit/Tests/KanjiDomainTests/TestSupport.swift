@@ -41,11 +41,3 @@ struct SeededGenerator: RandomNumberGenerator {
         return state
     }
 }
-
-/// Un archivio in memoria: la seconda implementazione della porta, quella dei test.
-final class InMemoryStore<Value>: ValueStore {
-    var value: Value
-    init(_ value: Value) { self.value = value }
-    func load() -> Value { value }
-    func save(_ value: Value) { self.value = value }
-}
