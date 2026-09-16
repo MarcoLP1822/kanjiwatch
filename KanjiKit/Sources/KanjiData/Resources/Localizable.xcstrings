@@ -1,0 +1,17 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "Tap for stroke order" : {
+      "comment" : "Corpo della notifica. Il titolo è il kanji stesso.",
+      "localizations" : {
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tocca per l'ordine dei tratti"
+          }
+        }
+      }
+    }
+  },
+  "version" : "1.0"
+}

@@ -1,0 +1,11 @@
+{
+  "Simulator Target Bundle": "com.marcolp.KanjiWatch.watchkitapp",
+  "aps": {
+    "alert": {
+      "title": "水",
+      "body": "Tocca per l'ordine dei tratti"
+    },
+    "category": "KANJI_REVIEW"
+  },
+  "cp": "06c34"
+}

@@ -21,6 +21,12 @@ public final class StudyViewModel {
     @ObservationIgnored private var drawing: Task<Void, Never>?
     @ObservationIgnored private var hold: Task<Void, Never>?
 
+    /// Scatta la prima volta che un'animazione arriva in fondo. Serve a chiedere
+    /// il permesso notifiche quando l'utente ha già capito cosa fa l'app, invece
+    /// che al primo avvio davanti a una schermata che non gli dice niente.
+    @ObservationIgnored public var onFirstDrawingCompleted: (() -> Void)?
+    @ObservationIgnored private var hasCompletedADrawing = false
+
     public init(deck: KanjiDeck, startAt codepoint: String? = nil) {
         precondition(!deck.isEmpty, "il mazzo nel bundle non può essere vuoto")
         let cards = deck.kanji
@@ -96,6 +102,10 @@ public final class StudyViewModel {
     private func holdThenReveal() {
         drawing?.cancel()
         hold?.cancel()
+        if !hasCompletedADrawing {
+            hasCompletedADrawing = true
+            onFirstDrawingCompleted?()
+        }
         hold = Task { [weak self] in
             try? await Task.sleep(for: .seconds(DS.Motion.completionHold))
             guard !Task.isCancelled else { return }

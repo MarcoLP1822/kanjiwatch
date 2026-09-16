@@ -14,14 +14,53 @@ final class AppContainer {
     let deck: KanjiDeck
     let study: StudyViewModel
 
+    private let scheduler: UserNotificationScheduler
+    private let reschedulePlan: RescheduleReminders
+
     private init() {
+        let loaded: KanjiDeck
         do {
-            deck = try BundledDeckRepository().loadDeck()
+            loaded = try BundledDeckRepository().loadDeck()
         } catch {
             // kanji.json sta nel bundle: se manca è rotta la build, non l'app
             // dell'utente. Un test in KanjiDataTests lo verifica a ogni giro.
             fatalError("mazzo non caricabile: \(error)")
         }
-        study = StudyViewModel(deck: deck)
+        let notifications = UserNotificationScheduler()
+
+        deck = loaded
+        scheduler = notifications
+        study = StudyViewModel(deck: loaded)
+        reschedulePlan = RescheduleReminders(
+            deck: loaded,
+            settings: UserDefaultsStore<ReminderSettings>.settings(),
+            state: UserDefaultsStore<ReminderState>.reminderState(),
+            scheduler: notifications,
+            authorization: notifications
+        )
+
+        study.onFirstDrawingCompleted = { [weak self] in
+            Task { await self?.askForPermissionIfNeverAsked() }
+        }
+    }
+
+    /// All'avvio, al ritorno in primo piano e quando si tocca una notifica:
+    /// finché usi l'app la coda non si svuota mai.
+    func reschedule() {
+        Task { await reschedulePlan.execute() }
+    }
+
+    /// Dalla notifica: apre sul kanji che hai guardato al polso e rimette in moto
+    /// la coda.
+    func open(codepoint: String) {
+        study.show(codepoint: codepoint)
+        reschedule()
+    }
+
+    /// Solo la prima volta: se l'utente ha già detto di no, non si insiste.
+    private func askForPermissionIfNeverAsked() async {
+        guard await scheduler.authorizationStatus() == .notDetermined else { return }
+        _ = await scheduler.requestAuthorization()
+        await reschedulePlan.execute()
     }
 }
