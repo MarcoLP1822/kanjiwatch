@@ -1,0 +1,61 @@
+import Foundation
+
+/// La finestra in cui l'app può farsi viva.
+///
+/// Non è un `ClosedRange<Int>` come nella prima stesura del documento: una
+/// finestra che attraversa la mezzanotte (22→6) non si può scrivere come
+/// `22...6`, va in crash alla costruzione. Qui il caso è esplicito.
+public struct ActiveHours: Equatable, Sendable, Codable {
+    /// Ora di inizio, 0-23. Le notifiche partono a `startHour:00`.
+    public let startHour: Int
+    /// Ora di fine, esclusa: con 22 l'ultima notifica può arrivare alle 21:59.
+    public let endHour: Int
+
+    public init(startHour: Int, endHour: Int) {
+        self.startHour = min(max(startHour, 0), 23)
+        self.endHour = min(max(endHour, 0), 23)
+    }
+
+    /// Vero per 22→6, e anche quando inizio e fine coincidono: in quel caso la
+    /// finestra è l'intera giornata, che è l'unica lettura sensata di "dalle 8
+    /// alle 8".
+    public var crossesMidnight: Bool { endHour <= startHour }
+
+    public func contains(hour: Int) -> Bool {
+        crossesMidnight
+            ? (hour >= startHour || hour < endHour)
+            : (hour >= startHour && hour < endHour)
+    }
+
+    /// Quante ore dura la finestra. Serve a capire quante notifiche ci stanno.
+    public var durationInHours: Int {
+        crossesMidnight ? (24 - startHour + endHour) : (endHour - startHour)
+    }
+}
+
+/// Le uniche cose che l'utente può cambiare.
+public struct ReminderSettings: Equatable, Sendable, Codable {
+    public var intervalMinutes: Int
+    public var activeHours: ActiveHours
+    /// Modalità discreta: la notifica non accende lo schermo e si accumula nella
+    /// lista, da guardare quando ti va. Per un ripasso passivo è una scelta seria.
+    public var isPassive: Bool
+
+    public init(intervalMinutes: Int, activeHours: ActiveHours, isPassive: Bool) {
+        self.intervalMinutes = intervalMinutes
+        self.activeHours = activeHours
+        self.isPassive = isPassive
+    }
+
+    /// Default del documento: un kanji all'ora, dalle 8 alle 22. Senza fascia di
+    /// silenzio l'app ti sveglia alle 3 di notte e la disinstalli il giorno dopo.
+    public static let `default` = ReminderSettings(
+        intervalMinutes: 60,
+        activeHours: ActiveHours(startHour: 8, endHour: 22),
+        isPassive: false
+    )
+
+    /// Gli intervalli proposti nelle impostazioni: pochi e tondi, si scelgono
+    /// con la corona in due giri.
+    public static let offeredIntervals = [15, 30, 45, 60, 90, 120, 180, 240]
+}
