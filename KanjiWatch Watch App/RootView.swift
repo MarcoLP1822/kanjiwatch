@@ -1,8 +1,9 @@
+import PaywallFeature
 import SettingsFeature
 import StudyFeature
 import SwiftUI
 
-/// La radice: mette insieme le due feature, che tra loro non si conoscono.
+/// La radice: mette insieme le feature, che tra loro non si conoscono.
 ///
 /// L'ingranaggio sta nella barra in alto e non nella schermata: il quadrante è
 /// piccolo e l'area sotto le dita serve tutta al glifo.
@@ -15,12 +16,28 @@ struct RootView: View {
                 .toolbar {
                     ToolbarItem(placement: .topBarLeading) {
                         NavigationLink {
-                            SettingsView(model: container.settings, attribution: container.deck.attribution)
+                            SettingsView(model: container.settings, attribution: container.catalog.attribution) {
+                                PaywallScreen()
+                            }
                         } label: {
                             Image(systemName: "gearshape")
                         }
                     }
                 }
         }
+    }
+}
+
+/// Il paywall tiene il suo view model in `@State`: la destinazione di un link si
+/// ricostruisce spesso, e ricaricare i piani dallo store a ogni ricostruzione è inutile.
+private struct PaywallScreen: View {
+    @State private var model = AppContainer.shared.makePaywall()
+
+    var body: some View {
+        PaywallView(
+            model: model,
+            termsURL: AppConfiguration.termsOfUseURL,
+            privacyURL: AppConfiguration.privacyPolicyURL
+        )
     }
 }

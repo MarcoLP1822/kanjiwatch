@@ -5,25 +5,43 @@ import SwiftUI
 
 /// Le impostazioni. Qui i controlli sono quelli di sistema di proposito: un
 /// Picker o un Toggle fatti in casa, su watchOS, si comportano peggio e basta.
-public struct SettingsView: View {
+///
+/// La destinazione dell'abbonamento arriva da fuori: questa feature non sa che
+/// esiste un paywall, e il paywall non sa che esistono le impostazioni.
+public struct SettingsView<Premium: View>: View {
     @Bindable private var model: SettingsViewModel
     private let attribution: String
+    private let premium: () -> Premium
 
-    public init(model: SettingsViewModel, attribution: String) {
+    public init(model: SettingsViewModel, attribution: String, @ViewBuilder premium: @escaping () -> Premium) {
         self.model = model
         self.attribution = attribution
+        self.premium = premium
     }
 
     public var body: some View {
         Form {
+            if !model.isPremium {
+                Section {
+                    NavigationLink(destination: premium) {
+                        Label {
+                            Text("Unlock all kanji", bundle: .module)
+                        } icon: {
+                            Image(systemName: "sparkles").foregroundStyle(.dsAccentText)
+                        }
+                    }
+                }
+            }
+
             Section {
                 ForEach(model.levels) { level in
-                    Toggle(isOn: deckBinding(for: level)) {
-                        VStack(alignment: .leading, spacing: DS.Spacing.xs) {
-                            levelName(level)
-                            Text(verbatim: "\(level.count) kanji")
-                                .font(.dsLabel)
-                                .foregroundStyle(.dsInkSecondary)
+                    if model.isLocked(level) {
+                        NavigationLink(destination: premium) {
+                            deckLabel(level, locked: true)
+                        }
+                    } else {
+                        Toggle(isOn: deckBinding(for: level)) {
+                            deckLabel(level, locked: false)
                         }
                     }
                 }
@@ -32,24 +50,38 @@ public struct SettingsView: View {
             }
 
             Section {
-                Picker(selection: $model.intervalMinutes) {
-                    ForEach(ReminderSettings.offeredIntervals, id: \.self) { minutes in
-                        Text(verbatim: intervalLabel(minutes)).tag(minutes)
+                if model.isPremium {
+                    Picker(selection: $model.intervalMinutes) {
+                        ForEach(ReminderSettings.offeredIntervals, id: \.self) { minutes in
+                            Text(verbatim: intervalLabel(minutes)).tag(minutes)
+                        }
+                    } label: {
+                        Text("Interval", bundle: .module)
                     }
-                } label: {
-                    Text("Interval", bundle: .module)
+                } else {
+                    lockedValue(
+                        Text("Interval", bundle: .module), value: intervalLabel(model.effective.intervalMinutes))
                 }
             } header: {
                 Text("Reminders", bundle: .module)
             }
 
             Section {
-                hourPicker(Text("From", bundle: .module), selection: $model.startHour)
-                hourPicker(Text("To", bundle: .module), selection: $model.endHour)
+                if model.isPremium {
+                    hourPicker(Text("From", bundle: .module), selection: $model.startHour)
+                    hourPicker(Text("To", bundle: .module), selection: $model.endHour)
+                } else {
+                    lockedValue(Text("From", bundle: .module), value: hourLabel(model.effective.activeHours.startHour))
+                    lockedValue(Text("To", bundle: .module), value: hourLabel(model.effective.activeHours.endHour))
+                }
             } header: {
                 Text("Active hours", bundle: .module)
             } footer: {
-                Text("Outside this window nothing arrives.", bundle: .module)
+                if model.isPremium {
+                    Text("Outside this window nothing arrives.", bundle: .module)
+                } else {
+                    Text("Included with Premium.", bundle: .module)
+                }
             }
 
             Section {
@@ -103,6 +135,36 @@ public struct SettingsView: View {
                     .font(.dsLabel)
             } icon: {
                 Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(.dsWarning)
+            }
+        }
+    }
+
+    private func deckLabel(_ level: KanjiLevel, locked: Bool) -> some View {
+        HStack {
+            VStack(alignment: .leading, spacing: DS.Spacing.xs) {
+                levelName(level)
+                Text(verbatim: "\(level.count) kanji")
+                    .font(.dsLabel)
+                    .foregroundStyle(.dsInkSecondary)
+            }
+            if locked {
+                Spacer()
+                // Il lucchetto accompagna il colore: lo stato non si affida al solo
+                // colore, e VoiceOver lo legge.
+                Image(systemName: "lock.fill")
+                    .foregroundStyle(.dsInkSecondary)
+                    .accessibilityLabel(Text("Included with Premium.", bundle: .module))
+            }
+        }
+    }
+
+    private func lockedValue(_ label: Text, value: String) -> some View {
+        NavigationLink(destination: premium) {
+            HStack {
+                label
+                Spacer()
+                Text(verbatim: value).foregroundStyle(.dsInkSecondary)
+                Image(systemName: "lock.fill").foregroundStyle(.dsInkSecondary)
             }
         }
     }

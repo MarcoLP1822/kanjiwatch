@@ -63,6 +63,8 @@
 			packageProductDependencies = (
 				AA0000000000000000001001 /* StudyFeature */,
 				AA0000000000000000001005 /* SettingsFeature */,
+				AA0000000000000000001006 /* KanjiPurchases */,
+				AA0000000000000000001007 /* PaywallFeature */,
 				AA0000000000000000001002 /* KanjiData */,
 				AA0000000000000000001003 /* KanjiDomain */,
 				AA0000000000000000001004 /* DesignSystem */,
@@ -283,6 +285,14 @@
 		AA0000000000000000001005 /* SettingsFeature */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = SettingsFeature;
+		};
+		AA0000000000000000001006 /* KanjiPurchases */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = KanjiPurchases;
+		};
+		AA0000000000000000001007 /* PaywallFeature */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = PaywallFeature;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

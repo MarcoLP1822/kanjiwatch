@@ -39,12 +39,14 @@ struct SettingsViewModelTests {
     private func makeModel(
         store: InMemoryStore = InMemoryStore(),
         authorizer: FakeAuthorizer = FakeAuthorizer(.notDetermined),
+        subscription: SubscriptionStatus = .premium,
         spy: RescheduleSpy = RescheduleSpy()
     ) -> SettingsViewModel {
         SettingsViewModel(
             store: store,
             authorization: authorizer,
             levels: levels,
+            subscription: subscription,
             rescheduleDelay: .zero,
             onSettingsChanged: { spy.count += 1 }
         )
@@ -87,10 +89,9 @@ struct SettingsViewModelTests {
 
     /// Un'app di ripasso senza niente da ripassare è solo un'app rotta.
     @Test func refusesToTurnOffTheLastDeck() {
-        let store = InMemoryStore(
-            ReminderSettings(
-                intervalMinutes: 60, activeHours: ActiveHours(startHour: 8, endHour: 22), isPassive: false, grades: [1]
-            ))
+        var onlyFirst = ReminderSettings.default
+        onlyFirst.grades = [1]
+        let store = InMemoryStore(onlyFirst)
         let model = makeModel(store: store)
 
         model.setGrade(1, enabled: false)
@@ -99,16 +100,49 @@ struct SettingsViewModelTests {
         #expect(store.value.grades == [1])
     }
 
+    @Test func aFreeUserCannotTurnOnAPaidDeck() {
+        let store = InMemoryStore()
+        let model = makeModel(store: store, subscription: .free)
+
+        model.setGrade(3, enabled: true)
+
+        #expect(model.isLocked(levels[2]))
+        #expect(!model.isLocked(levels[0]))
+        #expect(model.grades == KanjiLevel.freeGrades)
+        #expect(store.value.grades == KanjiLevel.freeGrades)
+    }
+
+    /// Chi non è abbonato vede il ritmo che vale davvero, non quello che aveva scelto.
+    @Test func aFreeUserSeesTheEffectiveRhythm() {
+        var chosen = ReminderSettings.default
+        chosen.intervalMinutes = 30
+        let model = makeModel(store: InMemoryStore(chosen), subscription: .free)
+
+        #expect(model.effective.intervalMinutes == AccessPolicy.freeIntervalMinutes)
+    }
+
+    @Test func subscribingUnlocksThePaidDecks() {
+        let model = makeModel(subscription: .free)
+
+        model.updateSubscription(.premium)
+        model.setGrade(3, enabled: true)
+
+        #expect(model.isPremium)
+        #expect(model.grades.contains(3))
+    }
+
     /// Con la corona i valori cambiano a raffica: la rischedulazione deve arrivare
     /// una volta sola, alla fine, non a ogni scatto.
-    @Test func reschedulesOnceAfterABurstOfChanges() async throws {
+    @Test func reschedulesOnceAfterABurstOfChanges() async {
         let spy = RescheduleSpy()
         let model = makeModel(spy: spy)
 
         model.intervalMinutes = 30
         model.intervalMinutes = 45
         model.intervalMinutes = 60
-        try await Task.sleep(for: .milliseconds(120))
+        // Si aspetta l'ultimo task, non un tempo fisso: i primi due sono stati
+        // cancellati, e questo è il solo che deve arrivare in fondo.
+        await model.pendingReschedule?.value
 
         #expect(spy.count == 1)
         #expect(model.intervalMinutes == 60)

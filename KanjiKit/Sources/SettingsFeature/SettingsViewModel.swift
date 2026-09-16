@@ -16,28 +16,33 @@ public final class SettingsViewModel {
 
     /// I mazzi disponibili nel bundle, dal catalogo.
     public let levels: [KanjiLevel]
-    /// I mazzi attivi. Si cambiano solo con `setGrade`, che impedisce di spegnerli
-    /// tutti: un'app di ripasso senza niente da ripassare è solo un'app rotta.
+    /// I mazzi scelti. Si cambiano solo con `setGrade`, che impedisce di spegnerli
+    /// tutti e di accendere quelli a pagamento senza abbonamento.
     public private(set) var grades: Set<Int>
 
+    public private(set) var subscription: SubscriptionStatus
     public private(set) var authorization: NotificationAuthorization = .notDetermined
 
     private let store: any ValueStore<ReminderSettings>
     private let authorizing: any NotificationAuthorizing
     private let rescheduleDelay: Duration
     private let onSettingsChanged: () async -> Void
-    @ObservationIgnored private var pendingReschedule: Task<Void, Never>?
+    /// Interno e non privato: i test lo aspettano, invece di dormire un tempo fisso
+    /// sperando che il task sia partito — che sotto carico non basta mai.
+    @ObservationIgnored var pendingReschedule: Task<Void, Never>?
 
     public init(
         store: any ValueStore<ReminderSettings>,
         authorization: any NotificationAuthorizing,
         levels: [KanjiLevel],
+        subscription: SubscriptionStatus = .free,
         rescheduleDelay: Duration = .seconds(0.8),
         onSettingsChanged: @escaping () async -> Void
     ) {
         self.store = store
         self.authorizing = authorization
         self.levels = levels
+        self.subscription = subscription
         self.rescheduleDelay = rescheduleDelay
         self.onSettingsChanged = onSettingsChanged
 
@@ -50,7 +55,26 @@ public final class SettingsViewModel {
         grades = current.grades
     }
 
+    public var isPremium: Bool { subscription == .premium }
+
+    /// Le impostazioni che valgono adesso, da mostrare quando i controlli sono
+    /// bloccati: chi non è abbonato deve vedere il ritmo vero, non quello scelto.
+    public var effective: ReminderSettings {
+        AccessPolicy.effective(store.load(), for: subscription)
+    }
+
+    public func isLocked(_ level: KanjiLevel) -> Bool {
+        !isPremium && !level.isFree
+    }
+
+    public func updateSubscription(_ status: SubscriptionStatus) {
+        subscription = status
+    }
+
     public func setGrade(_ grade: Int, enabled: Bool) {
+        if enabled, let level = levels.first(where: { $0.grade == grade }), isLocked(level) {
+            return
+        }
         var updated = grades
         if enabled {
             updated.insert(grade)

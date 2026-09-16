@@ -45,6 +45,12 @@
         "it" : { "stringUnit" : { "state" : "translated", "value" : "Classe %lld" } }
       }
     },
+    "Included with Premium." : {
+      "comment" : "Sotto un'impostazione bloccata e come etichetta VoiceOver del lucchetto.",
+      "localizations" : {
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Incluso in Premium." } }
+      }
+    },
     "Interval" : {
       "localizations" : {
         "it" : { "stringUnit" : { "state" : "translated", "value" : "Intervallo" } }
@@ -95,6 +101,11 @@
             "value" : "Attivale in Impostazioni › Notifiche sul Watch."
           }
         }
+      }
+    },
+    "Unlock all kanji" : {
+      "localizations" : {
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Sblocca tutti i kanji" } }
       }
     }
   },

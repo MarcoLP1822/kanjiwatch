@@ -1,0 +1,116 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "%@ per month" : {
+      "localizations" : {
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "%@ al mese" } }
+      }
+    },
+    "%@ per week" : {
+      "localizations" : {
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "%@ a settimana" } }
+      }
+    },
+    "%@ per year" : {
+      "localizations" : {
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "%@ all'anno" } }
+      }
+    },
+    "%lld-day free trial" : {
+      "localizations" : {
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "%lld giorni gratis" } }
+      }
+    },
+    "All 2,136 jōyō kanji" : {
+      "localizations" : {
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Tutti i 2.136 jōyō" } }
+      }
+    },
+    "Couldn't load the plans." : {
+      "localizations" : {
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Impossibile caricare i piani." } }
+      }
+    },
+    "Free for %lld days, then:" : {
+      "localizations" : {
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Gratis per %lld giorni, poi:" } }
+      }
+    },
+    "Kanji Watch Premium" : {
+      "localizations" : {
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Kanji Watch Premium" } }
+      }
+    },
+    "Monthly" : {
+      "localizations" : {
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Mensile" } }
+      }
+    },
+    "Privacy Policy" : {
+      "localizations" : {
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Privacy" } }
+      }
+    },
+    "Renews automatically until cancelled. Cancel anytime from your Apple account settings." : {
+      "localizations" : {
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Si rinnova automaticamente finché non disdici. Puoi disdire quando vuoi dalle impostazioni del tuo account Apple."
+          }
+        }
+      }
+    },
+    "Restore purchases" : {
+      "localizations" : {
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Ripristina acquisti" } }
+      }
+    },
+    "Save %lld%%" : {
+      "localizations" : {
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Risparmi il %lld%%" } }
+      }
+    },
+    "Start free trial" : {
+      "localizations" : {
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Inizia la prova gratuita" } }
+      }
+    },
+    "Subscribe" : {
+      "localizations" : {
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Abbonati" } }
+      }
+    },
+    "Terms of Use" : {
+      "localizations" : {
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Condizioni d'uso" } }
+      }
+    },
+    "The purchase didn't go through. Try again." : {
+      "localizations" : {
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "L'acquisto non è andato a buon fine. Riprova." } }
+      }
+    },
+    "Try again" : {
+      "localizations" : {
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Riprova" } }
+      }
+    },
+    "Weekly" : {
+      "localizations" : {
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Settimanale" } }
+      }
+    },
+    "Yearly" : {
+      "localizations" : {
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Annuale" } }
+      }
+    },
+    "Your own rhythm and hours" : {
+      "localizations" : {
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Ritmo e orari a tua scelta" } }
+      }
+    }
+  },
+  "version" : "1.0"
+}

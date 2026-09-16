@@ -3,13 +3,6 @@ import Testing
 
 @testable import KanjiDomain
 
-private final class InMemoryStore<Value>: ValueStore {
-    var value: Value
-    init(_ value: Value) { self.value = value }
-    func load() -> Value { value }
-    func save(_ value: Value) { self.value = value }
-}
-
 private final class FakeScheduler: ReminderScheduling {
     var notifications: [PlannedNotification] = []
     var isPassive = false

@@ -17,6 +17,7 @@ struct KanjiWatchApp: App {
                     // autoalimenta: finché apri l'app, la coda resta piena.
                     if phase == .active {
                         container.reschedule()
+                        container.refreshSubscription()
                     }
                 }
         }

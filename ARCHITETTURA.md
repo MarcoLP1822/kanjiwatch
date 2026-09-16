@@ -59,8 +59,10 @@ KanjiWatch/
 │   │   │   ├── Tokens/               primitivi → semantici → di componente
 │   │   │   ├── StrokeRendering/      SVGPathParser, StrokeGlyph
 │   │   │   └── Components/           KanjiGlyphView, ...
+│   │   ├── KanjiPurchases/           RevenueCat, e nient'altro → KanjiDomain
 │   │   ├── StudyFeature/             glifo → animazione → letture, long look
-│   │   └── SettingsFeature/          intervallo, silenzio, permessi, fonti
+│   │   ├── SettingsFeature/          mazzi, intervallo, silenzio, permessi, fonti
+│   │   └── PaywallFeature/           i tre piani, prova, ripristino acquisti
 │   └── Tests/                        un target di test per modulo (Swift Testing)
 └── KanjiWatch Watch App/             unico target pubblicato: sola composizione
     ├── KanjiWatchApp.swift           App + WKNotificationScene + delegate
@@ -498,7 +500,7 @@ Non è un parere legale. Se pensi di monetizzare, leggi le licenze per intero pr
 | **F4** | Notifiche | ✅ programmate e instradate — la consegna vera va provata sul Watch |
 | **F5** | Long look | ✅ il kanji si vede grande **dentro** la notifica |
 | **F6** | Impostazioni | ✅ intervallo, fascia attiva, modalità discreta, permessi, fonti |
-| **F7** | Abbonamenti | RevenueCat: 6,99 settimana / 12,99 mese / 99,99 anno |
+| **F7** | Abbonamenti | ✅ jōyō per grado, paywall, RevenueCat — manca solo l'account |
 
 F2 è già un'app che usi a mano. F5 è il momento in cui diventa quello che avevi in
 mente. Non invertire: se parti dalle notifiche, debugghi lo scheduler prima di aver
@@ -509,11 +511,31 @@ comando non si può dare: sul simulatore le notifiche inviate con `simctl push`
 restano silenziose finché il permesso non c'è. La prova vera è sul Watch, oppure
 toccando "Attiva le notifiche" nelle impostazioni del simulatore.
 
-**Sulla F7.** La monetizzazione era esplicitamente fuori scope nel §1 e ci rientra
-per richiesta successiva. Gli acquisti stanno dietro una porta di dominio, con
-l'SDK confinato nel layer dati e un modulo `PaywallFeature` a parte: serve il
-Programma Sviluppatori a pagamento e i prodotti su App Store Connect, altrimenti
-non è nemmeno testabile.
+**Sulla F7.** La monetizzazione era fuori scope nel §1 ed è rientrata per richiesta
+successiva, portandosi dietro l'allargamento del mazzo: 300 kanji non reggono un
+abbonamento, 2.136 sì.
+
+- **Gratis:** classi 1 e 2 (240 kanji), un promemoria all'ora dalle 8 alle 22,
+  modalità discreta. **Premium:** tutti i gradi, intervallo e fascia oraria liberi.
+- La regola sta in `AccessPolicy`, nel dominio. Scheduler e caricamento del mazzo
+  leggono le impostazioni *effettive*; quelle scelte restano salvate intatte, così
+  se l'abbonamento scade e poi si rinnova le scelte tornano da sole.
+- RevenueCat vive solo nel modulo `KanjiPurchases`; il paywall (`PaywallFeature`)
+  parla con la porta `SubscriptionGateway` e nei test usa un finto gateway.
+- Prezzi: 6,99 a settimana con 3 giorni di prova, 12,99 al mese, 99,99 all'anno.
+  Rispetto al settimanale il mensile costa il 57% in meno, l'annuale il 72%, e il
+  paywall lo dice.
+
+Cosa manca, tutto fuori dal codice:
+
+1. Il Programma Sviluppatori Apple a pagamento.
+2. Su App Store Connect, un gruppo di abbonamenti con i tre prodotti e la prova di
+   3 giorni sul settimanale.
+3. Su RevenueCat, un entitlement `premium` e un'offering corrente con i pacchetti
+   settimanale, mensile e annuale collegati a quei prodotti.
+4. La chiave pubblica in `AppConfiguration.revenueCatAPIKey` e l'indirizzo della
+   privacy policy in `AppConfiguration.privacyPolicyURL`. Finché mancano, due
+   `#warning` lo ricordano a ogni build e l'app gira gratuita.
 
 ---
 

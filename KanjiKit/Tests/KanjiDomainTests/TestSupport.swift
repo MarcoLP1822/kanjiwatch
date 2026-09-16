@@ -1,4 +1,5 @@
 import Foundation
+import KanjiDomain
 
 /// Fuso fisso a Roma: i test sugli orari non possono cambiare risultato a seconda
 /// della macchina che li esegue.
@@ -39,4 +40,12 @@ struct SeededGenerator: RandomNumberGenerator {
         state ^= state << 17
         return state
     }
+}
+
+/// Un archivio in memoria: la seconda implementazione della porta, quella dei test.
+final class InMemoryStore<Value>: ValueStore {
+    var value: Value
+    init(_ value: Value) { self.value = value }
+    func load() -> Value { value }
+    func save(_ value: Value) { self.value = value }
 }

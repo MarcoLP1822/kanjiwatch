@@ -21,6 +21,13 @@ let package = Package(
         .library(name: "DesignSystem", targets: ["DesignSystem"]),
         .library(name: "StudyFeature", targets: ["StudyFeature"]),
         .library(name: "SettingsFeature", targets: ["SettingsFeature"]),
+        .library(name: "KanjiPurchases", targets: ["KanjiPurchases"]),
+        .library(name: "PaywallFeature", targets: ["PaywallFeature"]),
+    ],
+    dependencies: [
+        // L'unica dipendenza esterna del progetto, richiesta esplicitamente: gli
+        // abbonamenti.
+        .package(url: "https://github.com/RevenueCat/purchases-ios-spm.git", from: "5.89.0")
     ],
     targets: [
         // Entità, regole pure e porte. Dipende solo da Foundation: è la regola
@@ -54,6 +61,28 @@ let package = Package(
         // Dipende da KanjiData solo nei test: il parser va verificato sui tratti veri
         // di tutti e 300 i kanji, non su tre stringhe scelte da me.
         .testTarget(name: "DesignSystemTests", dependencies: ["DesignSystem", "KanjiData"], swiftSettings: ui),
+        // L'SDK RevenueCat vive solo qui. È pesante, e nessun altro modulo deve sapere
+        // che esiste: il dominio parla con la porta SubscriptionGateway.
+        .target(
+            name: "KanjiPurchases",
+            dependencies: [
+                "KanjiDomain",
+                .product(name: "RevenueCat", package: "purchases-ios-spm"),
+            ],
+            swiftSettings: base
+        ),
+
+        // Il paywall. Parla con la porta SubscriptionGateway e non sa che dietro c'è
+        // RevenueCat: nei test e nelle preview c'è un finto gateway.
+        .target(
+            name: "PaywallFeature",
+            dependencies: ["KanjiDomain", "DesignSystem"],
+            resources: [.process("Resources")],
+            swiftSettings: ui
+        ),
+
+        .testTarget(name: "PaywallFeatureTests", dependencies: ["PaywallFeature"], swiftSettings: base),
+
         // Intervallo, fasce di silenzio, permessi, fonti dei dati. Come StudyFeature
         // vede solo dominio e design system.
         .target(
