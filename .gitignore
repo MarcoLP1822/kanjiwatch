@@ -1,0 +1,18 @@
+# macOS
+.DS_Store
+
+# Xcode
+xcuserdata/
+*.xcuserstate
+DerivedData/
+build/
+
+# Swift Package Manager
+.build/
+.swiftpm/
+
+# Data pipeline: raw upstream dumps, re-downloadable (see ARCHITETTURA.md §4)
+Scripts/raw/
+# Dizionario di frequenza JPDB (47 MB): serve solo in build, non si ridistribuisce
+\[Freq\] JPDB (Recommended)/
+__pycache__/

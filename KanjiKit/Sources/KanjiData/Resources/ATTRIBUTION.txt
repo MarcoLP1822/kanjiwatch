@@ -1,0 +1,15 @@
+This app includes data derived from:
+
+• KanjiVG © Ulrich Apel — https://kanjivg.tagaini.net
+  Licence: Creative Commons Attribution-ShareAlike 3.0
+  https://creativecommons.org/licenses/by-sa/3.0/
+
+• KANJIDIC2 and JMdict © Electronic Dictionary Research and Development Group (EDRDG)
+  https://www.edrdg.org/edrdg/licence.html
+  Licence: Creative Commons Attribution-ShareAlike 4.0
+  https://creativecommons.org/licenses/by-sa/4.0/
+
+Example words were ranked with the JPDB frequency list (https://jpdb.io).
+The list itself is not included in this app.
+
+The bundled kanji data is a derivative work and is distributed under the same licences.
