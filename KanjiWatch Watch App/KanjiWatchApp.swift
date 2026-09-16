@@ -11,7 +11,7 @@ struct KanjiWatchApp: App {
 
     var body: some Scene {
         WindowGroup {
-            StudyView(model: container.study)
+            RootView()
                 .onChange(of: scenePhase, initial: true) { _, phase in
                     // All'avvio e a ogni ritorno in primo piano. È il ciclo che si
                     // autoalimenta: finché apri l'app, la coda resta piena.

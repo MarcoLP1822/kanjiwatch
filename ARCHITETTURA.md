@@ -221,14 +221,26 @@ si riprende dall'inizio della finestra successiva.
 
 ```swift
 public enum FireDates {
-    /// Prossimi `count` orari di notifica, saltando le ore di silenzio.
+    /// Prossimi `count` orari, ancorati all'inizio della finestra attiva.
     public static func next(count: Int,
-                            from start: Date,
+                            after start: Date,
                             everyMinutes: Int,
-                            window: ClosedRange<Int>,   // ore, es. 8...22
+                            activeHours: ActiveHours,   // 8→22, oppure 22→6
                             calendar: Calendar = .current) -> [Date]
 }
 ```
+
+Due cose sono cambiate rispetto alla prima stesura, e nessuna delle due è estetica.
+
+`ClosedRange<Int>` non regge: una finestra che attraversa la mezzanotte si
+scriverebbe `22...6`, che va in crash alla costruzione. Da qui `ActiveHours`, dove
+il caso è esplicito.
+
+Gli orari sono **ancorati** all'inizio della finestra e non calcolati "da adesso".
+Con orari relativi, siccome l'app rischedula tutto a ogni apertura, ogni sguardo
+all'app sposterebbe in avanti la notifica successiva: aprendola ogni tanto, non
+arriverebbe mai. Ancorata, la griglia è la stessa a ogni ricalcolo — e c'è un test
+che lo verifica.
 
 Casi limite da testare, perché è qui che si rompe: mezzanotte, cambio dell'ora legale,
 finestra che attraversa la mezzanotte (22–6), `everyMinutes` più grande della finestra.
@@ -333,19 +345,29 @@ arrivi la prima risposta, quindi nell'init dell'app, non in `onAppear` di una vi
 ```
 
 ```swift
-enum Phase { case staticGlyph, animating, readings }
+// StudyFeature/StudyState.swift: la macchina sta fuori dalla view e si prova
+// senza SwiftUI e senza orologi.
+enum Phase { case glyph, readings }
 ```
+
+Due fasi bastano: "statico" e "in disegno" sono lo stesso stato con un progresso
+diverso (da 0 a `strokeCount`), ed è quel singolo numero ad animare tutto.
 
 Dettagli che fanno la differenza:
 
 - Un tap **durante** l'animazione la completa istantaneamente, non passa alle letture.
-  Chi tocca due volte veloce non vuole saltare il contenuto.
+  Chi tocca due volte veloce non vuole saltare il contenuto. Il passaggio alle letture
+  resta quello normale: fine del disegno, mezzo secondo di pausa sul glifo intero, poi
+  le letture.
 - `.onTapGesture` su una `ZStack`, **non** `Button`: su watchOS `Button` impone lo stile
   di sistema e si mangia l'area utile.
-- `.digitalCrownRotation` legata all'indice del tratto: scorrere i tratti a mano con la
-  corona è la cosa che rende l'app *tua* e non un esercizio da tutorial.
-- Da `readings`, swipe verso l'alto → kanji successivo del ciclo. Così puoi anche usarla
-  come ripasso attivo per due minuti, senza aspettare la prossima notifica.
+- `.digitalCrownRotation` legata al progresso dei tratti: scorrerli a mano con la corona
+  è la cosa che rende l'app *tua* e non un esercizio da tutorial. Girare la corona
+  interrompe l'animazione e **non** rivela le letture: lì comandi tu.
+- Swipe verticale sul glifo → kanji successivo o precedente. **Dalle letture no**, al
+  contrario di quanto diceva la prima stesura: lì c'è una `ScrollView`, e un gesto
+  verticale che significa due cose diverse a seconda di quanto testo c'è è un gesto
+  rotto. In fondo alle letture c'è un bottone esplicito.
 
 ---
 
@@ -404,16 +426,18 @@ Costo: il JSON non è più identico all'upstream.
 
 ## 10. Persistenza
 
-`UserDefaults.standard` esposto con `@AppStorage`. Nessun App Group, nessun database.
+`UserDefaults.standard` dietro la porta `ValueStore`, non `@AppStorage`: le
+impostazioni le legge anche lo scheduler, che non è una view. Nessun App Group —
+app e notifiche girano nello stesso contenitore — e nessun database.
 
-| Chiave | Tipo | Default |
+| Chiave | Contenuto | Default |
 |---|---|---|
-| `intervalMinutes` | Int | 60 |
-| `quietStartHour` | Int | 22 |
-| `quietEndHour` | Int | 8 |
-| `passiveMode` | Bool | false |
-| `deckOrder` | [String] | permutazione corrente dei `cp` |
-| `deckPosition` | Int | 0 |
+| `reminder.settings` | intervallo, fascia attiva, modalità discreta | 60 min, 8→22, spenta |
+| `reminder.state` | permutazione del mazzo, posizione, coda programmata | mazzo mescolato, coda vuota |
+
+Due chiavi e non sei: posizione nel mazzo e coda programmata si leggono e si
+scrivono **insieme**, ed è proprio quella coppia che evita di bruciare il mazzo a
+ogni rischedulazione. Tenerle separate vorrebbe dire poterle disallineare.
 I significati restano in inglese: KANJIDIC2 non ha l'italiano (solo en/fr/es/pt),
 quindi non c'è nessuna impostazione di lingua da salvare.
 
@@ -452,19 +476,31 @@ Non è un parere legale. Se pensi di monetizzare, leggi le licenze per intero pr
 
 ## 13. Roadmap
 
-| Fase | Obiettivo | "Fatto" quando |
+| Fase | Obiettivo | Stato |
 |---|---|---|
-| **F0** | Dati | `kanji.json` con 300 kanji, generato e validato |
-| **F1** | Rendering | `StrokeOrderView` anima 水 correttamente nel simulatore |
-| **F2** | App | Tap→animazione, tap→letture, gira sul Watch vero |
-| **F3** | Scheduler | `FireDates` + `DeckCycle` con test unitari verdi |
-| **F4** | Notifiche | Notifiche che arrivano davvero, tap→app sul kanji giusto |
-| **F5** | Long look | Il kanji si vede grande **dentro** la notifica |
-| **F6** | Impostazioni | Intervallo, fasce di silenzio, modalità discreta |
+| **F0** | Dati | ✅ 300 kanji con tratti, letture, significato e parola |
+| **F1** | Rendering | ✅ parser SVG su tutti i tratti del mazzo, glifo verificato a immagine |
+| **F2** | App | ✅ tap→animazione→letture, gira sul simulatore watchOS |
+| **F3** | Scheduler | ✅ orari e ciclo del mazzo, coi casi limite sotto test |
+| **F4** | Notifiche | ✅ programmate e instradate — la consegna vera va provata sul Watch |
+| **F5** | Long look | ✅ il kanji si vede grande **dentro** la notifica |
+| **F6** | Impostazioni | ✅ intervallo, fascia attiva, modalità discreta, permessi, fonti |
+| **F7** | Abbonamenti | RevenueCat: 6,99 settimana / 12,99 mese / 99,99 anno |
 
 F2 è già un'app che usi a mano. F5 è il momento in cui diventa quello che avevi in
 mente. Non invertire: se parti dalle notifiche, debugghi lo scheduler prima di aver
 visto un solo tratto disegnato sullo schermo.
+
+**Sulla F4.** Il permesso notifiche si concede solo con un tocco, e da riga di
+comando non si può dare: sul simulatore le notifiche inviate con `simctl push`
+restano silenziose finché il permesso non c'è. La prova vera è sul Watch, oppure
+toccando "Attiva le notifiche" nelle impostazioni del simulatore.
+
+**Sulla F7.** La monetizzazione era esplicitamente fuori scope nel §1 e ci rientra
+per richiesta successiva. Gli acquisti stanno dietro una porta di dominio, con
+l'SDK confinato nel layer dati e un modulo `PaywallFeature` a parte: serve il
+Programma Sviluppatori a pagamento e i prodotti su App Store Connect, altrimenti
+non è nemmeno testabile.
 
 ---
 

@@ -20,6 +20,7 @@ let package = Package(
         .library(name: "KanjiData", targets: ["KanjiData"]),
         .library(name: "DesignSystem", targets: ["DesignSystem"]),
         .library(name: "StudyFeature", targets: ["StudyFeature"]),
+        .library(name: "SettingsFeature", targets: ["SettingsFeature"]),
     ],
     targets: [
         // Entità, regole pure e porte. Dipende solo da Foundation: è la regola
@@ -53,6 +54,19 @@ let package = Package(
         // Dipende da KanjiData solo nei test: il parser va verificato sui tratti veri
         // di tutti e 300 i kanji, non su tre stringhe scelte da me.
         .testTarget(name: "DesignSystemTests", dependencies: ["DesignSystem", "KanjiData"], swiftSettings: ui),
+        // Intervallo, fasce di silenzio, permessi, fonti dei dati. Come StudyFeature
+        // vede solo dominio e design system.
+        .target(
+            name: "SettingsFeature",
+            dependencies: ["KanjiDomain", "DesignSystem"],
+            resources: [.process("Resources")],
+            swiftSettings: ui
+        ),
+
+        // Senza isolamento MainActor di default: i finti adattatori implementano
+        // porte nonisolated, e con il doppio isolamento non compilano.
+        .testTarget(name: "SettingsFeatureTests", dependencies: ["SettingsFeature"], swiftSettings: base),
+
         // DesignSystem serve solo qui nei test, per renderizzare le schermate coi
         // token veri invece che con valori inventati.
         .testTarget(

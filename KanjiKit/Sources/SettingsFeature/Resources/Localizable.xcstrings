@@ -1,0 +1,84 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "Active" : {
+      "comment" : "Stato del permesso notifiche.",
+      "localizations" : {
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Attive" } }
+      }
+    },
+    "Active hours" : {
+      "localizations" : {
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Orari attivi" } }
+      }
+    },
+    "Data sources" : {
+      "localizations" : {
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Fonti dati" } }
+      }
+    },
+    "Discreet mode" : {
+      "localizations" : {
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Modalità discreta" } }
+      }
+    },
+    "Enable notifications" : {
+      "localizations" : {
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Attiva le notifiche" } }
+      }
+    },
+    "From" : {
+      "comment" : "Ora di inizio della finestra attiva.",
+      "localizations" : {
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Dalle" } }
+      }
+    },
+    "Interval" : {
+      "localizations" : {
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Intervallo" } }
+      }
+    },
+    "Notifications" : {
+      "localizations" : {
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Notifiche" } }
+      }
+    },
+    "Notifications don't wake the screen: they pile up in the list." : {
+      "localizations" : {
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le notifiche non accendono lo schermo: si accumulano nella lista."
+          }
+        }
+      }
+    },
+    "Outside this window nothing arrives." : {
+      "localizations" : {
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Fuori da questa fascia non arriva niente." } }
+      }
+    },
+    "Reminders" : {
+      "localizations" : {
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Promemoria" } }
+      }
+    },
+    "To" : {
+      "comment" : "Ora di fine della finestra attiva.",
+      "localizations" : {
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Alle" } }
+      }
+    },
+    "Turn them on in Settings › Notifications on your Watch." : {
+      "localizations" : {
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Attivale in Impostazioni › Notifiche sul Watch."
+          }
+        }
+      }
+    }
+  },
+  "version" : "1.0"
+}

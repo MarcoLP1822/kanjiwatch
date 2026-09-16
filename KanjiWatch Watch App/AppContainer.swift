@@ -1,5 +1,6 @@
 import KanjiData
 import KanjiDomain
+import SettingsFeature
 import StudyFeature
 
 /// Il punto in cui le cose vengono messe insieme: l'unico che conosce sia il
@@ -13,6 +14,7 @@ final class AppContainer {
 
     let deck: KanjiDeck
     let study: StudyViewModel
+    let settings: SettingsViewModel
 
     private let scheduler: UserNotificationScheduler
     private let reschedulePlan: RescheduleReminders
@@ -27,16 +29,23 @@ final class AppContainer {
             fatalError("mazzo non caricabile: \(error)")
         }
         let notifications = UserNotificationScheduler()
-
-        deck = loaded
-        scheduler = notifications
-        study = StudyViewModel(deck: loaded)
-        reschedulePlan = RescheduleReminders(
+        let settingsStore = UserDefaultsStore<ReminderSettings>.settings()
+        let plan = RescheduleReminders(
             deck: loaded,
-            settings: UserDefaultsStore<ReminderSettings>.settings(),
+            settings: settingsStore,
             state: UserDefaultsStore<ReminderState>.reminderState(),
             scheduler: notifications,
             authorization: notifications
+        )
+
+        deck = loaded
+        scheduler = notifications
+        reschedulePlan = plan
+        study = StudyViewModel(deck: loaded)
+        settings = SettingsViewModel(
+            store: settingsStore,
+            authorization: notifications,
+            onSettingsChanged: { await plan.execute() }
         )
 
         study.onFirstDrawingCompleted = { [weak self] in
