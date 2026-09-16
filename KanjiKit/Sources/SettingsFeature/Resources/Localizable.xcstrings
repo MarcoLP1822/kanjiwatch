@@ -17,6 +17,12 @@
         "it" : { "stringUnit" : { "state" : "translated", "value" : "Fonti dati" } }
       }
     },
+    "Decks" : {
+      "comment" : "Sezione dei mazzi, uno per grado scolastico.",
+      "localizations" : {
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Mazzi" } }
+      }
+    },
     "Discreet mode" : {
       "localizations" : {
         "it" : { "stringUnit" : { "state" : "translated", "value" : "Modalità discreta" } }
@@ -31,6 +37,12 @@
       "comment" : "Ora di inizio della finestra attiva.",
       "localizations" : {
         "it" : { "stringUnit" : { "state" : "translated", "value" : "Dalle" } }
+      }
+    },
+    "Grade %lld" : {
+      "comment" : "Mazzo di una classe delle elementari giapponesi, da 1 a 6.",
+      "localizations" : {
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Classe %lld" } }
       }
     },
     "Interval" : {
@@ -61,6 +73,12 @@
     "Reminders" : {
       "localizations" : {
         "it" : { "stringUnit" : { "state" : "translated", "value" : "Promemoria" } }
+      }
+    },
+    "Secondary school" : {
+      "comment" : "Mazzo dei jōyō imparati dopo le elementari (grado 8 in KANJIDIC).",
+      "localizations" : {
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Medie e superiori" } }
       }
     },
     "To" : {

@@ -40,19 +40,39 @@ public struct ReminderSettings: Equatable, Sendable, Codable {
     /// Modalità discreta: la notifica non accende lo schermo e si accumula nella
     /// lista, da guardare quando ti va. Per un ripasso passivo è una scelta seria.
     public var isPassive: Bool
+    /// I gradi scolastici da ripassare, cioè i mazzi attivi.
+    public var grades: Set<Int>
 
-    public init(intervalMinutes: Int, activeHours: ActiveHours, isPassive: Bool) {
+    public init(
+        intervalMinutes: Int,
+        activeHours: ActiveHours,
+        isPassive: Bool,
+        grades: Set<Int> = KanjiLevel.freeGrades
+    ) {
         self.intervalMinutes = intervalMinutes
         self.activeHours = activeHours
         self.isPassive = isPassive
+        self.grades = grades
     }
 
-    /// Default del documento: un kanji all'ora, dalle 8 alle 22. Senza fascia di
-    /// silenzio l'app ti sveglia alle 3 di notte e la disinstalli il giorno dopo.
+    public init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        intervalMinutes = try container.decode(Int.self, forKey: .intervalMinutes)
+        activeHours = try container.decode(ActiveHours.self, forKey: .activeHours)
+        isPassive = try container.decode(Bool.self, forKey: .isPassive)
+        // Impostazioni salvate prima che esistessero i mazzi: senza questo la
+        // decodifica fallirebbe e si perderebbero anche intervallo e fascia oraria.
+        grades = try container.decodeIfPresent(Set<Int>.self, forKey: .grades) ?? KanjiLevel.freeGrades
+    }
+
+    /// Default del documento: un kanji all'ora, dalle 8 alle 22, mazzo gratuito.
+    /// Senza fascia di silenzio l'app ti sveglia alle 3 di notte e la disinstalli
+    /// il giorno dopo.
     public static let `default` = ReminderSettings(
         intervalMinutes: 60,
         activeHours: ActiveHours(startHour: 8, endHour: 22),
-        isPassive: false
+        isPassive: false,
+        grades: KanjiLevel.freeGrades
     )
 
     /// Gli intervalli proposti nelle impostazioni: pochi e tondi, si scelgono

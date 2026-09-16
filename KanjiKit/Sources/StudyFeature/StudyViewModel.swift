@@ -15,8 +15,8 @@ public final class StudyViewModel {
     public private(set) var glyph: StrokeGlyph?
     public private(set) var state: StudyState
 
-    private let queue: [Kanji]
-    private let viewBox: Double
+    private var queue: [Kanji]
+    private var viewBox: Double
     private var index: Int
     @ObservationIgnored private var drawing: Task<Void, Never>?
     @ObservationIgnored private var hold: Task<Void, Never>?
@@ -58,6 +58,17 @@ public final class StudyViewModel {
 
     public func showPrevious() {
         show(at: (index - 1 + queue.count) % queue.count)
+    }
+
+    /// Sono cambiati i mazzi attivi. Se il kanji sullo schermo c'è ancora si resta
+    /// lì: toglierti da sotto le dita quello che stai guardando è peggio che
+    /// ricominciare dal primo.
+    public func replaceDeck(_ deck: KanjiDeck) {
+        guard !deck.isEmpty else { return }
+        let onScreen = kanji.codepoint
+        queue = deck.kanji
+        viewBox = deck.viewBox
+        show(at: queue.firstIndex { $0.codepoint == onScreen } ?? 0)
     }
 
     // MARK: - Effetti

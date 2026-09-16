@@ -3,28 +3,36 @@ import Testing
 
 @testable import KanjiData
 
-@Suite("Deck nel bundle")
+@Suite("Mazzo nel bundle")
 struct BundledDeckRepositoryTests {
-    private func loadDeck() throws -> KanjiDeck {
-        try BundledDeckRepository().loadDeck()
+    private let repository = BundledDeckRepository()
+
+    @Test func catalogListsTheWholeJoyoByGrade() throws {
+        let catalog = try repository.loadCatalog()
+        #expect(catalog.levels.map(\.grade) == [1, 2, 3, 4, 5, 6, 8])
+        #expect(catalog.totalCount == 2136)
+        #expect(catalog.viewBox == 109)
+        // CC BY-SA: se l'attribuzione sparisce dal catalogo, l'app è fuori licenza.
+        #expect(catalog.attribution.contains("KanjiVG"))
+        #expect(catalog.attribution.contains("EDRDG"))
     }
 
-    @Test func loadsTheGeneratedDeck() throws {
-        let deck = try loadDeck()
-        #expect(deck.kanji.count == 300)
-        #expect(deck.viewBox == 109)
-        // CC BY-SA: se l'attribuzione sparisce dal JSON, l'app è fuori licenza.
-        #expect(deck.attribution.contains("KanjiVG"))
-        #expect(deck.attribution.contains("EDRDG"))
+    /// Il mazzo gratuito è quello che si decodifica all'avvio: deve contenere
+    /// solo le prime due classi.
+    @Test func loadsOnlyTheRequestedGrades() throws {
+        let free = try repository.loadDeck(grades: KanjiLevel.freeGrades)
+        #expect(free.kanji.count == 240)
+        #expect(free.kanji.allSatisfy { KanjiLevel.freeGrades.contains($0.grade ?? 0) })
     }
 
     @Test func mapsEveryFieldOfTheMostFrequentKanji() throws {
-        let day = try #require(try loadDeck()["065e5"])
+        let day = try #require(try repository.loadDeck(grades: [1])["065e5"])
         #expect(day.character == "日")
         #expect(day.strokeCount == 4)
         #expect(day.onReadings.contains("ニチ"))
         #expect(day.kunReadings.contains("ひ"))
         #expect(day.meanings.contains("day"))
+        #expect(day.grade == 1)
         #expect(day.frequencyRank == 1)
 
         let word = try #require(day.commonWord)
@@ -36,7 +44,9 @@ struct BundledDeckRepositoryTests {
     /// Ogni schermata dell'app dà per scontate queste cose: meglio scoprirlo qui
     /// che con un kanji vuoto sul polso.
     @Test func everyKanjiIsUsableOnScreen() throws {
-        for kanji in try loadDeck().kanji {
+        let deck = try repository.loadDeck()
+        #expect(deck.kanji.count == 2136)
+        for kanji in deck.kanji {
             #expect(!kanji.strokes.isEmpty, "\(kanji.character): nessun tratto")
             #expect(!kanji.meanings.isEmpty, "\(kanji.character): nessun significato")
             #expect(kanji.codepoint.count == 5, "\(kanji.character): codepoint \(kanji.codepoint)")
@@ -44,6 +54,13 @@ struct BundledDeckRepositoryTests {
                 !kanji.onReadings.isEmpty || !kanji.kunReadings.isEmpty,
                 "\(kanji.character): nessuna lettura"
             )
+        }
+    }
+
+    @Test func aMissingGradeFileIsAnExplicitError() {
+        let empty = BundledDeckRepository(bundle: .main)
+        #expect(throws: DeckLoadingError.fileMissing("kanji-catalog")) {
+            try empty.loadCatalog()
         }
     }
 }

@@ -114,6 +114,15 @@ def codepoint_hex(ch: str) -> str:
     return f"{ord(ch):05x}"
 
 
+def write_json(path: Path, payload, pretty: bool) -> int:
+    """Scrive e ritorna i KB, così il riepilogo non deve rifare i conti."""
+    with path.open("w", encoding="utf-8") as fh:
+        json.dump(payload, fh, ensure_ascii=False,
+                  indent=2 if pretty else None,
+                  separators=None if pretty else (",", ":"))
+    return path.stat().st_size // 1024
+
+
 # ---------------------------------------------------------------- KanjiVG
 
 def extract_paths(root: ET.Element) -> list[str]:
@@ -422,7 +431,7 @@ def sort_key(item: dict) -> tuple:
     # più frequenti prima, poi per grado, poi per numero di tratti
     freq = item.get("freq") or 10**6
     grade = item.get("grade") or 99
-    strokes = item.get("strokeCount") or 99
+    strokes = len(item.get("strokes") or []) or 99
     return (freq, grade, strokes, item["c"])
 
 
@@ -510,11 +519,10 @@ def main() -> int:
             "on": entry["on"],
             "kun": entry["kun"],
             "meanings": entry["meanings"],
-            "nanori": entry["nanori"],
+            # nanori, jlptOld e strokeCount non li legge nessuno: con 2.136 kanji
+            # ogni campo in più è tempo di decodifica sul Watch.
             "grade": entry["grade"],
-            "strokeCount": len(paths),
             "freq": entry["freq"],
-            "jlptOld": entry["jlptOld"],
         })
 
     records.sort(key=sort_key)
@@ -544,28 +552,38 @@ def main() -> int:
     print("[5/5] scrittura")
     args.out.mkdir(parents=True, exist_ok=True)
 
-    payload = {
-        "version": 1,
+    # Un file per grado scolastico, tratti compresi, più un catalogo minuscolo.
+    # Misurato su un Mac Intel: togliere i soli tratti da un indice unico portava la
+    # decodifica dei jōyō da 159 a 112 ms, perché il costo sta nel numero di voci e
+    # non nei byte. Per grado si decodifica solo il mazzo che si ripassa davvero.
+    by_grade: dict[int, list[dict]] = {}
+    for record in records:
+        by_grade.setdefault(record["grade"] or 0, []).append(record)
+
+    levels = []
+    for grade, level_records in sorted(by_grade.items()):
+        size = write_json(args.out / f"kanji-grade-{grade}.json", {"kanji": level_records}, args.pretty)
+        levels.append({"grade": grade, "count": len(level_records), "kb": size})
+
+    catalog = {
+        "version": 2,
         "viewBox": VIEWBOX,
         "count": len(records),
-        # L'attribuzione viaggia dentro il JSON: l'app la mostra in Impostazioni ›
+        # L'attribuzione viaggia dentro il catalogo: l'app la mostra in Impostazioni ›
         # Fonti dati senza imbarcare un secondo file nel bundle.
         "attribution": ATTRIBUTION,
-        "kanji": records,
+        "levels": [{"grade": level["grade"], "count": level["count"]} for level in levels],
     }
-
-    out_json = args.out / "kanji.json"
-    with out_json.open("w", encoding="utf-8") as f:
-        json.dump(payload, f, ensure_ascii=False,
-                  indent=2 if args.pretty else None,
-                  separators=None if args.pretty else (",", ":"))
+    size_kb = write_json(args.out / "kanji-catalog.json", catalog, args.pretty)
+    out_json = args.out / "kanji-catalog.json"
 
     (args.out / "ATTRIBUTION.txt").write_text(ATTRIBUTION, encoding="utf-8")
 
-    size_kb = out_json.stat().st_size / 1024
     print()
     print(f"  kanji prodotti : {len(records)}")
     print(f"  con parola     : {sum(1 for r in records if r.get('word'))}")
+    for level in levels:
+        print(f"      grado {level['grade']}: {level['count']:4d} kanji, {level['kb']:4d} KB")
     print(f"  senza tracciati: {missing_paths} (scartati)")
     print(f"  stroke count in disaccordo: {len(mismatches)}")
     for m in mismatches[:10]:

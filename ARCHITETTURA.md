@@ -16,10 +16,11 @@ Documento di design. Versione 2 — impianto a notifiche, niente widget, niente 
 - il kanji è visibile **dentro la notifica**, senza aprire nulla
 - tap → app: animazione dell'ordine dei tratti, poi on'yomi / kun'yomi / significato
 - 100% offline, nessun account, nessun backend, nessun companion iOS
-- deck fisso scelto a build time (~300 kanji più frequenti)
+- tutti i 2.136 jōyō, in mazzi per grado scolastico; le prime due classi sono gratis
 
 **Fuori scope, esplicitamente:** widget e complication, SRS, iCloud, audio,
-riconoscimento della scrittura, statistiche, monetizzazione.
+riconoscimento della scrittura, statistiche. La monetizzazione stava in questo
+elenco ed è rientrata dopo, con RevenueCat: vedi F7 nella roadmap.
 
 Il valore dell'app è il ripasso **passivo**. Se l'80% delle volte guardi la notifica e
 non apri niente, l'app sta funzionando come deve.
@@ -91,7 +92,7 @@ Le sorgenti stanno in `Scripts/raw/`, ignorata da git: sono tutte riscaricabili.
 
 ```
 KanjiVG (zip di SVG)  ─┐
-KANJIDIC2 (xml.gz)     ├─→ build_kanji_data.py ─→ kanji.json + ATTRIBUTION.txt
+KANJIDIC2 (xml.gz)     ├─→ build_kanji_data.py ─→ catalogo + un file per grado
 JMdict (gz)            │   + word_overrides.json
 JPDB (freq, Yomitan)  ─┘
 ```
@@ -108,7 +109,7 @@ python3 Scripts/build_kanji_data.py \
   --kanjidic Scripts/raw/kanjidic2.xml.gz \
   --jmdict Scripts/raw/JMdict_e.gz \
   --jpdb '[Freq] JPDB (Recommended)' \
-  --freq-max 300 --require-meaning \
+  --grade-max 8 --require-meaning \
   -o KanjiKit/Sources/KanjiData/Resources/
 ```
 
@@ -121,22 +122,29 @@ kana: 貴方, 勿論, 何所) e una dozzina di casi in `Scripts/word_overrides.j
 
 Il self-check della selezione: `python3 Scripts/test_build_kanji_data.py`.
 
-`kanji.json` va nel bundle. Non si parsa mai XML a runtime.
+Nel bundle vanno `kanji-catalog.json` e un `kanji-grade-N.json` per grado. Non si
+parsa mai XML a runtime.
 
-**Nota su `jlptOld`:** KANJIDIC2 espone la scala JLPT **vecchia** (4 = più facile,
-1 = più difficile), che non mappa 1:1 su N5–N1. Per costruire un deck usa `freq` o
-`grade`, sono più affidabili.
+**Perché i mazzi usano `grade` e non il JLPT.** KANJIDIC2 espone la scala JLPT
+**vecchia** (4 = più facile, 1 = più difficile), che non mappa 1:1 su N5–N1: per
+questo `jlptOld` non viene nemmeno più esportato.
 
 ---
 
 ## 5. Schema dati
 
 ```json
+// kanji-catalog.json — meno di 1 KB, si legge sempre
 {
-  "version": 1,
+  "version": 2,
   "viewBox": 109,
-  "count": 300,
+  "count": 2136,
   "attribution": "This app includes data derived from: ...",
+  "levels": [{ "grade": 1, "count": 80 }, { "grade": 2, "count": 160 }, "..."]
+}
+
+// kanji-grade-1.json — si legge solo se il grado è attivo
+{
   "kanji": [
     {
       "c": "水", "cp": "06c34",
@@ -144,8 +152,7 @@ Il self-check della selezione: `python3 Scripts/test_build_kanji_data.py`.
       "on": ["スイ"], "kun": ["みず"],
       "meanings": { "en": ["water"] },
       "word": { "w": "水曜日", "r": "すいようび", "g": ["Wednesday"] },
-      "nanori": [], "grade": 1, "strokeCount": 4,
-      "freq": 300, "jlptOld": 4
+      "grade": 1
     }
   ]
 }
@@ -174,17 +181,23 @@ public struct Kanji: Identifiable, Hashable, Sendable {
 }
 
 // KanjiData/DeckFile.swift — lo schema del file, coi nomi corti dello script
-struct DeckFile: Decodable { /* c, cp, strokes, on, kun, meanings, word... */ }
+struct CatalogFile: Decodable { /* viewBox, attribution, levels */ }
+struct LevelFile: Decodable { /* kanji: c, cp, strokes, on, kun, meanings, word... */ }
 ```
 
 Il dominio non è `Codable` di proposito: se cambia il formato dei dati si tocca
-`DeckFile` e basta, le schermate non se ne accorgono. `nanori` e `jlptOld` restano
-nel file ma non entrano nel dominio: non li mostra nessuno.
+`DeckFile.swift` e basta, le schermate non se ne accorgono. `nanori`, `jlptOld` e
+`strokeCount` non vengono più esportati: non li mostrava nessuno, e con duemila
+kanji ogni campo in più è tempo di decodifica sul Watch.
 
-**Performance.** 300 kanji ≈ 400 KB, decode istantaneo. I 2136 jōyō sono 3–5 MB e il
-`JSONDecoder` sul Watch ci mette centinaia di ms all'avvio. Se cresci oltre ~500 kanji,
-separa `index.json` (leggero, sempre caricato) da `strokes/<cp>.json` (on demand).
-Non prima: è ottimizzazione prematura.
+**Performance, misurata invece che stimata.** Su un Mac Intel tutti i 2.136 jōyō in
+un unico file si decodificano in 159 ms; togliendo i soli tratti in 112, perché il
+costo sta nel numero di voci e non nei byte. Divisi per grado, il mazzo gratuito
+(catalogo più gradi 1 e 2, 240 kanji) si decodifica in 34 ms. Sul Watch vanno
+moltiplicati per 3-5: all'avvio si carica solo quello che l'utente ripassa, e chi
+accende tutti i gradi paga il costo pieno. Se sull'orologio si sente, il passo
+successivo è caricare i gradi fuori dal thread principale — non prima di averlo
+misurato lì.
 
 ---
 

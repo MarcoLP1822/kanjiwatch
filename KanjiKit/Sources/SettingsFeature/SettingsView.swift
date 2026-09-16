@@ -17,6 +17,21 @@ public struct SettingsView: View {
     public var body: some View {
         Form {
             Section {
+                ForEach(model.levels) { level in
+                    Toggle(isOn: deckBinding(for: level)) {
+                        VStack(alignment: .leading, spacing: DS.Spacing.xs) {
+                            levelName(level)
+                            Text(verbatim: "\(level.count) kanji")
+                                .font(.dsLabel)
+                                .foregroundStyle(.dsInkSecondary)
+                        }
+                    }
+                }
+            } header: {
+                Text("Decks", bundle: .module)
+            }
+
+            Section {
                 Picker(selection: $model.intervalMinutes) {
                     ForEach(ReminderSettings.offeredIntervals, id: \.self) { minutes in
                         Text(verbatim: intervalLabel(minutes)).tag(minutes)
@@ -90,6 +105,21 @@ public struct SettingsView: View {
                 Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(.dsWarning)
             }
         }
+    }
+
+    private func deckBinding(for level: KanjiLevel) -> Binding<Bool> {
+        Binding(
+            get: { model.grades.contains(level.grade) },
+            set: { model.setGrade(level.grade, enabled: $0) }
+        )
+    }
+
+    /// In KANJIDIC i gradi 1-6 sono le classi delle elementari, l'8 i jōyō che si
+    /// imparano alle medie e alle superiori.
+    private func levelName(_ level: KanjiLevel) -> Text {
+        level.grade <= 6
+            ? Text("Grade \(level.grade)", bundle: .module)
+            : Text("Secondary school", bundle: .module)
     }
 
     private func hourPicker(_ label: Text, selection: Binding<Int>) -> some View {
