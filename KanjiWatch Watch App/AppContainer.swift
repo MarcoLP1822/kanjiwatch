@@ -1,9 +1,11 @@
+import Foundation
 import KanjiData
 import KanjiDomain
 import KanjiPurchases
 import PaywallFeature
 import SettingsFeature
 import StudyFeature
+import WidgetKit
 
 /// Il punto in cui le cose vengono messe insieme: l'unico che conosce sia il
 /// dominio sia gli adattatori. Le feature ricevono quello che serve e non sanno
@@ -35,6 +37,7 @@ final class AppContainer {
     private let repository: BundledDeckRepository
     private let settingsStore = UserDefaultsStore<ReminderSettings>.settings()
     private let stateStore = UserDefaultsStore<ReminderState>.reminderState()
+    private let complicationStore = UserDefaultsStore<[GlanceEntry]>.complicationTimeline()
     private let subscriptionStore = UserDefaultsStore<SubscriptionStatus>(
         key: AppContainer.lastKnownSubscriptionKey,
         default: .free
@@ -96,7 +99,7 @@ final class AppContainer {
     /// All'avvio, al ritorno in primo piano e quando si tocca una notifica:
     /// finché usi l'app la coda non si svuota mai.
     func reschedule() {
-        Task { await rescheduleReminders().execute() }
+        Task { await rescheduleAndPublish() }
     }
 
     /// All'avvio e al ritorno in primo piano: l'abbonamento può essere scaduto,
@@ -105,8 +108,8 @@ final class AppContainer {
         Task { await subscriptionDidChange(await subscriptions.currentStatus()) }
     }
 
-    /// Dalla notifica: apre sul kanji che hai guardato al polso e rimette in moto
-    /// la coda.
+    /// Dalla notifica o dalla complication: apre sul kanji che hai guardato al polso
+    /// e rimette in moto la coda.
     func open(codepoint: String) {
         study.show(codepoint: codepoint)
         reschedule()
@@ -138,7 +141,26 @@ final class AppContainer {
             loadedGrades = wanted
             study.replaceDeck(reloaded)
         }
+        await rescheduleAndPublish()
+    }
+
+    /// Rifà la coda e poi la timeline del quadrante, sempre insieme e in quest'ordine:
+    /// notifica e complication devono mostrare lo stesso kanji.
+    private func rescheduleAndPublish() async {
+        let previous = stateStore.load()
         await rescheduleReminders().execute()
+        publishComplication(previous: previous)
+    }
+
+    private func publishComplication(previous: ReminderState) {
+        let now = Date()
+        // Sul quadrante va l'ultimo kanji arrivato al polso; se non ne è ancora
+        // arrivato nessuno, quello che l'app sta mostrando.
+        let current = previous.lastDelivered(before: now).flatMap { deck[$0.codepoint] } ?? study.kanji
+        complicationStore.save(
+            ComplicationTimeline.entries(now: now, current: current, upcoming: stateStore.load().scheduled, deck: deck)
+        )
+        WidgetCenter.shared.reloadAllTimelines()
     }
 
     /// Lo scheduler legge le impostazioni effettive, ma le scelte dell'utente restano
@@ -163,6 +185,6 @@ final class AppContainer {
     private func askForPermissionIfNeverAsked() async {
         guard await scheduler.authorizationStatus() == .notDetermined else { return }
         _ = await scheduler.requestAuthorization()
-        await rescheduleReminders().execute()
+        await rescheduleAndPublish()
     }
 }

@@ -29,13 +29,11 @@ extension DS {
         /// Alone indaco dietro il glifo, il motivo della direzione visiva.
         public static let haloOpacity: Double = 0.16
         /// Lo spessore si calcola dal lato del riquadro: scalare la view con
-        /// `scaleEffect` scalerebbe anche il tratto, e su 41 mm si vede.
-        public static func width(forSide side: CGFloat) -> CGFloat {
-            side * widthRatio
-        }
-
-        public static func style(forSide side: CGFloat) -> StrokeStyle {
-            StrokeStyle(lineWidth: width(forSide: side), lineCap: .round, lineJoin: .round)
+        /// `scaleEffect` scalerebbe anche il tratto, e su 41 mm si vede. `ratio`
+        /// permette tratti più spessi dove lo spazio è minuscolo, come sulle
+        /// complication, senza duplicare cappucci e giunture.
+        public static func style(forSide side: CGFloat, ratio: CGFloat = widthRatio) -> StrokeStyle {
+            StrokeStyle(lineWidth: side * ratio, lineCap: .round, lineJoin: .round)
         }
     }
 }

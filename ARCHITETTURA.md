@@ -4,7 +4,7 @@ App **watchOS standalone**. A intervalli configurabili arriva una notifica che m
 un kanji; il carattere è già grande dentro la notifica, e se non te lo ricordi apri
 l'app per vedere l'ordine dei tratti e le letture e la parola più comune con quel kanji.
 
-Documento di design. Versione 2 — impianto a notifiche, niente widget, niente app iOS.
+Documento di design. Versione 3 — impianto a notifiche con una complication, niente app iOS.
 
 ---
 
@@ -18,9 +18,10 @@ Documento di design. Versione 2 — impianto a notifiche, niente widget, niente 
 - 100% offline, nessun account, nessun backend, nessun companion iOS
 - tutti i 2.136 jōyō, in mazzi per grado scolastico; le prime due classi sono gratis
 
-**Fuori scope, esplicitamente:** widget e complication, SRS, iCloud, audio,
-riconoscimento della scrittura, statistiche. La monetizzazione stava in questo
-elenco ed è rientrata dopo, con RevenueCat: vedi F7 nella roadmap.
+**Fuori scope, esplicitamente:** SRS, progressi e gamification, iCloud, audio,
+riconoscimento della scrittura, statistiche. Due voci stavano in questo elenco e sono
+rientrate dopo: la monetizzazione (F7) e la complication (F8), che è esposizione
+passiva in più e non chiede impegno.
 
 Il valore dell'app è il ripasso **passivo**. Se l'80% delle volte guardi la notifica e
 non apri niente, l'app sta funzionando come deve.
@@ -62,11 +63,15 @@ KanjiWatch/
 │   │   ├── KanjiPurchases/           RevenueCat, e nient'altro → KanjiDomain
 │   │   ├── StudyFeature/             glifo → animazione → letture, long look
 │   │   ├── SettingsFeature/          mazzi, intervallo, silenzio, permessi, fonti
-│   │   └── PaywallFeature/           i tre piani, prova, ripristino acquisti
+│   │   ├── PaywallFeature/           i tre piani, prova, ripristino acquisti
+│   │   ├── ComplicationFeature/      il kanji sul quadrante, senza WidgetKit
+│   │   └── KanjiTestSupport/         rendering e conteggio pixel, solo per i test
 │   └── Tests/                        un target di test per modulo (Swift Testing)
-└── KanjiWatch Watch App/             unico target pubblicato: sola composizione
-    ├── KanjiWatchApp.swift           App + WKNotificationScene + delegate
-    └── AppContainer.swift            costruisce e collega tutto
+├── KanjiWatch Watch App/             target pubblicato: sola composizione
+│   ├── KanjiWatchApp.swift           App + WKNotificationScene + delegate
+│   └── AppContainer.swift            costruisce e collega tutto
+└── KanjiWatch Complications/         estensione WidgetKit: sola composizione
+    └── KanjiComplications.swift      quale vista su quale formato del quadrante
 ```
 
 **Perché moduli separati e non cartelle.** Il confine lo fa il compilatore, non la
@@ -82,8 +87,12 @@ minuscolo. Se il parser SVG ti dà filo da torcere, un target iOS buttato lì ch
 solo `StrokeOrderView` ti fa risparmiare ore. Non si pubblica, non ha notifiche, non ha
 impostazioni. Se il parser fila liscio, saltalo.
 
-**Non serve un App Group.** Notifiche e app girano nello stesso container:
-`UserDefaults.standard` basta.
+**Un App Group, ma solo per la complication.** Notifiche e app girano nello stesso
+contenitore e usano `UserDefaults.standard`. La complication invece è un processo
+separato: l'app le prepara la timeline nel contenitore condiviso
+`group.com.marcolp.KanjiWatch` dopo ogni rischedulazione, e l'estensione la legge e
+basta, senza caricare il mazzo. Così notifica e quadrante mostrano sempre lo stesso
+kanji.
 
 ---
 
@@ -442,8 +451,9 @@ Costo: il JSON non è più identico all'upstream.
 ## 10. Persistenza
 
 `UserDefaults.standard` dietro la porta `ValueStore`, non `@AppStorage`: le
-impostazioni le legge anche lo scheduler, che non è una view. Nessun App Group —
-app e notifiche girano nello stesso contenitore — e nessun database.
+impostazioni le legge anche lo scheduler, che non è una view. App e notifiche girano
+nello stesso contenitore; l'unico App Group serve alla complication (§3). Nessun
+database.
 
 | Chiave | Contenuto | Default |
 |---|---|---|
@@ -501,6 +511,7 @@ Non è un parere legale. Se pensi di monetizzare, leggi le licenze per intero pr
 | **F5** | Long look | ✅ il kanji si vede grande **dentro** la notifica |
 | **F6** | Impostazioni | ✅ intervallo, fascia attiva, modalità discreta, permessi, fonti |
 | **F7** | Abbonamenti | ✅ jōyō per grado, paywall, RevenueCat — manca solo l'account |
+| **F8** | Complication | ✅ il kanji dell'ultima notifica sul quadrante, tocco → app |
 
 F2 è già un'app che usi a mano. F5 è il momento in cui diventa quello che avevi in
 mente. Non invertire: se parti dalle notifiche, debugghi lo scheduler prima di aver

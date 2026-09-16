@@ -96,7 +96,7 @@ public struct StudyView: View {
     }
 
     private var meanings: String {
-        model.kanji.meanings.prefix(2).joined(separator: ", ")
+        model.kanji.shortMeaning
     }
 }
 
@@ -129,7 +129,7 @@ struct ReadingsContent: View {
                     word: word.text,
                     highlighting: kanji.character,
                     reading: word.reading,
-                    meaning: word.meanings.prefix(2).joined(separator: ", ")
+                    meaning: word.shortMeaning
                 )
             }
 
@@ -144,6 +144,6 @@ struct ReadingsContent: View {
     }
 
     private var meanings: String {
-        kanji.meanings.prefix(2).joined(separator: ", ")
+        kanji.shortMeaning
     }
 }

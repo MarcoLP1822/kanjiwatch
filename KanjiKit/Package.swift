@@ -23,6 +23,7 @@ let package = Package(
         .library(name: "SettingsFeature", targets: ["SettingsFeature"]),
         .library(name: "KanjiPurchases", targets: ["KanjiPurchases"]),
         .library(name: "PaywallFeature", targets: ["PaywallFeature"]),
+        .library(name: "ComplicationFeature", targets: ["ComplicationFeature"]),
     ],
     dependencies: [
         // L'unica dipendenza esterna del progetto, richiesta esplicitamente: gli
@@ -71,6 +72,20 @@ let package = Package(
             ],
             swiftSettings: base
         ),
+
+        // Le viste della complication. Non conoscono WidgetKit: quale vista va su quale
+        // formato del quadrante lo decide l'estensione.
+        .target(name: "ComplicationFeature", dependencies: ["KanjiDomain", "DesignSystem"], swiftSettings: ui),
+
+        .testTarget(
+            name: "ComplicationFeatureTests",
+            dependencies: ["ComplicationFeature", "KanjiData", "KanjiTestSupport"],
+            swiftSettings: ui
+        ),
+
+        // Strumenti condivisi dai test che disegnano. Target normale e non di test,
+        // perché più target di test possano dipenderne; l'app non lo usa.
+        .target(name: "KanjiTestSupport", swiftSettings: ui),
 
         // Il paywall. Parla con la porta SubscriptionGateway e non sa che dietro c'è
         // RevenueCat: nei test e nelle preview c'è un finto gateway.

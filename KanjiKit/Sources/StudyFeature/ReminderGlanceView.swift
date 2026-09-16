@@ -29,7 +29,7 @@ public struct ReminderGlanceView: View {
             }
 
             if let kanji {
-                Text(verbatim: kanji.meanings.prefix(2).joined(separator: ", "))
+                Text(verbatim: kanji.shortMeaning)
                     .font(.dsLabel)
                     .foregroundStyle(.dsInkSecondary)
                     .multilineTextAlignment(.center)

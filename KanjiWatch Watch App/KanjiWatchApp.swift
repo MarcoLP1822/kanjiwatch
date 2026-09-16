@@ -12,6 +12,12 @@ struct KanjiWatchApp: App {
     var body: some Scene {
         WindowGroup {
             RootView()
+                .onOpenURL { url in
+                    // Dalla complication: apre sul kanji che era sul quadrante.
+                    if let codepoint = KanjiLink.codepoint(from: url) {
+                        container.open(codepoint: codepoint)
+                    }
+                }
                 .onChange(of: scenePhase, initial: true) { _, phase in
                     // All'avvio e a ogni ritorno in primo piano. È il ciclo che si
                     // autoalimenta: finché apri l'app, la coda resta piena.

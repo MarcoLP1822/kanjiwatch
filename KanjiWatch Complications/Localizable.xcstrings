@@ -1,0 +1,17 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "The kanji from your latest reminder." : {
+      "comment" : "Descrizione della complication nella galleria dei quadranti.",
+      "localizations" : {
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il kanji dell'ultima notifica."
+          }
+        }
+      }
+    }
+  },
+  "version" : "1.0"
+}
