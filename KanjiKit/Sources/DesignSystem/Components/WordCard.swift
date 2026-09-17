@@ -7,6 +7,7 @@ public struct WordCard: View {
     private let highlighted: String
     private let reading: String
     private let meaning: String
+    @Environment(\.dsTheme) private var theme
 
     public init(word: String, highlighting: String, reading: String, meaning: String) {
         self.word = word
@@ -30,14 +31,14 @@ public struct WordCard: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(DS.Spacing.m)
-        .background(Color.dsSurface, in: .rect(cornerRadius: DS.Radius.m))
+        .background(.dsSurface, in: .rect(cornerRadius: DS.Radius.m))
         .accessibilityElement(children: .combine)
     }
 
     private var marked: AttributedString {
         word.reduce(into: AttributedString()) { result, character in
             var piece = AttributedString(String(character))
-            piece.foregroundColor = String(character) == highlighted ? .dsAccentText : .dsInk
+            piece.foregroundColor = theme.color(String(character) == highlighted ? .accentText : .ink)
             result += piece
         }
     }
@@ -48,6 +49,6 @@ public struct WordCard: View {
     WordCard(word: "水曜日", highlighting: "水", reading: "すいようび", meaning: "Wednesday")
         .padding(DS.Spacing.l)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color.dsBackground)
+        .background(.dsBackground)
 }
 #endif

@@ -8,6 +8,7 @@ import SwiftUI
 public struct ReadingRow: View {
     private let label: String
     private let readings: [String]
+    @Environment(\.dsTheme) private var theme
 
     public init(label: String, readings: [String]) {
         self.label = label
@@ -35,7 +36,7 @@ public struct ReadingRow: View {
     private var joined: AttributedString {
         readings.enumerated().reduce(into: AttributedString()) { result, item in
             if item.offset > 0 {
-                result += colored("・", .dsInkSecondary)
+                result += colored("・", .inkSecondary)
             }
             result += styled(item.element)
         }
@@ -43,15 +44,15 @@ public struct ReadingRow: View {
 
     private func styled(_ reading: String) -> AttributedString {
         guard let dot = reading.firstIndex(of: ".") else {
-            return colored(reading, .dsInk)
+            return colored(reading, .ink)
         }
-        return colored(String(reading[..<dot]), .dsInk)
-            + colored(String(reading[reading.index(after: dot)...]), .dsInkSecondary)
+        return colored(String(reading[..<dot]), .ink)
+            + colored(String(reading[reading.index(after: dot)...]), .inkSecondary)
     }
 
-    private func colored(_ text: String, _ color: Color) -> AttributedString {
+    private func colored(_ text: String, _ role: DSColor.Role) -> AttributedString {
         var piece = AttributedString(text)
-        piece.foregroundColor = color
+        piece.foregroundColor = theme.color(role)
         return piece
     }
 }
@@ -65,6 +66,6 @@ public struct ReadingRow: View {
     }
     .padding(DS.Spacing.l)
     .frame(maxWidth: .infinity, maxHeight: .infinity)
-    .background(Color.dsBackground)
+    .background(.dsBackground)
 }
 #endif

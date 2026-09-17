@@ -9,6 +9,7 @@ import SwiftUI
 public struct StudyView: View {
     private let model: StudyViewModel
     @State private var crown: Double = 0
+    @Environment(\.dsTheme) private var theme
 
     public init(model: StudyViewModel) {
         self.model = model
@@ -16,7 +17,8 @@ public struct StudyView: View {
 
     public var body: some View {
         ZStack {
-            Color.dsBackground.ignoresSafeArea()
+            Rectangle().fill(.dsBackground).ignoresSafeArea()
+            DSTopWash()
 
             if model.snapshot.isDone {
                 waiting
@@ -38,6 +40,14 @@ public struct StudyView: View {
         VStack(spacing: DS.Spacing.s) {
             drawing
                 .frame(maxHeight: .infinity)
+                .overlay(alignment: .topTrailing) {
+                    if theme.showsSeal {
+                        // Appena fuori dal riquadro del glifo: molti kanji arrivano fino
+                        // all'angolo, e il sigillo non deve coprire un tratto.
+                        KanjiSeal(strokeCount: model.state.strokeCount)
+                            .offset(x: DS.Spacing.l, y: -DS.Spacing.s)
+                    }
+                }
 
             if let hint {
                 hint

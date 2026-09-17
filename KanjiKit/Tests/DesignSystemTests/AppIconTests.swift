@@ -57,9 +57,9 @@ private struct AppIcon: View {
 
     var body: some View {
         KanjiGlyphMark(glyph: glyph)
-            .foregroundStyle(Color.dsInk)
+            .foregroundStyle(.dsInk)
             .padding(230)
-            .background(Color.dsAccent)
+            .background(.dsAccent)
     }
 }
 #endif

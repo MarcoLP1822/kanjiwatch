@@ -4,12 +4,25 @@ import SwiftUI
 /// entra in scena — e si passa il risultato alle view, che in SwiftUI vengono
 /// ricostruite di continuo.
 public struct StrokeGlyph: Equatable, Sendable {
+    /// Come si chiude un tratto a pennello: tome, harai, hane, ten.
+    public enum Ending: Equatable, Sendable {
+        case stop
+        case sweep
+        case hook
+        case dot
+    }
+
     public let strokes: [StrokePath]
+    /// Come finisce ogni tratto, nello stesso ordine di `strokes`.
+    public let endings: [Ending]
     /// Lato del sistema di coordinate dei tracciati (109 per KanjiVG).
     public let viewBox: Double
 
-    public init(svgPaths: [String], viewBox: Double) throws {
+    /// Senza fini, o con fini che non corrispondono ai tratti, ogni tratto è un fermo:
+    /// il pennello resta leggibile, solo meno calligrafico.
+    public init(svgPaths: [String], endings: [Ending] = [], viewBox: Double) throws {
         self.strokes = try svgPaths.map { try SVGPathParser.parse($0) }
+        self.endings = endings.count == svgPaths.count ? endings : Array(repeating: .stop, count: svgPaths.count)
         self.viewBox = viewBox
     }
 

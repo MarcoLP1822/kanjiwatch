@@ -29,6 +29,17 @@ struct SVGPathParserTests {
         #expect(smooth.path == explicit.path)
     }
 
+    /// Il pennello cambia spessore lungo la strada percorsa: i campioni devono seguire il
+    /// tratto dall'inizio alla fine, a passo costante.
+    @Test func samplesTheStrokeEvenlyFromStartToEnd() throws {
+        let samples = try SVGPathParser.parse("M0,0C0,25,0,75,0,100").samples
+        #expect(samples.count >= 12)
+        #expect(samples.first == .zero)
+        #expect(abs((samples.last?.y ?? 0) - 100) < 0.001)
+        let steps = zip(samples, samples.dropFirst()).map { hypot($1.x - $0.x, $1.y - $0.y) }
+        #expect((steps.max() ?? 0) - (steps.min() ?? 0) < 0.5)
+    }
+
     @Test func measuresLengthAlongTheCurve() throws {
         let straight = try SVGPathParser.parse("M0,0C0,25,0,75,0,100")
         #expect(abs(straight.length - 100) < 0.5)

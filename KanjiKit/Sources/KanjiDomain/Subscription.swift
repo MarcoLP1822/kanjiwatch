@@ -90,10 +90,17 @@ public enum AccessPolicy {
         limited.intervalMinutes = freeIntervalMinutes
         limited.activeHours = freeActiveHours
         limited.dailyLimit = freeDailyLimit
+        limited.theme = theme(settings.theme, for: status)
         let freeGrades = settings.grades.intersection(KanjiLevel.freeGrades)
         // Mai un mazzo vuoto: chi aveva scelto solo gradi a pagamento riparte da
         // quelli gratuiti.
         limited.grades = freeGrades.isEmpty ? KanjiLevel.freeGrades : freeGrades
         return limited
+    }
+
+    /// Il tema che si vede davvero: senza abbonamento quello di base, ma la scelta
+    /// resta salvata e torna al rinnovo.
+    public static func theme(_ chosen: AppTheme, for status: SubscriptionStatus) -> AppTheme {
+        status == .premium || chosen.isFree ? chosen : .aiZome
     }
 }

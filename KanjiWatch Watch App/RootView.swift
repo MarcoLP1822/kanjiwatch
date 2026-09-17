@@ -1,3 +1,4 @@
+import DesignSystem
 import PaywallFeature
 import SettingsFeature
 import StudyFeature
@@ -10,9 +11,14 @@ import SwiftUI
 struct RootView: View {
     private let container = AppContainer.shared
 
+    private var theme: DSTheme {
+        DSTheme.named(container.settings.appliedTheme.rawValue)
+    }
+
     var body: some View {
         NavigationStack {
             StudyView(model: container.study)
+                .dsTheme(theme)
                 .toolbar {
                     ToolbarItem(placement: .topBarLeading) {
                         NavigationLink {

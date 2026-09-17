@@ -25,7 +25,7 @@ struct StudyViewRenderingTests {
         let readings = try renderWatchSized(
             ReadingsContent(kanji: model.kanji, glyph: model.glyph, dailyLimitReached: false, onDone: {}, onNext: {})
                 .padding(DS.Spacing.m)
-                .background(Color.dsBackground),
+                .background(.dsBackground),
             named: "study-readings"
         )
         let waiting = try renderWatchSized(
@@ -37,7 +37,7 @@ struct StudyViewRenderingTests {
                 onNext: {}
             )
             .padding(DS.Spacing.m)
-            .background(Color.dsBackground),
+            .background(.dsBackground),
             named: "study-waiting"
         )
         let dayOver = try renderWatchSized(
@@ -45,9 +45,14 @@ struct StudyViewRenderingTests {
                 kanji: model.kanji, glyph: model.glyph, nextArrival: nil, dailyLimitReached: true, onNext: {}
             )
             .padding(DS.Spacing.m)
-            .background(Color.dsBackground),
+            .background(.dsBackground),
             named: "study-day-over"
         )
+
+        // Un tema sumi-e cambia la schermata intera: carta al posto della notte.
+        let senape = try renderWatchSized(
+            StudyView(model: makeStudyModel()).dsTheme(.sumiSenape), named: "study-kanji-senape")
+        #expect(inkPixels(senape) > inkPixels(kanji) * 10)
 
         // Nessun passo può essere una schermata vuota, e nessuno uguale a un altro.
         let ink = [kanji, readings, waiting, dayOver].map(inkPixels)

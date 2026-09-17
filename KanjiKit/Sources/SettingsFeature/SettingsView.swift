@@ -50,6 +50,24 @@ public struct SettingsView<Premium: View>: View {
             }
 
             Section {
+                ForEach(AppTheme.allCases, id: \.self) { theme in
+                    if model.isLocked(theme) {
+                        NavigationLink(destination: premium) {
+                            themeLabel(theme, locked: true)
+                        }
+                    } else {
+                        Button {
+                            model.setTheme(theme)
+                        } label: {
+                            themeLabel(theme, locked: false)
+                        }
+                    }
+                }
+            } header: {
+                Text("Theme", bundle: .module)
+            }
+
+            Section {
                 if model.isPremium {
                     Picker(selection: $model.intervalMinutes) {
                         ForEach(ReminderSettings.offeredIntervals, id: \.self) { minutes in
@@ -119,8 +137,12 @@ public struct SettingsView<Premium: View>: View {
                 }
             }
         }
-        .tint(.dsAccent)
+        .tint(DSColor.dsAccent)
         .task { await model.refreshAuthorization() }
+        // Le impostazioni sono controlli di sistema, sempre scuri su watchOS: il tema
+        // sumi-e li renderebbe illeggibili. Qui, e nel paywall che si apre da qui,
+        // resta il tema di base.
+        .dsTheme(.aiZome)
     }
 
     @ViewBuilder
@@ -168,6 +190,44 @@ public struct SettingsView<Premium: View>: View {
                     .foregroundStyle(.dsInkSecondary)
                     .accessibilityLabel(Text("Included with Premium.", bundle: .module))
             }
+        }
+    }
+
+    private func themeLabel(_ theme: AppTheme, locked: Bool) -> some View {
+        HStack(spacing: DS.Spacing.m) {
+            ThemeSwatch(theme: DSTheme.named(theme.rawValue))
+            VStack(alignment: .leading, spacing: DS.Spacing.xs) {
+                themeName(theme)
+                themeDescription(theme)
+                    .font(.dsLabel)
+                    .foregroundStyle(.dsInkSecondary)
+            }
+            Spacer(minLength: 0)
+            if locked {
+                Image(systemName: "lock.fill")
+                    .foregroundStyle(.dsInkSecondary)
+                    .accessibilityLabel(Text("Included with Premium.", bundle: .module))
+            } else if theme == model.theme {
+                Image(systemName: "checkmark")
+                    .foregroundStyle(.dsAccentText)
+            }
+        }
+        .accessibilityAddTraits(theme == model.theme && !locked ? .isSelected : [])
+    }
+
+    private func themeName(_ theme: AppTheme) -> Text {
+        switch theme {
+        case .aiZome: Text(verbatim: "Ai-zome")
+        case .sumiWashi: Text("Sumi-e washi", bundle: .module)
+        case .sumiSenape: Text("Sumi-e mustard", bundle: .module)
+        }
+    }
+
+    private func themeDescription(_ theme: AppTheme) -> Text {
+        switch theme {
+        case .aiZome: Text("Indigo on night", bundle: .module)
+        case .sumiWashi: Text("Brush ink on washi paper", bundle: .module)
+        case .sumiSenape: Text("Brush ink on mustard paper", bundle: .module)
         }
     }
 
@@ -220,5 +280,22 @@ public struct SettingsView<Premium: View>: View {
         components.minute = 0
         let date = Calendar.current.date(from: components) ?? Date()
         return date.formatted(.dateTime.hour())
+    }
+}
+
+/// Il tema in piccolo: la sua carta, il suo inchiostro e il bordo del suo accento. I
+/// colori sono quelli del tema mostrato, non di quello attivo.
+private struct ThemeSwatch: View {
+    let theme: DSTheme
+
+    var body: some View {
+        Text(verbatim: "字")
+            .font(.system(.body, design: theme.fontDesign).weight(.semibold))
+            .foregroundStyle(theme.color(.ink))
+            .frame(width: 30, height: 30)
+            .background(theme.color(.background), in: .circle)
+            .overlay(Circle().strokeBorder(theme.color(.accent), lineWidth: 2))
+            .dsJapanese()
+            .accessibilityHidden(true)
     }
 }

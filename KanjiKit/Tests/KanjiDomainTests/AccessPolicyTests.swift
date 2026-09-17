@@ -22,6 +22,15 @@ struct AccessPolicyTests {
         #expect(effective.isPassive)
     }
 
+    /// I temi sumi-e sono Premium: senza abbonamento si vede Ai-zome, e la scelta resta.
+    @Test func sumiThemesArePremium() {
+        var sumi = chosen
+        sumi.theme = .sumiSenape
+        #expect(AccessPolicy.effective(sumi, for: .free).theme == .aiZome)
+        #expect(AccessPolicy.effective(sumi, for: .premium).theme == .sumiSenape)
+        #expect(AppTheme.allCases.filter(\.isFree) == [.aiZome])
+    }
+
     @Test func freeKeepsOnlyTheFreeGradesAmongTheChosenOnes() {
         #expect(AccessPolicy.effective(chosen, for: .free).grades == [1])
     }

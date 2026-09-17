@@ -20,6 +20,9 @@ public final class SettingsViewModel {
     /// I mazzi scelti. Si cambiano solo con `setGrade`, che impedisce di spegnerli
     /// tutti e di accendere quelli a pagamento senza abbonamento.
     public private(set) var grades: Set<Int>
+    /// Il tema scelto. Si cambia solo con `setTheme`, che non accende i temi Premium
+    /// senza abbonamento.
+    public private(set) var theme: AppTheme
 
     public private(set) var subscription: SubscriptionStatus
     public private(set) var authorization: NotificationAuthorization = .notDetermined
@@ -55,6 +58,7 @@ public final class SettingsViewModel {
         isPassive = current.isPassive
         dailyLimit = current.dailyLimit
         grades = current.grades
+        theme = current.theme
     }
 
     public var isPremium: Bool { subscription == .premium }
@@ -67,6 +71,21 @@ public final class SettingsViewModel {
 
     public func isLocked(_ level: KanjiLevel) -> Bool {
         !isPremium && !level.isFree
+    }
+
+    public func isLocked(_ theme: AppTheme) -> Bool {
+        !isPremium && !theme.isFree
+    }
+
+    /// Il tema da mostrare adesso: scade con l'abbonamento, ma la scelta resta salvata.
+    public var appliedTheme: AppTheme {
+        AccessPolicy.theme(theme, for: subscription)
+    }
+
+    public func setTheme(_ chosen: AppTheme) {
+        guard !isLocked(chosen), chosen != theme else { return }
+        theme = chosen
+        settingsChanged()
     }
 
     public func updateSubscription(_ status: SubscriptionStatus) {
@@ -110,6 +129,7 @@ public final class SettingsViewModel {
         settings.isPassive = isPassive
         settings.dailyLimit = dailyLimit
         settings.grades = grades
+        settings.theme = theme
         store.save(settings)
 
         pendingReschedule?.cancel()

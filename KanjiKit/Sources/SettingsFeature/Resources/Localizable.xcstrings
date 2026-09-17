@@ -12,6 +12,18 @@
         "it" : { "stringUnit" : { "state" : "translated", "value" : "Orari attivi" } }
       }
     },
+    "Brush ink on mustard paper" : {
+      "comment" : "Descrizione del tema Sumi-e senape.",
+      "localizations" : {
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Inchiostro a pennello su carta senape" } }
+      }
+    },
+    "Brush ink on washi paper" : {
+      "comment" : "Descrizione del tema Sumi-e washi.",
+      "localizations" : {
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Inchiostro a pennello su carta washi" } }
+      }
+    },
     "Data sources" : {
       "localizations" : {
         "it" : { "stringUnit" : { "state" : "translated", "value" : "Fonti dati" } }
@@ -49,6 +61,12 @@
       "comment" : "Sotto un'impostazione bloccata e come etichetta VoiceOver del lucchetto.",
       "localizations" : {
         "it" : { "stringUnit" : { "state" : "translated", "value" : "Incluso in Premium." } }
+      }
+    },
+    "Indigo on night" : {
+      "comment" : "Descrizione del tema Ai-zome.",
+      "localizations" : {
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Indaco su notte" } }
       }
     },
     "Interval" : {
@@ -97,6 +115,24 @@
       "comment" : "Mazzo dei jōyō imparati dopo le elementari (grado 8 in KANJIDIC).",
       "localizations" : {
         "it" : { "stringUnit" : { "state" : "translated", "value" : "Medie e superiori" } }
+      }
+    },
+    "Sumi-e mustard" : {
+      "comment" : "Nome del tema: inchiostro a pennello su carta senape.",
+      "localizations" : {
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Sumi-e senape" } }
+      }
+    },
+    "Sumi-e washi" : {
+      "comment" : "Nome del tema: inchiostro a pennello su carta washi.",
+      "localizations" : {
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Sumi-e washi" } }
+      }
+    },
+    "Theme" : {
+      "comment" : "Sezione dei temi dell'app.",
+      "localizations" : {
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Tema" } }
       }
     },
     "To" : {

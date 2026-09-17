@@ -45,19 +45,24 @@ public struct ReminderSettings: Equatable, Sendable, Codable {
     /// Quanti kanji nuovi al giorno, tra notifiche arrivate e NEXT. L'intervallo dà
     /// il ritmo, questo il tetto: raggiunto il numero, la giornata è finita.
     public var dailyLimit: Int
+    /// Il tema scelto. Sta qui e non in un archivio a parte perché segue le stesse regole
+    /// di accesso delle altre scelte Premium, e si salva allo stesso modo.
+    public var theme: AppTheme
 
     public init(
         intervalMinutes: Int,
         activeHours: ActiveHours,
         isPassive: Bool,
         grades: Set<Int> = KanjiLevel.freeGrades,
-        dailyLimit: Int = ReminderSettings.defaultDailyLimit
+        dailyLimit: Int = ReminderSettings.defaultDailyLimit,
+        theme: AppTheme = .aiZome
     ) {
         self.intervalMinutes = intervalMinutes
         self.activeHours = activeHours
         self.isPassive = isPassive
         self.grades = grades
         self.dailyLimit = dailyLimit
+        self.theme = theme
     }
 
     public init(from decoder: any Decoder) throws {
@@ -69,6 +74,8 @@ public struct ReminderSettings: Equatable, Sendable, Codable {
         // fallirebbe, e con lei si perderebbero intervallo e fascia oraria.
         grades = try container.decodeIfPresent(Set<Int>.self, forKey: .grades) ?? KanjiLevel.freeGrades
         dailyLimit = try container.decodeIfPresent(Int.self, forKey: .dailyLimit) ?? Self.defaultDailyLimit
+        // Un tema sconosciuto, per esempio tolto in un aggiornamento, torna a quello di base.
+        theme = (try? container.decodeIfPresent(AppTheme.self, forKey: .theme)) ?? .aiZome
     }
 
     public static let defaultDailyLimit = 10

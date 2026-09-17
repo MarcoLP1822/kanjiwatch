@@ -3,9 +3,9 @@ import Testing
 
 @testable import DesignSystem
 
-/// Il contrasto è una proprietà dei token, non della singola schermata: se qualcuno
-/// ritocca la palette, questi test cadono prima che l'app diventi illeggibile al sole.
-@Suite("Contrasto dei token")
+/// Il contrasto è una proprietà dei temi, non della singola schermata: se qualcuno
+/// ritocca una palette, questi test cadono prima che l'app diventi illeggibile al sole.
+@Suite("Contrasto dei temi")
 struct TokenContrastTests {
     /// Luminanza relativa secondo WCAG 2.1, da un colore sRGB a 8 bit.
     private func luminance(_ hex: UInt32) -> Double {
@@ -21,29 +21,39 @@ struct TokenContrastTests {
         return (luminances.max()! + 0.05) / (luminances.min()! + 0.05)
     }
 
-    @Test func everyTextTokenClearsTheWcagThreshold() {
-        #expect(contrast(Palette.frost, Palette.night) >= 4.5)
-        #expect(contrast(Palette.slate, Palette.night) >= 4.5)
-        #expect(contrast(Palette.indigoLight, Palette.night) >= 4.5)
-        #expect(contrast(Palette.amber, Palette.night) >= 4.5)
+    /// Tutto il testo piccolo, sul fondo e sulle superfici dove compare: WCAG chiede 4.5:1.
+    @Test(arguments: DSTheme.all)
+    func everyTextTokenIsReadable(_ theme: DSTheme) {
+        let palette = theme.palette
+        for text in [palette.ink, palette.inkSecondary, palette.accentText] {
+            #expect(contrast(text, palette.background) >= 4.5, "\(theme.id)")
+            #expect(contrast(text, palette.surface) >= 4.5, "\(theme.id)")
+        }
+        #expect(contrast(palette.warning, palette.background) >= 4.5, "\(theme.id)")
     }
 
-    /// Il motivo per cui esistono due indaco: quello pieno è per i tratti, non per
-    /// il testo piccolo. Se un giorno passasse la soglia, tanto meglio saperlo.
-    @Test func fullAccentIsForGraphicsOnly() {
-        let accent = contrast(Palette.indigo, Palette.night)
-        #expect(accent >= 3.0)
-        #expect(accent < 4.5)
-        #expect(contrast(Palette.indigoLight, Palette.night) > accent)
+    /// L'accento pieno è per forme e tratti, dove basta 3:1. Il testo dei bottoni pieni
+    /// è grande e in grassetto: anche lì la soglia WCAG è 3:1.
+    @Test(arguments: DSTheme.all)
+    func fullAccentWorksAsShapeAndUnderLargeText(_ theme: DSTheme) {
+        #expect(contrast(theme.palette.accent, theme.palette.background) >= 3.0, "\(theme.id)")
+        #expect(contrast(theme.palette.onAccent, theme.palette.accent) >= 3.0, "\(theme.id)")
     }
 
-    /// Il bottone primario: testo chiaro su indaco pieno. Non arriva a 4.5, ed è per
-    /// questo che il suo testo è grande e in grassetto, dove WCAG chiede 3:1.
-    @Test func primaryButtonLabelClearsTheLargeTextThreshold() {
-        #expect(contrast(Palette.frost, Palette.indigo) >= 3.0)
+    @Test(arguments: DSTheme.all)
+    func surfaceStaysVisibleOverTheBackground(_ theme: DSTheme) {
+        #expect(contrast(theme.palette.surface, theme.palette.background) > 1.1, "\(theme.id)")
     }
 
-    @Test func raisedSurfaceStaysVisibleOverTheBackground() {
-        #expect(contrast(Palette.nightRaised, Palette.night) > 1.1)
+    /// Il motivo per cui Ai-zome ha due indaco: quello pieno non regge il testo piccolo.
+    @Test func aiZomeFullAccentIsForGraphicsOnly() {
+        let palette = DSTheme.aiZome.palette
+        #expect(contrast(palette.accent, palette.background) < 4.5)
+        #expect(contrast(palette.accentText, palette.background) > contrast(palette.accent, palette.background))
+    }
+
+    @Test func themesHaveDistinctNamesAndAnUnknownOneFallsBack() {
+        #expect(Set(DSTheme.all.map(\.id)).count == DSTheme.all.count)
+        #expect(DSTheme.named("sconosciuto") == .aiZome)
     }
 }

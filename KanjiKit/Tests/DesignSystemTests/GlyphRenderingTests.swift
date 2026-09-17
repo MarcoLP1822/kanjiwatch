@@ -29,7 +29,46 @@ struct GlyphRenderingTests {
         #expect(wide.pixelsWide == wide.pixelsHigh * 260 / 160 || wide.pixelsWide > 0)
     }
 
+    /// Col pennello il glifo è inchiostro scuro sulla carta: cresce col progresso come la
+    /// linea fine, ma in pixel scuri. Il tratto in corso è rosso e non conta.
+    @Test func brushDrawsDarkInkOnPaper() throws {
+        func ink(_ progress: Double) throws -> Int {
+            let bitmap = try render(
+                KanjiGlyphView(glyph: .previewWater, progress: progress),
+                size: CGSize(width: 180, height: 180),
+                theme: .sumiWashi
+            )
+            if let directory = ProcessInfo.processInfo.environment["GLYPH_SNAPSHOT_DIR"],
+                let png = bitmap.representation(using: .png, properties: [:])
+            {
+                try? png.write(
+                    to: URL(fileURLWithPath: directory).appendingPathComponent("water-brush-\(progress).png"))
+            }
+            return darkPixels(bitmap)
+        }
+        let halfway = try ink(2.5)
+        let complete = try ink(4)
+        #expect(halfway > 0)
+        #expect(complete > halfway)
+    }
+
     // MARK: - Strumenti
+
+    /// Pixel quasi neri: sulla carta sono solo i tratti già scritti.
+    private func darkPixels(_ bitmap: NSBitmapImageRep) -> Int {
+        guard let data = bitmap.bitmapData, bitmap.bitsPerSample == 8 else { return 0 }
+        let bytesPerPixel = bitmap.bitsPerPixel / 8
+        var count = 0
+        for y in 0..<bitmap.pixelsHigh {
+            let row = data + y * bitmap.bytesPerRow
+            for x in 0..<bitmap.pixelsWide
+            where Int(row[x * bytesPerPixel]) + Int(row[x * bytesPerPixel + 1]) + Int(row[x * bytesPerPixel + 2]) < 200
+            {
+                count += 1
+            }
+        }
+        return count
+    }
 
     private func renderWater(progress: Double) throws -> NSBitmapImageRep {
         let bitmap = try render(
@@ -44,12 +83,13 @@ struct GlyphRenderingTests {
         return bitmap
     }
 
-    private func render(_ view: some View, size: CGSize) throws -> NSBitmapImageRep {
+    private func render(_ view: some View, size: CGSize, theme: DSTheme = .aiZome) throws -> NSBitmapImageRep {
         let renderer = ImageRenderer(
             content:
                 view
                 .frame(width: size.width, height: size.height)
-                .background(Color.dsBackground)
+                .background(.dsBackground)
+                .dsTheme(theme)
         )
         renderer.scale = 2
         return NSBitmapImageRep(cgImage: try #require(renderer.cgImage))

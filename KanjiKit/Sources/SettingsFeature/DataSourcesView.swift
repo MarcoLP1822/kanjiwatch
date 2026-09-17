@@ -22,6 +22,6 @@ public struct DataSourcesView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(DS.Spacing.m)
         }
-        .background(Color.dsBackground)
+        .background(.dsBackground)
     }
 }

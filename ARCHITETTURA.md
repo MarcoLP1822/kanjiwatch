@@ -57,7 +57,7 @@ KanjiWatch/
 │   │   ├── KanjiData/                kanji.json nel bundle, UserDefaults,
 │   │   │   └── Resources/            UNUserNotificationCenter → KanjiDomain
 │   │   ├── DesignSystem/             nessuna dipendenza
-│   │   │   ├── Tokens/               primitivi → semantici → di componente
+│   │   │   ├── Tokens/               temi → semantici → di componente
 │   │   │   ├── StrokeRendering/      SVGPathParser, StrokeGlyph
 │   │   │   └── Components/           KanjiGlyphView, ...
 │   │   ├── KanjiPurchases/           RevenueCat, e nient'altro → KanjiDomain
@@ -475,6 +475,35 @@ Piano B se ti impantani: aggiungi allo script Python un passo di normalizzazione
 converte tutto in comandi assoluti `M`/`C`/`L`, e il parser Swift scende a ~40 righe.
 Costo: il JSON non è più identico all'upstream.
 
+### I temi e il tratto a pennello
+
+Un tema è una scelta sola: palette, famiglia dei caratteri, modo di disegnare i tratti,
+sigillo. Tre temi, in `DSTheme`:
+
+| Tema | Carta e inchiostro | Tratti | Caratteri | Accesso |
+|---|---|---|---|---|
+| Ai-zome | notte, bianco freddo, indaco | linea fine con alone | SF Pro | gratis |
+| Sumi-e washi | carta washi, sumi, rosso shu | pennello, sigillo 画 | serif | Premium |
+| Sumi-e senape | carta senape, sumi, rosso shu | pennello, sigillo 画 | serif | Premium |
+
+I token semantici (`.dsInk`, `.dsBackground`…) sono `ShapeStyle` che si risolvono dal
+tema dell'ambiente: le schermate non sanno quale tema c'è, e `.dsTheme(_:)` lo applica
+alla radice dello studio. La notifica lo riceve come parametro, perché la mostra il
+sistema fuori dalla gerarchia dell'app. Impostazioni e paywall restano Ai-zome: sono
+controlli di sistema, sempre scuri su watchOS, e l'inchiostro scuro lì non si leggerebbe.
+Il contrasto WCAG si verifica per ogni tema, sul fondo e sulle superfici.
+
+Il pennello parte dagli stessi tracciati di KanjiVG. Il parser li campiona a passo
+costante; `BrushStroke` costruisce un solo poligono con spessore variabile e punte
+arrotondate: il pennello entra leggero, preme, e chiude come dice `ends` (§5) — pieno
+sul fermo, in punta sulla spazzata, di scatto sull'uncino, a goccia sul punto. Niente
+sfocature né unioni di forme: durante l'animazione si ricalcola a ogni fotogramma.
+L'inchiostro che sbava è una copia più larga e trasparente sotto il tratto.
+
+Sui temi chiari l'ora in alto, che watchOS disegna sempre bianca e non lascia
+ricolorare, sparirebbe sulla carta: `DSTopWash` le mette dietro un velo d'inchiostro
+sfumato. Chiedere a watchOS l'aspetto chiaro non cambia l'ora e scurisce i bottoni.
+
 ---
 
 ## 10. Persistenza
@@ -545,6 +574,7 @@ Non è un parere legale. Se pensi di monetizzare, leggi le licenze per intero pr
 | **F8** | Complication | ✅ il kanji in gioco sul quadrante, tocco → app |
 | **F9** | Loop di studio | ✅ un tocco per passo, DONE/NEXT, attesa, kanji al giorno |
 | **F10** | Pronta per la prova | ✅ icona, negozio simulato, flussi verificati sul simulatore |
+| **F11** | Temi | ✅ Ai-zome gratis; sumi-e washi e senape Premium, col pennello e il sigillo |
 
 F2 è già un'app che usi a mano. F5 è il momento in cui diventa quello che avevi in
 mente. Non invertire: se parti dalle notifiche, debugghi lo scheduler prima di aver
@@ -560,8 +590,8 @@ successiva, portandosi dietro l'allargamento del mazzo: 300 kanji non reggono un
 abbonamento, 2.136 sì.
 
 - **Gratis:** classi 1 e 2 (240 kanji), un promemoria all'ora dalle 8 alle 22, 10
-  kanji al giorno, modalità discreta. **Premium:** tutti i gradi, intervallo, fascia
-  oraria e numero di kanji al giorno liberi.
+  kanji al giorno, modalità discreta, tema Ai-zome. **Premium:** tutti i gradi,
+  intervallo, fascia oraria e numero di kanji al giorno liberi, e i temi sumi-e.
 - La regola sta in `AccessPolicy`, nel dominio. Scheduler e caricamento del mazzo
   leggono le impostazioni *effettive*; quelle scelte restano salvate intatte, così
   se l'abbonamento scade e poi si rinnova le scelte tornano da sole.
@@ -618,5 +648,9 @@ non si ritocca a mano.
   cavo; senza cavo (porta dell'iPhone rotta) l'abbinamento non si rifà. Via Wi-Fi
   l'iPhone deve annunciare il servizio `_remotepairing`, e non lo fa finché non è stato
   riabbinato col cavo. L'alternativa senza cavo è TestFlight.
+- **Temi chiari sul Watch.** Sullo schermo OLED la carta a tutto schermo consuma più
+  della notte, e alzando il polso al buio abbaglia. Per questo Ai-zome resta il tema di
+  base. Il pennello si ricalcola a ogni fotogramma dell'animazione: sul simulatore è
+  fluido, sul Watch vero va verificato.
 - **Tempo reale sul polso.** Il simulatore mente sulle notifiche e sulle performance.
   Prova sul Watch vero già in F2, non in F6.

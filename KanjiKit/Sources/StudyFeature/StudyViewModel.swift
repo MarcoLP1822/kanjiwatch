@@ -34,7 +34,7 @@ public final class StudyViewModel {
         }
         self.loop = loop
         self.snapshot = snapshot
-        glyph = try? StrokeGlyph(svgPaths: snapshot.current.strokes, viewBox: loop.deck.viewBox)
+        glyph = try? StrokeGlyph(kanji: snapshot.current, viewBox: loop.deck.viewBox)
         state = StudyState(strokeCount: snapshot.current.strokeCount)
     }
 
@@ -103,7 +103,7 @@ public final class StudyViewModel {
         snapshot = new
         guard isNewTurn else { return }
         drawing?.cancel()
-        glyph = try? StrokeGlyph(svgPaths: new.current.strokes, viewBox: loop.deck.viewBox)
+        glyph = try? StrokeGlyph(kanji: new.current, viewBox: loop.deck.viewBox)
         state = StudyState(strokeCount: new.current.strokeCount)
     }
 

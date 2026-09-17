@@ -20,14 +20,14 @@ public struct DSButtonStyle: ButtonStyle {
     public func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .font(.dsButton)
-            .foregroundStyle(prominence == .primary ? Color.dsInk : .dsAccentText)
+            .foregroundStyle(prominence == .primary ? DSColor.dsOnAccent : .dsAccentText)
             .frame(maxWidth: .infinity, minHeight: DS.Control.height)
             .background {
                 switch prominence {
                 case .primary:
-                    Capsule().fill(Color.dsAccent)
+                    Capsule().fill(.dsAccent)
                 case .secondary:
-                    Capsule().strokeBorder(Color.dsAccentText, lineWidth: DS.Control.borderWidth)
+                    Capsule().strokeBorder(.dsAccentText, lineWidth: DS.Control.borderWidth)
                 }
             }
             .contentShape(Capsule())

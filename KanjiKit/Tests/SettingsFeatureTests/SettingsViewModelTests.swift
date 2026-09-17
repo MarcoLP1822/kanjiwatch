@@ -120,6 +120,26 @@ struct SettingsViewModelTests {
         #expect(model.effective.dailyLimit == AccessPolicy.freeDailyLimit)
     }
 
+    /// I temi sumi-e sono Premium: senza abbonamento non si scelgono; con, si salvano e
+    /// si vedono. Quando l'abbonamento scade torna Ai-zome, ma la scelta resta.
+    @Test func themesFollowTheSubscription() {
+        let store = InMemoryStore(ReminderSettings.default)
+        let model = makeModel(store: store, subscription: .free)
+
+        model.setTheme(.sumiWashi)
+        #expect(model.isLocked(.sumiWashi))
+        #expect(model.theme == .aiZome)
+
+        model.updateSubscription(.premium)
+        model.setTheme(.sumiWashi)
+        #expect(store.value.theme == .sumiWashi)
+        #expect(model.appliedTheme == .sumiWashi)
+
+        model.updateSubscription(.free)
+        #expect(model.appliedTheme == .aiZome)
+        #expect(model.theme == .sumiWashi)
+    }
+
     @Test func subscribingUnlocksThePaidDecks() {
         let model = makeModel(subscription: .free)
 

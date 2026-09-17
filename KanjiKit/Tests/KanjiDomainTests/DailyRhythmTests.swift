@@ -61,6 +61,16 @@ struct DailyRhythmTests {
         #expect(settings.intervalMinutes == 90)
         #expect(settings.grades == [1])
         #expect(settings.dailyLimit == ReminderSettings.defaultDailyLimit)
+        #expect(settings.theme == .aiZome)
+    }
+
+    /// Un tema che nell'app non esiste più non deve far perdere le altre impostazioni.
+    @Test func anUnknownThemeFallsBackWithoutLosingTheRest() throws {
+        let saved =
+            #"{"intervalMinutes":45,"activeHours":{"startHour":8,"endHour":22},"isPassive":false,"theme":"neon"}"#
+        let settings = try JSONDecoder().decode(ReminderSettings.self, from: Data(saved.utf8))
+        #expect(settings.intervalMinutes == 45)
+        #expect(settings.theme == .aiZome)
     }
 
     @Test func freeUsersGetTheDefaultLimit() {

@@ -1,3 +1,4 @@
+import DesignSystem
 import KanjiData
 import KanjiDomain
 import StudyFeature
@@ -19,6 +20,10 @@ final class KanjiNotificationController: WKUserNotificationHostingController<Rem
     }
 
     override var body: ReminderGlanceView {
-        ReminderGlanceView(kanji: kanji, viewBox: AppContainer.shared.deck.viewBox)
+        ReminderGlanceView(
+            kanji: kanji,
+            viewBox: AppContainer.shared.deck.viewBox,
+            theme: DSTheme.named(AppContainer.shared.settings.appliedTheme.rawValue)
+        )
     }
 }

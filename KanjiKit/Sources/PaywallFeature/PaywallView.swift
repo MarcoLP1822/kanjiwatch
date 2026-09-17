@@ -39,7 +39,7 @@ public struct PaywallView: View {
             }
             .padding(DS.Spacing.m)
         }
-        .background(Color.dsBackground)
+        .background(.dsBackground)
         .task { await model.load() }
         .onChange(of: model.isUnlocked) { _, unlocked in
             if unlocked { dismiss() }
@@ -53,6 +53,7 @@ public struct PaywallView: View {
                 .foregroundStyle(.dsInk)
             benefit(Text("All 2,136 jōyō kanji", bundle: .module))
             benefit(Text("Your own rhythm and hours", bundle: .module))
+            benefit(Text("Sumi-e brush ink themes", bundle: .module))
         }
     }
 
@@ -87,7 +88,7 @@ public struct PaywallView: View {
                 .frame(maxWidth: .infinity)
             }
             .buttonStyle(.borderedProminent)
-            .tint(.dsAccent)
+            .tint(DSColor.dsAccent)
             .disabled(model.phase == .purchasing || model.selectedOffer == nil)
 
             if model.lastAttemptFailed {
@@ -189,10 +190,10 @@ private struct PlanRow: View {
                 .foregroundStyle(.dsInk)
         }
         .padding(DS.Spacing.m)
-        .background(Color.dsSurface, in: .rect(cornerRadius: DS.Radius.m))
+        .background(.dsSurface, in: .rect(cornerRadius: DS.Radius.m))
         .overlay {
             RoundedRectangle(cornerRadius: DS.Radius.m)
-                .strokeBorder(isSelected ? Color.dsAccent : .clear, lineWidth: 2)
+                .strokeBorder(.dsAccent.opacity(isSelected ? 1 : 0), lineWidth: 2)
         }
         .contentShape(.rect)
         .accessibilityElement(children: .combine)

@@ -81,6 +81,12 @@
         "it" : { "stringUnit" : { "state" : "translated", "value" : "Abbonati" } }
       }
     },
+    "Sumi-e brush ink themes" : {
+      "comment" : "Vantaggio Premium: i temi a inchiostro.",
+      "localizations" : {
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Temi sumi-e, inchiostro e pennello" } }
+      }
+    },
     "Terms of Use" : {
       "localizations" : {
         "it" : { "stringUnit" : { "state" : "translated", "value" : "Condizioni d'uso" } }

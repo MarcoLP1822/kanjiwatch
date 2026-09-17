@@ -10,10 +10,14 @@ import SwiftUI
 public struct ReminderGlanceView: View {
     private let kanji: Kanji?
     private let glyph: StrokeGlyph?
+    private let theme: DSTheme
 
-    public init(kanji: Kanji?, viewBox: Double) {
+    /// Il tema arriva come parametro: la notifica la mostra il sistema, fuori dalla
+    /// gerarchia di view dell'app, e l'ambiente dell'app qui non arriva.
+    public init(kanji: Kanji?, viewBox: Double, theme: DSTheme = .aiZome) {
         self.kanji = kanji
-        self.glyph = kanji.flatMap { try? StrokeGlyph(svgPaths: $0.strokes, viewBox: viewBox) }
+        self.glyph = kanji.flatMap { try? StrokeGlyph(kanji: $0, viewBox: viewBox) }
+        self.theme = theme
     }
 
     public var body: some View {
@@ -37,7 +41,8 @@ public struct ReminderGlanceView: View {
         }
         .padding(DS.Spacing.m)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color.dsBackground)
+        .background(.dsBackground)
+        .dsTheme(theme)
     }
 }
 

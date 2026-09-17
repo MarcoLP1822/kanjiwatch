@@ -26,6 +26,19 @@ extension DS {
         public static let pressedOpacity: Double = 0.6
     }
 
+    /// Token di componente per il tratto a pennello dei temi sumi-e.
+    public nonisolated enum Brush {
+        /// Spessore massimo, come frazione del lato: quasi il doppio della linea fine,
+        /// perché il pennello si assottiglia e deve avere da dove partire.
+        public static let widthRatio: CGFloat = 6.1 / 109
+        /// Sagoma dei tratti non ancora scritti: un velo, non una traccia da ricalcare.
+        public static let guideOpacity: Double = 0.07
+        /// L'inchiostro che sbava nella carta: una copia più larga e trasparente sotto
+        /// il tratto. Niente sfocatura, che sul Watch costerebbe a ogni fotogramma.
+        public static let bleedScale: CGFloat = 1.3
+        public static let bleedOpacity: Double = 0.12
+    }
+
     /// Token di componente per il glifo: valori legati al sistema di coordinate
     /// di KanjiVG, non a una dimensione in pixel.
     public enum Stroke {
