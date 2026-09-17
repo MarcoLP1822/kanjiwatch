@@ -547,15 +547,38 @@ revocare da fuori, e in quel caso lo scheduler gira a vuoto senza dire niente.
 
 ## 12. Licenze — non opzionale
 
-KanjiVG e KANJIDIC2 sono entrambi **CC BY-SA**. Due obblighi concreti:
+KanjiVG è **CC BY-SA 3.0**; KANJIDIC2 e JMdict sono **CC BY-SA 4.0** dell'EDRDG.
+Entrambe permettono l'uso commerciale — EDRDG scrive che i suoi file si possono
+includere in un software venduto senza dover aprire il codice — a queste condizioni:
 
-1. **Attribuzione visibile dentro l'app.** Una voce "Fonti dati" in Impostazioni con il
-   contenuto di `ATTRIBUTION.txt`. Non nascosta nella descrizione App Store.
-2. **Share-alike sui dati derivati.** `kanji.json` è un'opera derivata, e metterlo nel
-   bundle è ridistribuirlo: resta sotto CC BY-SA. Il tuo codice Swift può restare tuo;
-   i dati no.
+1. **Attribuzione dentro l'app.** EDRDG chiede il riconoscimento su ogni schermata solo
+   ai server web che fanno da dizionario; per i programmi accetta *"a separate screen
+   accessed from a menu, such as one labelled 'About', 'Sources'"*. È la voce
+   Impostazioni › Fonti dati, che mostra `ATTRIBUTION.txt` dal bundle. Il file cita le
+   pagine dei progetti che EDRDG indica, e dice cosa viene da quale fonte.
+2. **Attribuzione nella documentazione.** Stessa richiesta per «documentation, publicity
+   material, WWW site»: `README.md` e `NOTICE.md` nel repository, e la descrizione su
+   App Store quando ci sarà.
+3. **Dati aggiornati.** *"There must be a procedure for regular updating of the data"*, e
+   non farlo è una violazione: `Scripts/update_data.sh` riscarica le fonti e rigenera i
+   mazzi. Da lanciare a ogni rilascio.
+4. **Share-alike sui dati derivati.** I `kanji-*.json` restano CC BY-SA. Il codice Swift
+   no: unire dati e software in un prodotto è una raccolta, non un adattamento.
 
-Non è un parere legale. Se pensi di monetizzare, leggi le licenze per intero prima.
+**Punto aperto: il DRM dell'App Store.** Le licenze Creative Commons — tutte, anche le
+BY — vietano di applicare misure tecniche che impediscano a chi riceve l'opera di
+esercitare i suoi diritti, e Creative Commons stessa scrive che distribuire materiale CC
+via App Store, che applica FairPlay, «può costituire una violazione». Nella 4.0 la
+"distribuzione parallela" è stata respinta, quindi pubblicare i dati anche altrove non
+basta da sola. La via pulita è l'autorizzazione scritta dei due titolari, EDRDG e Ulrich
+Apel: le richieste stanno in `Documenti/autorizzazioni/`.
+
+Alternative senza vincoli, valutate e scartate: per letture e significati esiste Unihan
+(licenza Unicode, permissiva), ma per i tracciati no — animCJK è LGPL con font Arphic e
+forme cinesi. Rinunciare a KanjiVG vuol dire rinunciare all'ordine dei tratti, cioè
+all'app.
+
+Non è un parere legale.
 
 ---
 
