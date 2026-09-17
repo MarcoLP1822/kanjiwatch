@@ -537,6 +537,7 @@ Non è un parere legale. Se pensi di monetizzare, leggi le licenze per intero pr
 | **F7** | Abbonamenti | ✅ jōyō per grado, paywall, RevenueCat — manca solo l'account |
 | **F8** | Complication | ✅ il kanji in gioco sul quadrante, tocco → app |
 | **F9** | Loop di studio | ✅ un tocco per passo, DONE/NEXT, attesa, kanji al giorno |
+| **F10** | Pronta per la prova | ✅ icona, negozio simulato, flussi verificati sul simulatore |
 
 F2 è già un'app che usi a mano. F5 è il momento in cui diventa quello che avevi in
 mente. Non invertire: se parti dalle notifiche, debugghi lo scheduler prima di aver
@@ -574,6 +575,23 @@ Cosa manca, tutto fuori dal codice:
    privacy policy in `AppConfiguration.privacyPolicyURL`. Finché mancano, due
    `#warning` lo ricordano a ogni build e l'app gira gratuita.
 
+Nelle build di sviluppo senza chiave il negozio è simulato
+(`SimulatedSubscriptionGateway`): gli stessi tre piani e prezzi, acquisto e ripristino
+che riescono sempre, stato ricordato tra un avvio e l'altro. Serve a provare paywall e
+Premium sul simulatore; per tornare gratuiti si cancella e si reinstalla l'app. Nelle
+build di rilascio non esiste.
+
+**Sulla F10.** Verificato sul simulatore Watch, in italiano: paywall con acquisto
+simulato che si chiude da solo e sblocca le impostazioni; coda rifatta con intervallo e
+tetto giornaliero nuovi; notifica personalizzata e tocco che apre l'app su quel kanji;
+notifica arrivata durante lo studio, che DONE non chiude; schermata d'attesa che all'ora
+della notifica passa da sola al kanji nuovo; complication rettangolare su un quadrante
+Modulare Duo, col kanji in gioco, che al tocco apre l'app su quel kanji; notifica
+programmata davvero (intervallo di 15 minuti) consegnata con l'app in background, e la
+complication che all'ora della notifica passa da sola al nuovo kanji. L'icona si
+genera dai token e dai tratti di 字 con `AppIconTests` (variabile `APP_ICON_OUTPUT`),
+non si ritocca a mano.
+
 ---
 
 ## 14. Rischi noti
@@ -586,5 +604,12 @@ Cosa manca, tutto fuori dal codice:
 - **Debug delle notifiche.** Xcode permette di consegnare una notifica di test con un
   payload JSON senza aspettare il trigger. Prepara quel file in F4, prima di scoprire
   che aspetti un'ora per ogni prova.
+- **Mac Intel.** Xcode 27 gira solo su Apple silicon: qui si compila con Xcode 26.5
+  (SDK 26.5), che per ora basta anche per TestFlight. Quando App Store chiederà l'SDK
+  27, per pubblicare servirà un Mac Apple silicon.
+- **Installare sul Watch.** Xcode abbina il Watch attraverso l'iPhone collegato col
+  cavo; senza cavo (porta dell'iPhone rotta) l'abbinamento non si rifà. Via Wi-Fi
+  l'iPhone deve annunciare il servizio `_remotepairing`, e non lo fa finché non è stato
+  riabbinato col cavo. L'alternativa senza cavo è TestFlight.
 - **Tempo reale sul polso.** Il simulatore mente sulle notifiche e sulle performance.
   Prova sul Watch vero già in F2, non in F6.

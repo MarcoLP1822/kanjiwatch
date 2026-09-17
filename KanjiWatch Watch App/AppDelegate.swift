@@ -19,7 +19,7 @@ final class AppDelegate: NSObject, WKApplicationDelegate, UNUserNotificationCent
         guard let codepoint = ReminderPayload.codepoint(from: response.notification.request.content.userInfo) else {
             return
         }
-        await AppContainer.shared.open(codepoint: codepoint)
+        AppContainer.shared.open(codepoint: codepoint)
     }
 
     func userNotificationCenter(

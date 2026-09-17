@@ -83,6 +83,7 @@ struct PaywallViewModelTests {
 
         #expect(gateway.purchased == ["yearly"])
         #expect(spy.unlocked == 1)
+        #expect(model.isUnlocked)
         #expect(!model.lastAttemptFailed)
     }
 
@@ -97,6 +98,7 @@ struct PaywallViewModelTests {
         await model.purchaseSelected()
 
         #expect(spy.unlocked == 0)
+        #expect(!model.isUnlocked)
         #expect(!model.lastAttemptFailed)
         #expect(model.phase == .ready)
     }
@@ -121,6 +123,7 @@ struct PaywallViewModelTests {
         await model.restore()
 
         #expect(spy.unlocked == 1)
+        #expect(model.isUnlocked)
     }
 
     @Test func noPlansIsAFailureYouCanRetry() async {

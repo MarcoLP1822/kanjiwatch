@@ -18,6 +18,10 @@ public final class PaywallViewModel {
     /// L'ultimo acquisto o ripristino non è andato a buon fine. Annullare non conta:
     /// è una scelta, non un errore.
     public private(set) var lastAttemptFailed = false
+    /// Premium è attivo: la schermata ha finito il suo lavoro e si chiude. Senza, dopo
+    /// il foglio d'acquisto di Apple si tornerebbe a un paywall che chiede di nuovo di
+    /// abbonarsi.
+    public private(set) var isUnlocked = false
 
     private let gateway: any SubscriptionGateway
     private let onPremium: () -> Void
@@ -72,6 +76,7 @@ public final class PaywallViewModel {
             let status = try await operation()
             phase = .ready
             if status == .premium {
+                isUnlocked = true
                 onPremium()
             }
         } catch {

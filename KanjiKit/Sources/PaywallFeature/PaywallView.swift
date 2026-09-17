@@ -12,6 +12,7 @@ public struct PaywallView: View {
     private let model: PaywallViewModel
     private let termsURL: URL
     private let privacyURL: URL?
+    @Environment(\.dismiss) private var dismiss
 
     public init(model: PaywallViewModel, termsURL: URL, privacyURL: URL?) {
         self.model = model
@@ -40,6 +41,9 @@ public struct PaywallView: View {
         }
         .background(Color.dsBackground)
         .task { await model.load() }
+        .onChange(of: model.isUnlocked) { _, unlocked in
+            if unlocked { dismiss() }
+        }
     }
 
     private var header: some View {
