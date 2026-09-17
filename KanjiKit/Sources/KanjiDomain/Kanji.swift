@@ -11,6 +11,9 @@ public struct Kanji: Identifiable, Hashable, Sendable {
     public let codepoint: String
     /// Tracciati SVG nell'ordine di scrittura, nel sistema di coordinate del deck.
     public let strokes: [String]
+    /// Come finisce ogni tratto, nello stesso ordine di `strokes`. Vuoto se i dati non
+    /// lo dicono: chi disegna tratta allora ogni tratto come un fermo.
+    public let strokeEnds: [StrokeEnd]
     public let onReadings: [String]
     public let kunReadings: [String]
     public let meanings: [String]
@@ -28,6 +31,7 @@ public struct Kanji: Identifiable, Hashable, Sendable {
         character: String,
         codepoint: String,
         strokes: [String],
+        strokeEnds: [StrokeEnd] = [],
         onReadings: [String],
         kunReadings: [String],
         meanings: [String],
@@ -38,6 +42,7 @@ public struct Kanji: Identifiable, Hashable, Sendable {
         self.character = character
         self.codepoint = codepoint
         self.strokes = strokes
+        self.strokeEnds = strokeEnds
         self.onReadings = onReadings
         self.kunReadings = kunReadings
         self.meanings = meanings
@@ -48,6 +53,19 @@ public struct Kanji: Identifiable, Hashable, Sendable {
 }
 
 extension Kanji {
+    /// Come si chiude un tratto a pennello. Lo decide la calligrafia, non la forma del
+    /// tracciato: dedurlo dal disegno sbaglia un tratto su tre.
+    public enum StrokeEnd: Sendable, Hashable {
+        /// Tome: il pennello si ferma.
+        case stop
+        /// Harai: il pennello si solleva spazzando e il tratto si assottiglia.
+        case sweep
+        /// Hane: il pennello cambia direzione di scatto.
+        case hook
+        /// Ten: il punto.
+        case dot
+    }
+
     /// Una parola di esempio: grafia, lettura in kana e significati.
     public struct Word: Hashable, Sendable {
         public let text: String

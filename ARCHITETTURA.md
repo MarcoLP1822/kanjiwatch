@@ -160,6 +160,7 @@ questo `jlptOld` non viene nemmeno più esportato.
     {
       "c": "水", "cp": "06c34",
       "strokes": ["M52.77,15.08c1.08,1.08,1.67,2.49...", "..."],
+      "ends": "hwww",
       "on": ["スイ"], "kun": ["みず"],
       "meanings": { "en": ["water"] },
       "word": { "w": "水曜日", "r": "すいようび", "g": ["Wednesday"] },
@@ -172,6 +173,11 @@ questo `jlptOld` non viene nemmeno più esportato.
 Tutti i tracciati KanjiVG vivono in un sistema di coordinate **109 × 109**.
 È l'unico numero magico del progetto e sta in `viewBox`.
 
+`ends` dice come finisce ogni tratto, una lettera per tratto: `s` fermo (tome), `w`
+spazzata (harai), `h` uncino (hane), `d` punto. Viene dall'attributo `kvg:type` di
+KanjiVG e serve al tratto a pennello: dedurlo dalla forma del tracciato sbagliava un
+tratto su tre.
+
 L'attribuzione viaggia dentro il JSON invece che in un secondo file del bundle:
 CC BY-SA obbliga a mostrarla in app, e così non può separarsi dai dati.
 
@@ -183,6 +189,7 @@ public struct Kanji: Identifiable, Hashable, Sendable {
     public let character: String      // "水"
     public let codepoint: String      // "06c34": l'id che viaggia nelle notifiche
     public let strokes: [String]      // tracciati SVG in ordine di scrittura
+    public let strokeEnds: [StrokeEnd] // come si chiude ogni tratto: stop, sweep, hook, dot
     public let onReadings: [String]
     public let kunReadings: [String]
     public let meanings: [String]     // inglese: KANJIDIC2 non ha l'italiano

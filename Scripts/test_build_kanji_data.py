@@ -6,7 +6,7 @@ import tempfile
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
-from build_kanji_data import load_jmdict_words, word_record
+from build_kanji_data import load_jmdict_words, stroke_end, word_record
 
 SAMPLE = """<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE JMdict [
@@ -76,5 +76,11 @@ entry = next(e for e in ET.fromstring(SAMPLE) if e.findtext("k_ele/keb") == "水
 assert word_record(entry, "水道") == {
     "w": "水道", "r": "すいどう", "g": ["water supply", "tap water"]
 }, word_record(entry, "水道")
+
+# Come finisce un tratto, dai tipi veri di KanjiVG: 水 e 字.
+assert "".join(stroke_end(t) for t in ["㇚", "㇇", "㇒", "㇏"]) == "hwww"
+assert "".join(stroke_end(t) for t in ["㇑a", "㇔", "㇖b", "㇖", "㇁", "㇐"]) == "sdhhhs"
+# alternative e tipi mancanti: conta il primo carattere, e senza tipo è un fermo
+assert stroke_end("㇔/㇀") == "d" and stroke_end(None) == "s"
 
 print("ok")

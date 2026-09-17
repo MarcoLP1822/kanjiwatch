@@ -37,6 +37,8 @@ struct LevelFile: Decodable {
         let c: String
         let cp: String
         let strokes: [String]
+        /// Una lettera per tratto: s fermo, w spazzata, h uncino, d punto.
+        let ends: String?
         let on: [String]
         let kun: [String]
         let meanings: [String: [String]]
@@ -55,6 +57,7 @@ struct LevelFile: Decodable {
                 character: c,
                 codepoint: cp,
                 strokes: strokes,
+                strokeEnds: strokeEnds,
                 onReadings: on,
                 kunReadings: kun,
                 meanings: meanings[LevelFile.meaningLanguage] ?? [],
@@ -62,6 +65,20 @@ struct LevelFile: Decodable {
                 grade: grade,
                 frequencyRank: freq
             )
+        }
+
+        /// Se le lettere non sono una per tratto il dato è guasto: meglio nessuna fine
+        /// che fini assegnate ai tratti sbagliati.
+        private var strokeEnds: [Kanji.StrokeEnd] {
+            guard let ends, ends.count == strokes.count else { return [] }
+            return ends.map { code in
+                switch code {
+                case "w": .sweep
+                case "h": .hook
+                case "d": .dot
+                default: .stop
+                }
+            }
         }
     }
 }

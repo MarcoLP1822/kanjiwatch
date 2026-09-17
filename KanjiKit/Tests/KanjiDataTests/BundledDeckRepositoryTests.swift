@@ -34,6 +34,7 @@ struct BundledDeckRepositoryTests {
         #expect(day.meanings.contains("day"))
         #expect(day.grade == 1)
         #expect(day.frequencyRank == 1)
+        #expect(day.strokeEnds == [.stop, .stop, .stop, .stop])
 
         let word = try #require(day.commonWord)
         #expect(word.text.contains("日"))
@@ -48,6 +49,7 @@ struct BundledDeckRepositoryTests {
         #expect(deck.kanji.count == 2136)
         for kanji in deck.kanji {
             #expect(!kanji.strokes.isEmpty, "\(kanji.character): nessun tratto")
+            #expect(kanji.strokeEnds.count == kanji.strokeCount, "\(kanji.character): fini dei tratti")
             #expect(!kanji.meanings.isEmpty, "\(kanji.character): nessun significato")
             #expect(kanji.codepoint.count == 5, "\(kanji.character): codepoint \(kanji.codepoint)")
             #expect(
@@ -55,6 +57,12 @@ struct BundledDeckRepositoryTests {
                 "\(kanji.character): nessuna lettura"
             )
         }
+    }
+
+    /// I tipi di KanjiVG per 水: uncino, poi tre spazzate.
+    @Test func carriesHowEachStrokeEnds() throws {
+        let water = try #require(try repository.loadDeck(grades: [1])["06c34"])
+        #expect(water.strokeEnds == [.hook, .sweep, .sweep, .sweep])
     }
 
     @Test func aMissingGradeFileIsAnExplicitError() {

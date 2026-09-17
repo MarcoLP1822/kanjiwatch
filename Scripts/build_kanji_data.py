@@ -125,13 +125,36 @@ def write_json(path: Path, payload, pretty: bool) -> int:
 
 # ---------------------------------------------------------------- KanjiVG
 
-def extract_paths(root: ET.Element) -> list[str]:
+# Come finisce un tratto, dal suo tipo KanjiVG (blocco Unicode "CJK Strokes"). Conta
+# solo l'ultimo movimento: ㇇ è orizzontale e poi spazzata, quindi finisce spazzando.
+SWEEP_STROKES = set("㇀㇇㇊㇋㇏㇒㇓㇙㇝")
+HOOK_STROKES = set("㇁㇂㇃㇆㇈㇉㇌㇖㇚㇟㇠㇡㇢")
+DOT_STROKES = set("㇔")
+
+
+def stroke_end(kvg_type: str | None) -> str:
     """
-    Ritorna i tracciati 'd' in ordine di stroke.
-    L'ordine del documento è già corretto, ma ci fidiamo dell'id -sN
+    Una lettera per tratto: s fermo (tome), w spazzata (harai), h uncino (hane),
+    d punto. Varianti come "㇖b" o alternative come "㇔/㇀" contano per il primo
+    carattere; senza tipo il tratto è un fermo, che è il caso più comune.
+    """
+    first = (kvg_type or "")[:1]
+    if first in SWEEP_STROKES:
+        return "w"
+    if first in HOOK_STROKES:
+        return "h"
+    if first in DOT_STROKES:
+        return "d"
+    return "s"
+
+
+def extract_paths(root: ET.Element) -> list[tuple[str, str]]:
+    """
+    Ritorna i tracciati 'd' in ordine di stroke, ciascuno con la lettera di come
+    finisce. L'ordine del documento è già corretto, ma ci fidiamo dell'id -sN
     quando c'è, perché è la fonte autoritativa.
     """
-    found: list[tuple[int, str]] = []
+    found: list[tuple[int, str, str]] = []
     for el in root.iter():
         if localname(el.tag) != "path":
             continue
@@ -141,12 +164,13 @@ def extract_paths(root: ET.Element) -> list[str]:
         pid = el.get("id", "")
         m = STROKE_ID_RE.search(pid)
         order = int(m.group(1)) if m else len(found) + 1
-        found.append((order, " ".join(d.split())))
+        found.append((order, " ".join(d.split()), stroke_end(el.get(KVG_TYPE))))
     found.sort(key=lambda t: t[0])
-    return [d for _, d in found]
+    return [(d, end) for _, d, end in found]
 
 
 KVG_NS = b'xmlns:kvg="http://kanjivg.tagaini.net"'
+KVG_TYPE = "{http://kanjivg.tagaini.net}type"
 
 
 def parse_kanjivg(data: bytes) -> ET.Element:
@@ -162,12 +186,12 @@ def parse_kanjivg(data: bytes) -> ET.Element:
     return ET.fromstring(data)
 
 
-def load_kanjivg(src: Path, keep_variants: bool = False) -> dict[str, list[str]]:
+def load_kanjivg(src: Path, keep_variants: bool = False) -> dict[str, list[tuple[str, str]]]:
     """
     Accetta: cartella di .svg, zip di .svg, oppure kanjivg.xml(.gz) monolitico.
-    Ritorna {codepoint_hex: [path_d, ...]}
+    Ritorna {codepoint_hex: [(path_d, fine), ...]}
     """
-    out: dict[str, list[str]] = {}
+    out: dict[str, list[tuple[str, str]]] = {}
 
     def add_svg(name: str, blob: bytes) -> None:
         m = SVG_NAME_RE.search(name)
@@ -502,20 +526,22 @@ def main() -> int:
             continue
 
         cp = codepoint_hex(literal)
-        paths = vg.get(cp)
-        if not paths:
+        strokes = vg.get(cp)
+        if not strokes:
             missing_paths += 1
             continue
 
-        if entry["strokeCount"] and entry["strokeCount"] != len(paths):
+        if entry["strokeCount"] and entry["strokeCount"] != len(strokes):
             mismatches.append(
-                f"{literal} kanjidic={entry['strokeCount']} kanjivg={len(paths)}"
+                f"{literal} kanjidic={entry['strokeCount']} kanjivg={len(strokes)}"
             )
 
         records.append({
             "c": literal,
             "cp": cp,
-            "strokes": paths,
+            "strokes": [d for d, _ in strokes],
+            # Una lettera per tratto: serve al pennello per chiudere il tratto giusto.
+            "ends": "".join(end for _, end in strokes),
             "on": entry["on"],
             "kun": entry["kun"],
             "meanings": entry["meanings"],
