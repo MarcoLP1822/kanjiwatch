@@ -6,9 +6,6 @@
 risponde nessuno in un paio di settimane, aprire una issue con lo stesso testo.
 **Oggetto:** Permission request — Kanji Watch (watchOS app using KanjiVG)
 
-Prima di inviare: sostituisci `<LINK AL REPOSITORY>` con l'indirizzo del repository
-pubblico, oppure togli quella riga e la frase finale sul repository se resta privato.
-
 ---
 
 Dear Ulrich Apel, dear KanjiVG maintainers,
@@ -41,8 +38,8 @@ with the licence.
 
 May I have your written permission to distribute the KanjiVG-derived data inside the
 app through the Apple App Store, notwithstanding the technological measures Apple
-applies to every app bundle? The derived data will also be available without any DRM in
-a public repository: <LINK AL REPOSITORY>
+applies to every app bundle? The derived files themselves carry no DRM, and I am glad
+to send them to you, or to publish them separately under CC BY-SA 3.0, if that helps.
 
 If you would like the credit worded differently, please tell me and I will change it.
 

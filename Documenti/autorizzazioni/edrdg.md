@@ -4,9 +4,6 @@
 della [pagina della licenza](https://www.edrdg.org/edrdg/licence.html).
 **Oggetto:** Permission request — Kanji Watch (watchOS app using KANJIDIC2 and JMdict)
 
-Prima di inviare: sostituisci `<LINK AL REPOSITORY>` con l'indirizzo del repository
-pubblico, oppure togli quella riga e la frase finale sul repository se resta privato.
-
 ---
 
 Dear Dr Breen,
@@ -37,8 +34,8 @@ adopted in version 4.0.
 
 May I have your written permission to distribute the derived data inside the app
 through the Apple App Store, notwithstanding the technological measures Apple applies
-to every app bundle? The derived data will also be available without any DRM in a
-public repository: <LINK AL REPOSITORY>
+to every app bundle? The derived files themselves carry no DRM, and I am glad to send
+them to you, or to publish them separately under CC BY-SA, if that helps.
 
 If any part of my acknowledgement should be worded differently, please tell me and I
 will change it. Should the app ever earn anything, I intend to donate to the Group, as
