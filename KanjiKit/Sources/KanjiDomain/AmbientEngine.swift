@@ -13,12 +13,17 @@ public struct AmbientSelection: Equatable, Sendable {
 
     public let fireDate: Date
     public let codepoint: String
+    /// *Quale* kanji: quanto ti è già familiare.
     public let kind: Kind
+    /// *Come* mostrarlo: a che punto è la micro-sequenza di quel kanji. Due domande
+    /// diverse, e tenerle separate è l'unico modo perché restino leggibili.
+    public let content: ExposureContent
 
-    public init(fireDate: Date, codepoint: String, kind: Kind) {
+    public init(fireDate: Date, codepoint: String, kind: Kind, content: ExposureContent = .introduce) {
         self.fireDate = fireDate
         self.codepoint = codepoint
         self.kind = kind
+        self.content = content
     }
 }
 
@@ -82,7 +87,19 @@ public enum AmbientEngine {
                 )
             else { continue }
 
-            selections.append(AmbientSelection(fireDate: fireDate, codepoint: choice.codepoint, kind: choice.kind))
+            // La forma si decide **prima** di segnare la comparsa simulata: alla prima
+            // volta il kanji ha zero comparse, e zero comparse vuol dire "presentalo".
+            selections.append(
+                AmbientSelection(
+                    fireDate: fireDate,
+                    codepoint: choice.codepoint,
+                    kind: choice.kind,
+                    content: ExposureContent.forSightings(
+                        projected.records[choice.codepoint]?.presentationCount ?? 0,
+                        hasWord: deck[choice.codepoint]?.commonWord != nil
+                    )
+                )
+            )
             if choice.kind == .new { introduced[day] = already + 1 }
             projected.record(.presented, codepoint: choice.codepoint, at: fireDate)
             recent.append(choice.codepoint)

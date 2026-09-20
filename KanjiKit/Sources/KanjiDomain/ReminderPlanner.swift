@@ -1,13 +1,26 @@
 import Foundation
 
-/// Una notifica programmata: quando, e quale kanji.
+/// Una notifica programmata: quando, quale kanji, e in che forma.
 public struct ScheduledReminder: Equatable, Sendable, Codable {
     public let fireDate: Date
     public let codepoint: String
+    /// Deciso dal piano e mai ricalcolato dopo: se la notifica mostra la parola e la
+    /// complication ricalcolasse per conto suo, il polso racconterebbe due cose
+    /// diverse nello stesso momento.
+    public let content: ExposureContent
 
-    public init(fireDate: Date, codepoint: String) {
+    public init(fireDate: Date, codepoint: String, content: ExposureContent = .introduce) {
         self.fireDate = fireDate
         self.codepoint = codepoint
+        self.content = content
+    }
+
+    public init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        fireDate = try container.decode(Date.self, forKey: .fireDate)
+        codepoint = try container.decode(String.self, forKey: .codepoint)
+        // Code programmate prima della micro-sequenza: erano tutte "kanji e significato".
+        content = (try? container.decodeIfPresent(ExposureContent.self, forKey: .content)) ?? .introduce
     }
 }
 
@@ -50,7 +63,7 @@ public enum ReminderPlanner {
             newPerDay: settings.newKanjiPerDay,
             calendar: calendar
         )
-        .map { ScheduledReminder(fireDate: $0.fireDate, codepoint: $0.codepoint) }
+        .map { ScheduledReminder(fireDate: $0.fireDate, codepoint: $0.codepoint, content: $0.content) }
     }
 
     private static func fireDates(

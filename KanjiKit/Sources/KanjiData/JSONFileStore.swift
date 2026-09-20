@@ -22,7 +22,7 @@ public struct JSONFileStore<Value: Codable>: ValueStore {
             // Illeggibile: si riparte da zero invece di bloccare l'app, ma il file si
             // mette da parte invece di lasciarlo sovrascrivere dal primo salvataggio.
             // È l'unica copia di una storia lunga mesi.
-            try? FileManager.default.replaceItemAt(url.appendingPathExtension("broken"), withItemAt: url)
+            _ = try? FileManager.default.replaceItemAt(url.appendingPathExtension("broken"), withItemAt: url)
             return fallback
         }
         return decoded
