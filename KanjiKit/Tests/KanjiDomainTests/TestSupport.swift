@@ -27,21 +27,6 @@ private let formatter: DateFormatter = {
     return formatter
 }()
 
-/// Generatore deterministico: i test sul mescolamento non possono dipendere dalla
-/// fortuna del momento.
-struct SeededGenerator: RandomNumberGenerator {
-    private var state: UInt64
-
-    init(seed: UInt64) { state = seed &* 6_364_136_223_846_793_005 &+ 1_442_695_040_888_963_407 }
-
-    mutating func next() -> UInt64 {
-        state ^= state << 13
-        state ^= state >> 7
-        state ^= state << 17
-        return state
-    }
-}
-
 /// Un mazzo finto con codepoint prevedibili e frequenza crescente: così l'ordine con
 /// cui l'Ambient Engine introduce i kanji nuovi si legge a occhio nei test.
 func testDeck(count: Int, grade: (Int) -> Int = { _ in 1 }) -> KanjiDeck {

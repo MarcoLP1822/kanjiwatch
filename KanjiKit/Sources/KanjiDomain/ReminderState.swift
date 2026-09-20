@@ -2,8 +2,6 @@ import Foundation
 
 /// Quello che l'app deve ricordarsi tra un avvio e l'altro.
 public struct ReminderState: Equatable, Sendable, Codable {
-    /// A che punto è il giro del mazzo.
-    public var cycle: DeckCycle
     /// Le notifiche ancora in coda: servono a sapere quali kanji erano già stati
     /// estratti ma non ancora mostrati, quando si rischedula.
     public var scheduled: [ScheduledReminder]
@@ -15,13 +13,11 @@ public struct ReminderState: Equatable, Sendable, Codable {
     public var anchor: Date?
 
     public init(
-        cycle: DeckCycle,
         scheduled: [ScheduledReminder] = [],
         session: StudySession = .none,
         today: DailyCount = .none,
         anchor: Date? = nil
     ) {
-        self.cycle = cycle
         self.scheduled = scheduled
         self.session = session
         self.today = today
@@ -30,7 +26,6 @@ public struct ReminderState: Equatable, Sendable, Codable {
 
     public init(from decoder: any Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        cycle = try container.decode(DeckCycle.self, forKey: .cycle)
         scheduled = try container.decode([ScheduledReminder].self, forKey: .scheduled)
         // Stato salvato prima che esistesse il loop: senza i default si perderebbe
         // anche il punto del giro nel mazzo.
@@ -39,9 +34,9 @@ public struct ReminderState: Equatable, Sendable, Codable {
         anchor = try container.decodeIfPresent(Date.self, forKey: .anchor)
     }
 
-    /// Primo avvio: nessun giro cominciato e nessuna coda. `reconcile` col mazzo
-    /// del bundle lo riempie, così non serve un optional in giro per il codice.
-    public static let empty = ReminderState(cycle: DeckCycle(order: [], position: 0))
+    /// Primo avvio: nessuna coda e nessun kanji in gioco. Il primo se lo sceglie
+    /// l'Ambient Engine alla prima lettura dello stato.
+    public static let empty = ReminderState()
 }
 
 /// Il kanji in gioco.

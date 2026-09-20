@@ -52,11 +52,10 @@ public struct RescheduleReminders {
         let preferences = settings.load()
         var current = state.load()
         var exposure = ambient.load()
-        var generator = SystemRandomNumberGenerator()
         // Le notifiche già arrivate contano nella giornata prima di rifare la coda,
         // altrimenti il tetto giornaliero non saprebbe quante ne sono passate — e il
         // motore non saprebbe quali kanji ti sono già passati davanti.
-        current.catchUp(with: deck, now: moment, ambient: &exposure, using: &generator, calendar: calendar)
+        current.catchUp(with: deck, now: moment, ambient: &exposure, calendar: calendar)
 
         guard isAuthorized else {
             // Non arriverà niente: la schermata d'attesa non deve promettere un orario.

@@ -18,8 +18,7 @@ struct StudyLoopTests {
         session: StudySession = .none,
         today: DailyCount = .none
     ) -> ReminderState {
-        ReminderState(
-            cycle: DeckCycle(order: ["zzzzz"], position: 0), scheduled: scheduled, session: session, today: today)
+        ReminderState(scheduled: scheduled, session: session, today: today)
     }
 
     // MARK: - Regole
@@ -139,11 +138,15 @@ struct StudyLoopTests {
         #expect(value.today.count(on: now, calendar: calendar) == 0)
     }
 
-    /// Stato salvato prima del loop: il punto del giro nel mazzo non si perde.
-    @Test func stateSavedBeforeTheLoopKeepsTheCycle() throws {
-        let saved = #"{"cycle":{"order":["aaaaa","bbbbb"],"position":1},"scheduled":[]}"#
+    /// Stato salvato quando esisteva ancora il giro del mazzo: il campo sparito si
+    /// ignora, e la coda e il kanji in gioco si leggono lo stesso.
+    @Test func stateSavedWithTheOldDeckCycleStillLoads() throws {
+        let saved = #"""
+            {"cycle":{"order":["aaaaa","bbbbb"],"position":1},
+             "scheduled":[{"fireDate":768484800,"codepoint":"04e00"}]}
+            """#
         let value = try JSONDecoder().decode(ReminderState.self, from: Data(saved.utf8))
-        #expect(value.cycle.position == 1)
+        #expect(value.scheduled.map(\.codepoint) == ["04e00"])
         #expect(value.session == .none)
         #expect(value.anchor == nil)
     }
@@ -222,7 +225,6 @@ struct StudyLoopTests {
     @Test func onlyNotificationsThatArrivedCount() throws {
         let store = InMemoryStore(
             ReminderState(
-                cycle: DeckCycle(order: [], position: 0),
                 scheduled: [
                     ScheduledReminder(fireDate: date("2026-05-10 09:00"), codepoint: deck.kanji[0].codepoint),
                     ScheduledReminder(fireDate: date("2026-05-10 11:00"), codepoint: deck.kanji[1].codepoint),
@@ -255,7 +257,6 @@ struct StudyLoopTests {
     @Test func nextCountsAsASightingNow() throws {
         let store = InMemoryStore(
             ReminderState(
-                cycle: DeckCycle(order: [], position: 0),
                 scheduled: [ScheduledReminder(fireDate: date("2026-05-10 11:00"), codepoint: deck.kanji[1].codepoint)],
                 session: StudySession(
                     codepoint: deck.kanji[0].codepoint, isDone: false, since: date("2026-05-10 09:00"))
@@ -275,7 +276,6 @@ struct StudyLoopTests {
     @Test func aKanjiArrivedWhileStudyingIsNotCountedTwice() throws {
         let store = InMemoryStore(
             ReminderState(
-                cycle: DeckCycle(order: [], position: 0),
                 scheduled: [ScheduledReminder(fireDate: date("2026-05-10 09:00"), codepoint: deck.kanji[1].codepoint)],
                 session: StudySession(
                     codepoint: deck.kanji[0].codepoint, isDone: false, since: date("2026-05-10 08:55"))
@@ -316,7 +316,6 @@ struct StudyLoopTests {
     @Test func openingANotificationStartsItsKanjiAgain() throws {
         let store = InMemoryStore(
             ReminderState(
-                cycle: DeckCycle(order: deck.codepoints, position: 3),
                 session: StudySession(codepoint: deck.kanji[0].codepoint, isDone: true, since: date("2026-05-10 08:00"))
             )
         )

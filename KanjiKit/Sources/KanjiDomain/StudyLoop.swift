@@ -22,11 +22,8 @@ extension ReminderState {
         with deck: KanjiDeck,
         now: Date,
         ambient: inout AmbientState,
-        using generator: inout some RandomNumberGenerator,
         calendar: Calendar
     ) {
-        // Un aggiornamento dell'app o un grado spento possono aver cambiato il mazzo.
-        cycle.reconcile(with: deck.codepoints, using: &generator)
         for delivered in recordDeliveries(now: now, calendar: calendar) {
             ambient.record(.presented, codepoint: delivered.codepoint, at: delivered.fireDate)
         }
@@ -224,8 +221,7 @@ public struct StudyLoop {
         let moment = now()
         var value = state.load()
         var exposure = ambient.load()
-        var generator = SystemRandomNumberGenerator()
-        value.catchUp(with: deck, now: moment, ambient: &exposure, using: &generator, calendar: calendar)
+        value.catchUp(with: deck, now: moment, ambient: &exposure, calendar: calendar)
         change(&value, &exposure, moment)
         state.save(value)
         ambient.save(exposure)

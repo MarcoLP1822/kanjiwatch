@@ -101,7 +101,6 @@ struct RescheduleRemindersTests {
         let now = date("2026-05-10 09:12")
         let state = InMemoryStore(
             ReminderState(
-                cycle: DeckCycle(order: [], position: 0),
                 today: DailyCount(day: calendar.startOfDay(for: now), count: 2),
                 anchor: date("2026-05-10 09:05")
             )
@@ -120,7 +119,6 @@ struct RescheduleRemindersTests {
         let deck = makeDeck()
         let state = InMemoryStore(
             ReminderState(
-                cycle: DeckCycle(order: [], position: 0),
                 scheduled: [ScheduledReminder(fireDate: date("2026-05-10 10:00"), codepoint: "0ffff")]
             )
         )
@@ -136,7 +134,6 @@ struct RescheduleRemindersTests {
     @Test func withoutPermissionNothingIsPromised() async {
         let state = InMemoryStore(
             ReminderState(
-                cycle: DeckCycle(order: [], position: 0),
                 scheduled: [ScheduledReminder(fireDate: date("2026-05-10 10:00"), codepoint: "04e01")]
             )
         )
