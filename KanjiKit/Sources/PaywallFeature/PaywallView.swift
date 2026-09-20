@@ -51,6 +51,7 @@ public struct PaywallView: View {
             Text("Kanji Watch Premium", bundle: .module)
                 .font(.dsTitle)
                 .foregroundStyle(.dsInk)
+            benefit(Text("Reviews that adapt to you", bundle: .module))
             benefit(Text("All 2,136 jōyō kanji", bundle: .module))
             benefit(Text("Your own rhythm and hours", bundle: .module))
             benefit(Text("Sumi-e brush ink themes", bundle: .module))

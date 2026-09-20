@@ -138,6 +138,9 @@ public struct StudyLoop {
     private let settings: any ValueStore<ReminderSettings>
     private let state: any ValueStore<ReminderState>
     private let ambient: any ValueStore<AmbientState>
+    /// Una funzione e non un valore: l'abbonamento può cambiare mentre l'app è
+    /// aperta, e il loro loop vive quanto la schermata.
+    private let mode: () -> AmbientMode
     private let now: () -> Date
     private let calendar: Calendar
 
@@ -146,6 +149,7 @@ public struct StudyLoop {
         settings: any ValueStore<ReminderSettings>,
         state: any ValueStore<ReminderState>,
         ambient: any ValueStore<AmbientState>,
+        mode: @escaping () -> AmbientMode = { .standard },
         now: @escaping () -> Date = Date.init,
         calendar: Calendar = .current
     ) {
@@ -153,6 +157,7 @@ public struct StudyLoop {
         self.settings = settings
         self.state = state
         self.ambient = ambient
+        self.mode = mode
         self.now = now
         self.calendar = calendar
     }
@@ -220,6 +225,7 @@ public struct StudyLoop {
                     state: exposure,
                     after: onScreen,
                     newPerDay: settings.load().newKanjiPerDay,
+                    mode: mode(),
                     calendar: calendar
                 )
                 .map { ReminderDestination(codepoint: $0.codepoint, content: $0.content) }

@@ -193,6 +193,13 @@ final class AppContainer {
         WidgetCenter.shared.reloadAllTimelines()
     }
 
+    /// Col Premium il motore guarda anche come interagisci e dà a ogni kanji il suo
+    /// ritmo. Senza, i segnali si raccolgono lo stesso ma non si usano: chi compra
+    /// dopo due settimane d'uso trova un motore che lo conosce già.
+    private var ambientMode: AmbientMode {
+        subscription == .premium ? .adaptive : .standard
+    }
+
     /// Lo scheduler legge le impostazioni effettive, ma le scelte dell'utente restano
     /// salvate intatte: al rinnovo tornano da sole.
     private var effectiveSettings: PolicyAppliedSettings {
@@ -200,7 +207,13 @@ final class AppContainer {
     }
 
     private func makeStudyLoop() -> StudyLoop {
-        StudyLoop(deck: deck, settings: effectiveSettings, state: stateStore, ambient: ambientStore)
+        StudyLoop(
+            deck: deck,
+            settings: effectiveSettings,
+            state: stateStore,
+            ambient: ambientStore,
+            mode: { [weak self] in self?.ambientMode ?? .standard }
+        )
     }
 
     /// Costruito al momento e non tenuto da parte: è una struct da niente, e così
@@ -211,6 +224,7 @@ final class AppContainer {
             settings: effectiveSettings,
             state: stateStore,
             ambient: ambientStore,
+            mode: { [weak self] in self?.ambientMode ?? .standard },
             scheduler: scheduler,
             authorization: scheduler
         )

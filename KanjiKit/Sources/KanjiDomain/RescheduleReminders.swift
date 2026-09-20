@@ -17,6 +17,7 @@ public struct RescheduleReminders {
     private let settings: any ValueStore<ReminderSettings>
     private let state: any ValueStore<ReminderState>
     private let ambient: any ValueStore<AmbientState>
+    private let mode: () -> AmbientMode
     private let scheduler: any ReminderScheduling
     private let authorization: any NotificationAuthorizing
     private let now: () -> Date
@@ -27,6 +28,7 @@ public struct RescheduleReminders {
         settings: any ValueStore<ReminderSettings>,
         state: any ValueStore<ReminderState>,
         ambient: any ValueStore<AmbientState>,
+        mode: @escaping () -> AmbientMode = { .standard },
         scheduler: any ReminderScheduling,
         authorization: any NotificationAuthorizing,
         now: @escaping () -> Date = Date.init,
@@ -36,6 +38,7 @@ public struct RescheduleReminders {
         self.settings = settings
         self.state = state
         self.ambient = ambient
+        self.mode = mode
         self.scheduler = scheduler
         self.authorization = authorization
         self.now = now
@@ -72,6 +75,7 @@ public struct RescheduleReminders {
             deck: deck,
             ambient: exposure,
             currentCodepoint: current.session.codepoint,
+            mode: mode(),
             anchor: current.anchor,
             usedToday: current.today.count(on: moment, calendar: calendar),
             calendar: calendar

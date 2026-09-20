@@ -12,12 +12,17 @@ struct AmbientLoopTests {
     private let ambient = InMemoryStore(AmbientState.empty)
     private let scheduler = FakeScheduler()
 
-    private func reschedule(_ clock: @escaping () -> Date, deck: KanjiDeck? = nil) async {
+    private func reschedule(
+        _ clock: @escaping () -> Date,
+        deck: KanjiDeck? = nil,
+        mode: AmbientMode = .standard
+    ) async {
         await RescheduleReminders(
             deck: deck ?? self.deck,
             settings: InMemoryStore(ReminderSettings.default),
             state: state,
             ambient: ambient,
+            mode: { mode },
             scheduler: scheduler,
             authorization: FakeAuthorizer(.authorized),
             now: clock,
@@ -65,6 +70,41 @@ struct AmbientLoopTests {
         #expect(state.value.scheduled.first?.codepoint != planned.codepoint)
         let todaysQueue = state.value.scheduled.filter { calendar.isDate($0.fireDate, inSameDayAs: clock) }
         #expect(Set(todaysQueue.map(\.codepoint)).count > 1)
+    }
+
+    /// Il giro che rende il Premium sensato: si usa l'app gratis, i segnali si
+    /// raccolgono lo stesso, e il giorno dell'acquisto il motore conosce già chi ti
+    /// costa fatica. Nessuno riparte da zero al pagamento.
+    @Test func whatTheFreeVersionCollectsThePremiumUsesRightAway() async throws {
+        var clock = date("2026-05-10 09:00")
+
+        // Una settimana da utente gratuito: un kanji mostrato da solo, toccato e
+        // letto fino in fondo, più volte.
+        let asking = deck.kanji[1].codepoint
+        for day in 0..<4 {
+            clock = date("2026-05-10 09:00") + Double(day) * .day
+            var exposure = ambient.value
+            exposure.record(.presented, codepoint: asking, content: .recall, at: clock)
+            exposure.record(.opened, codepoint: asking, content: .recall, at: clock + 60)
+            exposure.record(.readingsViewed, codepoint: asking, content: .recall, at: clock + 120)
+            for other in [deck.kanji[0], deck.kanji[2]] {
+                exposure.record(.presented, codepoint: other.codepoint, content: .recall, at: clock + 3 * .hour)
+            }
+            ambient.value = exposure
+        }
+        clock = date("2026-05-14 09:00")
+        #expect(ambient.value.support(of: asking, at: clock) == .high)
+
+        // Gratis: i segnali ci sono, ma la coda è quella di tutti.
+        await reschedule({ clock }, mode: .standard)
+        let free = state.value.scheduled
+
+        // Il giorno dell'acquisto, senza aver fatto altro.
+        await reschedule({ clock }, mode: .adaptive)
+        let premium = state.value.scheduled
+
+        #expect(free != premium)
+        #expect(premium.count { $0.codepoint == asking } >= free.count { $0.codepoint == asking })
     }
 
     /// Spegnere un grado non cancella la storia dei suoi kanji, e riaccenderlo la
