@@ -11,6 +11,9 @@ extension Font {
     public static let dsReading = Font.system(.title3)
     /// La parola di esempio.
     public static let dsWord = Font.system(.headline)
+    /// La parola dentro la notifica: lì è lei la cosa da leggere alzando il polso,
+    /// quindi ha lo stesso peso che altrove ha il kanji.
+    public static let dsWordLarge = Font.system(.largeTitle, weight: .semibold)
     /// Il testo dei bottoni: grassetto perché, su indaco pieno, il contrasto regge
     /// solo come testo grande (vedi TokenContrastTests).
     public static let dsButton = Font.system(.body, weight: .semibold)

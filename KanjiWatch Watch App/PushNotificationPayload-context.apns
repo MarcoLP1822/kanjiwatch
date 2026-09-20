@@ -2,11 +2,11 @@
   "Simulator Target Bundle": "com.marcolp.KanjiWatch.watchkitapp",
   "aps": {
     "alert": {
-      "title": "水",
-      "body": "water"
+      "title": "水曜日",
+      "body": "すいようび · Wednesday"
     },
     "category": "KANJI_REVIEW"
   },
   "cp": "06c34",
-  "ec": "introduce"
+  "ec": "context"
 }

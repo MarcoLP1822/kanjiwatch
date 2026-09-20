@@ -10,9 +10,53 @@ import Testing
 @MainActor
 struct GlanceRenderingTests {
 
+    private func render(_ content: ExposureContent, kanji: Kanji = waterKanji) throws -> NSBitmapImageRep {
+        try renderWatchSized(
+            ReminderGlanceView(kanji: kanji, viewBox: 109, content: content), named: "glance-\(content.rawValue)")
+    }
+
     @Test func showsTheGlyphAndTheMeaning() throws {
-        let glance = try renderWatchSized(ReminderGlanceView(kanji: waterKanji, viewBox: 109), named: "glance")
-        #expect(inkPixels(glance) > 500)
+        #expect(inkPixels(try render(.introduce)) > 500)
+    }
+
+    /// Solo il kanji: la forma del richiamo deve avere meno inchiostro di quella che
+    /// scrive anche il significato, altrimenti la riga è rimasta lì.
+    @Test func recallShowsTheKanjiAlone() throws {
+        #expect(inkPixels(try render(.recall)) < inkPixels(try render(.introduce)))
+    }
+
+    /// Nella forma col contesto si disegna la parola, non il kanji: con una parola
+    /// diversa l'immagine cambia, e col glifo al suo posto sarebbe identica.
+    @Test func contextDrawsTheWordAndNotTheGlyph() throws {
+        let sameKanjiOtherWord = Kanji(
+            character: waterKanji.character,
+            codepoint: waterKanji.codepoint,
+            strokes: waterKanji.strokes,
+            onReadings: waterKanji.onReadings,
+            kunReadings: waterKanji.kunReadings,
+            meanings: waterKanji.meanings,
+            commonWord: Kanji.Word(text: "水着", reading: "みずぎ", meanings: ["swimsuit"])
+        )
+
+        #expect(inkPixels(try render(.context)) != inkPixels(try render(.context, kanji: sameKanjiOtherWord)))
+        // Tre righe di testo lasciano meno inchiostro di un glifo grande: è il modo
+        // più semplice di verificare che il glifo lì non c'è.
+        #expect(inkPixels(try render(.context)) < inkPixels(try render(.recall)))
+    }
+
+    /// Senza parola d'esempio il contesto non esiste: si ricade sul significato,
+    /// non su una schermata vuota.
+    @Test func withoutAWordContextLooksLikeAnIntroduce() throws {
+        let wordless = Kanji(
+            character: waterKanji.character,
+            codepoint: waterKanji.codepoint,
+            strokes: waterKanji.strokes,
+            onReadings: waterKanji.onReadings,
+            kunReadings: waterKanji.kunReadings,
+            meanings: waterKanji.meanings
+        )
+        #expect(
+            inkPixels(try render(.context, kanji: wordless)) == inkPixels(try render(.introduce, kanji: wordless)))
     }
 
     /// Il mazzo può cambiare tra quando la notifica viene programmata e quando

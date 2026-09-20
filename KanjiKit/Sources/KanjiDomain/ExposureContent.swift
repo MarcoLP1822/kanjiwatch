@@ -34,8 +34,13 @@ extension ExposureContent {
             case 2: .context
             default: rhythm[(count - 3) % rhythm.count]
             }
-        // Senza una parola d'esempio non c'è nessun contesto da mostrare: JMdict non
-        // ne ha una per ogni kanji.
-        return chosen == .context && !hasWord ? .introduce : chosen
+        return chosen.resolved(hasWord: hasWord)
+    }
+
+    /// Senza una parola d'esempio non c'è nessun contesto da mostrare — JMdict non ne
+    /// ha una per ogni kanji — e chi disegna la notifica e chi ne scrive il testo
+    /// devono cadere sulla stessa alternativa.
+    public func resolved(hasWord: Bool) -> ExposureContent {
+        self == .context && !hasWord ? .introduce : self
     }
 }

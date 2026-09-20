@@ -83,12 +83,7 @@ public struct RescheduleReminders {
 
         let notifications = reminders.compactMap { reminder in
             deck[reminder.codepoint].map {
-                PlannedNotification(
-                    fireDate: reminder.fireDate,
-                    codepoint: $0.codepoint,
-                    character: $0.character,
-                    content: reminder.content
-                )
+                PlannedNotification(fireDate: reminder.fireDate, kanji: $0, content: reminder.content)
             }
         }
         await scheduler.replacePending(with: notifications, isPassive: preferences.isPassive)
