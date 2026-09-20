@@ -375,6 +375,43 @@ Tutto deterministico: stesso storico e stesse date, stessa coda. Rischedulare no
 invece nel frattempo hai aperto qualcosa, il piano cambia da sé — che è esattamente il
 motivo per cui l'abbonamento ha un valore ricorrente: non il catalogo, il flusso.
 
+### La micro-sequenza: come mostrarlo
+
+Il motore decide due cose, e vanno tenute separate: **quale** kanji (nuovo, rinforzo,
+familiare) e **come** mostrarlo.
+
+| Forma | Cosa si vede | Perché |
+|---|---|---|
+| `introduce` | il kanji e il significato | 議 da solo non insegna niente: la prima volta si insegna |
+| `recall` | solo il kanji | mezzo secondo per pensarci. Il simbolo è già la domanda: scriverla sarebbe rumore |
+| `context` | 水曜日 / すいようび / Wednesday, col kanji acceso | smette di essere un carattere e diventa lingua |
+
+La forma si ricava da quante volte il kanji è già comparso — prima volta, seconda,
+terza, poi il giro `recall, context, recall, introduce` — e **non si salva da nessuna
+parte**: un secondo contatore accanto a `presentationCount` sarebbe un secondo
+contatore da tenere allineato, cioè il modo per finire a chiedere «ricordi?» a chi quel
+kanji non l'ha mai visto. Senza parola d'esempio (JMdict non ne ha per tutti) `context`
+ricade su `introduce`.
+
+Le tre forme non stanno nella stessa giornata di proposito: si applicano quando il
+kanji torna dovuto, quindi la sequenza si distende su giorni.
+
+```
+lun 09:00   水  water         lun 15:00   水          mar 10:00   水曜日
+                                                                  すいようび
+```
+
+**La forma viaggia col kanji.** `ReminderDestination` — codepoint e forma — passa dalla
+coda alla notifica (`ec` nel payload), dalla notifica alla sessione, dalla sessione al
+quadrante, e dal tocco all'app (`?content=` nel link della complication). Decisa dal
+piano una volta sola e mai ricalcolata: altrimenti la notifica delle 15:00 mostrerebbe
+la parola e il quadrante, dopo la prima rischedulazione, tornerebbe al significato.
+Dove manca — notifiche già in coda, link vecchi, stati salvati — vale `introduce`.
+
+Lo schermo dell'app **non cambia**: kanji → tratti → letture è già l'interazione da
+pochi secondi che vogliamo, e chi arriva da una notifica col contesto tocca e trova lo
+stesso giro di sempre.
+
 Il carattere viaggia dentro la notifica:
 
 ```swift
@@ -671,6 +708,7 @@ Non è un parere legale.
 | **F11** | Temi | ✅ Ai-zome gratis; sumi-e washi e senape Premium, col pennello e il sigillo |
 | **F12** | Linee guida | ✅ manifest privacy, informativa nell'app, bottoni accessibili, Riduci movimento |
 | **F13** | Ambient Engine | ✅ lo storico decide cosa ti passa davanti: nuovo, rinforzo, familiare |
+| **F14** | Micro-sequenza | ✅ e decide anche come: il kanji, il richiamo, la parola |
 
 F2 è già un'app che usi a mano. F5 è il momento in cui diventa quello che avevi in
 mente. Non invertire: se parti dalle notifiche, debugghi lo scheduler prima di aver
@@ -731,9 +769,11 @@ personale che si aggiorna da solo. Per questo il motore c'è anche nella version
 gratuita — dimostrare un prodotto peggiore di quello che vendi è un modo sicuro di non
 venderlo — e Premium allarga il mazzo e il controllo del ritmo.
 
-Le prossime fasi, quando questa avrà girato per qualche giorno: la micro-sequenza
-(kanji → significato → vocabolo, distribuita nella giornata invece che tutta insieme) e
-poi il resto del vocabolario.
+**Sulla F14.** La micro-sequenza (§6) è il secondo passo dello stesso motore: prima
+*cosa*, adesso *come*. Anche qui nessuna schermata nuova — cambiano la notifica e il
+quadrante, cioè i due posti che guardi senza aprire niente. Le fasi successive, quando
+questa avrà girato per qualche giorno: vocabolario più profondo, micro-frasi, e solo
+molto dopo eventuali percorsi JLPT.
 
 **Sulla F10.** Verificato sul simulatore Watch, in italiano: paywall con acquisto
 simulato che si chiude da solo e sblocca le impostazioni; coda rifatta con intervallo e
