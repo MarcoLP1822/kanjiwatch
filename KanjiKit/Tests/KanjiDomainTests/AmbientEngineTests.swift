@@ -129,8 +129,29 @@ struct AmbientEngineTests {
         #expect(choice.kind == .learning)
     }
 
+    /// Un familiare che non è ancora il suo momento non torna: il suo slot va a un
+    /// rinforzo. Senza questa regola, finché ce n'è uno solo si prenderebbe tutti e due
+    /// gli slot familiari del ritmo, cioè due comparse al giorno.
+    @Test func aFamiliarKanjiWaitsItsTurn() {
+        var state = AmbientState.empty
+        // Uno solo familiare, appena visto: la sua prossima volta è fra dieci giorni.
+        for day in 0..<8 {
+            state.record(.presented, codepoint: testCodepoint(1), at: date("2026-05-02 09:00") + Double(day) * .day)
+        }
+        // E due che sta imparando.
+        state.record(.presented, codepoint: testCodepoint(2), at: date("2026-05-09 09:00"))
+        state.record(.presented, codepoint: testCodepoint(3), at: date("2026-05-09 10:00"))
+
+        let selections = plan(hours(10), state: state)
+
+        #expect(state.stage(of: testCodepoint(1), at: date("2026-05-10 08:00")) == .familiar)
+        #expect(selections.allSatisfy { $0.kind != .familiar })
+        #expect(selections.count { $0.codepoint == testCodepoint(1) } == 0)
+    }
+
     @Test func familiarOnesComeBackToo() {
         var state = AmbientState.empty
+        // Visti otto giorni di fila e poi spariti da un mese: è il loro momento.
         for index in 1...2 {
             for day in 0..<8 {
                 state.record(

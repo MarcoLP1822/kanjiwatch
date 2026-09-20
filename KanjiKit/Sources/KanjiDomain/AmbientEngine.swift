@@ -169,13 +169,22 @@ public enum AmbientEngine {
 
         case .learning, .familiar:
             let stages: Set<FamiliarityStage> = kind == .familiar ? [.familiar] : [.fresh, .reinforcing]
-            // Vince chi è più in ritardo. `nextDueAt` non è una scadenza da aspettare:
-            // il primo giorno tutti sono in anticipo, e il kanji introdotto alle 8
-            // torna lo stesso alle 10.
+            // Vince chi è più in ritardo. Per chi sta imparando `nextDueAt` non è una
+            // scadenza da aspettare: il primo giorno sono tutti in anticipo, e il kanji
+            // introdotto alle 8 torna lo stesso alle 10.
+            //
+            // Per i familiari invece è una condizione, ed è il motivo per cui esiste:
+            // senza, finché ce n'è uno solo si prende tutti e due gli slot del ritmo e
+            // torna due volte al giorno — l'opposto di "sta uscendo dal giro". Se non è
+            // ancora il suo momento lo slot va a un rinforzo.
             return
                 deck.kanji.lazy
                 .compactMap { kanji in state.records[kanji.codepoint].map { (kanji, $0) } }
-                .filter { stages.contains($0.1.stage(at: date)) && !excluding.contains($0.0.codepoint) }
+                .filter { kanji, exposure in
+                    stages.contains(exposure.stage(at: date))
+                        && (kind == .learning || exposure.nextDueAt <= date)
+                        && !excluding.contains(kanji.codepoint)
+                }
                 .min {
                     ($0.1.nextDueAt, $0.1.lastPresentedAt, $0.0.frequencyRank ?? .max, $0.0.codepoint)
                         < ($1.1.nextDueAt, $1.1.lastPresentedAt, $1.0.frequencyRank ?? .max, $1.0.codepoint)
