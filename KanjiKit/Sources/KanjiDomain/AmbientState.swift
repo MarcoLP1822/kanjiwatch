@@ -197,6 +197,30 @@ extension KanjiExposure {
         }
     }
 
+    /// Quando torna davvero, col ritmo personale acceso.
+    ///
+    /// `nextDueAt` resta la linea di base per tutti e non si tocca: il ritmo
+    /// personale è una lettura diversa dello stesso dato, non una riscrittura. Così
+    /// se l'abbonamento finisce, il ritmo di base è ancora lì intatto.
+    public func effectiveDueAt(mode: AmbientMode, at date: Date) -> Date {
+        guard mode == .adaptive else { return nextDueAt }
+        let factor = Self.spacingFactor(for: supportLevel(at: date))
+        guard factor < 1 else { return nextDueAt }
+
+        // Si accorcia l'attesa, ma mai sotto le sei ore dall'ultima volta: un kanji
+        // che sembra costare fatica non deve diventare una raffica.
+        let shortened = lastPresentedAt + max(nextDueAt.timeIntervalSince(lastPresentedAt) * factor, Self.firstSpacing)
+        return min(nextDueAt, shortened)
+    }
+
+    static func spacingFactor(for support: SupportLevel) -> Double {
+        switch support {
+        case .low: 1
+        case .medium: 0.65
+        case .high: 0.40
+        }
+    }
+
     static let supportHalfLife: TimeInterval = 14 * .day
 
     /// Aprire l'app su un kanji mostrato da solo pesa più che arrivare fino alle

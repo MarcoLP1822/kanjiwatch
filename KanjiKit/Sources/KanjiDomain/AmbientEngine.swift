@@ -57,6 +57,7 @@ public enum AmbientEngine {
         state: AmbientState,
         currentCodepoint: String? = nil,
         newPerDay: Int = defaultNewPerDay,
+        mode: AmbientMode = .standard,
         calendar: Calendar = .current
     ) -> [AmbientSelection] {
         guard !deck.isEmpty else { return [] }
@@ -84,14 +85,19 @@ public enum AmbientEngine {
                     state: projected,
                     at: fireDate,
                     recent: recent,
-                    allowsNew: already < newPerDay
+                    allowsNew: already < newPerDay,
+                    mode: mode
                 )
             else { continue }
 
             // La forma si decide **prima** di segnare la comparsa simulata: alla prima
             // volta il kanji ha zero comparse, e zero comparse vuol dire "presentalo".
+            // Col ritmo personale, un kanji che sembra chiedere aiuto si porta dietro
+            // un appiglio più spesso. Senza, il giro è quello di tutti.
+            let record = projected.records[choice.codepoint]
             let content = ExposureContent.forSightings(
-                projected.records[choice.codepoint]?.presentationCount ?? 0,
+                record?.presentationCount ?? 0,
+                support: mode == .adaptive ? record?.supportLevel(at: fireDate) ?? .low : .low,
                 hasWord: deck[choice.codepoint]?.commonWord != nil
             )
             selections.append(
@@ -112,6 +118,7 @@ public enum AmbientEngine {
         state: AmbientState,
         after onScreen: String? = nil,
         newPerDay: Int = defaultNewPerDay,
+        mode: AmbientMode = .standard,
         calendar: Calendar = .current
     ) -> AmbientSelection? {
         plan(
@@ -120,6 +127,7 @@ public enum AmbientEngine {
             state: state,
             currentCodepoint: onScreen,
             newPerDay: newPerDay,
+            mode: mode,
             calendar: calendar
         ).first
     }
@@ -132,7 +140,8 @@ public enum AmbientEngine {
         state: AmbientState,
         at date: Date,
         recent: [String],
-        allowsNew: Bool
+        allowsNew: Bool,
+        mode: AmbientMode
     ) -> (codepoint: String, kind: AmbientSelection.Kind)? {
         let order: [AmbientSelection.Kind] =
             switch wanted {
@@ -148,7 +157,7 @@ public enum AmbientEngine {
         let allowed = order.filter { $0 != .new || allowsNew }
         for kind in allowed {
             for excluded in [Set(recent.suffix(2)), Set(recent.suffix(1))] {
-                if let codepoint = best(kind, deck: deck, state: state, at: date, excluding: excluded) {
+                if let codepoint = best(kind, deck: deck, state: state, at: date, excluding: excluded, mode: mode) {
                     return (codepoint, kind)
                 }
             }
@@ -156,7 +165,7 @@ public enum AmbientEngine {
         // Un mazzo da un kanji solo: ripeterlo è meglio che non mostrare niente.
         return allowed.lazy
             .compactMap { kind in
-                best(kind, deck: deck, state: state, at: date, excluding: []).map { ($0, kind) }
+                best(kind, deck: deck, state: state, at: date, excluding: [], mode: mode).map { ($0, kind) }
             }
             .first
     }
@@ -166,7 +175,8 @@ public enum AmbientEngine {
         deck: KanjiDeck,
         state: AmbientState,
         at date: Date,
-        excluding: Set<String>
+        excluding: Set<String>,
+        mode: AmbientMode
     ) -> String? {
         switch kind {
         case .new:
@@ -196,12 +206,18 @@ public enum AmbientEngine {
                 .compactMap { kanji in state.records[kanji.codepoint].map { (kanji, $0) } }
                 .filter { kanji, exposure in
                     stages.contains(exposure.stage(at: date))
-                        && (kind == .learning || exposure.nextDueAt <= date)
+                        && (kind == .learning || exposure.effectiveDueAt(mode: mode, at: date) <= date)
                         && !excluding.contains(kanji.codepoint)
                 }
                 .min {
-                    ($0.1.nextDueAt, $0.1.lastPresentedAt, $0.0.frequencyRank ?? .max, $0.0.codepoint)
-                        < ($1.1.nextDueAt, $1.1.lastPresentedAt, $1.0.frequencyRank ?? .max, $1.0.codepoint)
+                    (
+                        $0.1.effectiveDueAt(mode: mode, at: date), $0.1.lastPresentedAt,
+                        $0.0.frequencyRank ?? .max, $0.0.codepoint
+                    )
+                        < (
+                            $1.1.effectiveDueAt(mode: mode, at: date), $1.1.lastPresentedAt,
+                            $1.0.frequencyRank ?? .max, $1.0.codepoint
+                        )
                 }?
                 .0.codepoint
         }

@@ -18,21 +18,39 @@ public enum ExposureContent: String, Equatable, Sendable, Codable, CaseIterable 
 }
 
 extension ExposureContent {
-    /// Il giro dopo le prime tre volte: si torna a richiamare, ogni tanto si rivede
-    /// dentro una parola, ogni tanto si rilegge il significato per intero.
-    static let rhythm: [ExposureContent] = [.recall, .context, .recall, .introduce]
+    /// Il giro dopo le prime tre volte, a seconda di quanto quel kanji sembra
+    /// chiedere un appiglio.
+    ///
+    /// Più supporto vuol dire più esposizioni che si portano dietro qualcosa —
+    /// significato o parola — ma il richiamo resta sempre nel giro: trasformare
+    /// tutto in risposte pronte vorrebbe dire non far più ricordare niente.
+    static func rhythm(for support: SupportLevel) -> [ExposureContent] {
+        switch support {
+        case .low: [.recall, .context, .recall, .introduce]
+        case .medium: [.context, .recall, .introduce, .recall]
+        case .high: [.introduce, .context, .recall, .context]
+        }
+    }
 
     /// Si ricava da quante volte il kanji è già comparso, e non si salva: un secondo
     /// contatore accanto a `presentationCount` sarebbe un secondo contatore da tenere
     /// allineato, cioè un modo per finire a mostrare "ricorda?" a chi quel kanji non
     /// l'ha mai visto.
-    public static func forSightings(_ count: Int, hasWord: Bool) -> ExposureContent {
+    /// Le prime tre volte sono uguali per tutti: insegna, richiama, mostra dentro una
+    /// parola. È la grammatica dell'app, e cambiarla a seconda dei segnali vorrebbe
+    /// dire partire già storti su un kanji di cui non sappiamo ancora niente.
+    public static func forSightings(
+        _ count: Int,
+        support: SupportLevel = .low,
+        hasWord: Bool
+    ) -> ExposureContent {
+        let giro = rhythm(for: support)
         let chosen: ExposureContent =
             switch count {
             case ..<1: .introduce
             case 1: .recall
             case 2: .context
-            default: rhythm[(count - 3) % rhythm.count]
+            default: giro[(count - 3) % giro.count]
             }
         return chosen.resolved(hasWord: hasWord)
     }
