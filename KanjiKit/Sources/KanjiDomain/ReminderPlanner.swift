@@ -25,34 +25,32 @@ public enum ReminderPlanner {
     /// resta un promemoria di recupero anche dopo giorni di silenzio.
     public static let recoveryOffsetsInHours = [12, 24, 48, 96]
 
+    /// Quando, lo decide il ritmo della giornata; cosa, l'Ambient Engine.
+    ///
+    /// La coda si rigenera sempre per intero, e la vecchia non serve più a niente:
+    /// a parità di storico e di date il risultato è identico, quindi rischedulare
+    /// non "brucia" niente. Se invece nel frattempo hai aperto un kanji, il piano
+    /// cambia — ed è esattamente quello che deve fare.
     public static func plan(
         now: Date,
         settings: ReminderSettings,
-        previous: [ScheduledReminder] = [],
-        cycle: inout DeckCycle,
-        using generator: inout some RandomNumberGenerator,
+        deck: KanjiDeck,
+        ambient: AmbientState,
+        currentCodepoint: String? = nil,
         anchor: Date? = nil,
         usedToday: Int = 0,
         calendar: Calendar = .current
     ) -> [ScheduledReminder] {
-        // I kanji già estratti per notifiche che non sono mai arrivate tornano in
-        // testa alla coda: senza, ogni apertura dell'app ne brucerebbe 64, e la
-        // garanzia "ognuno una volta prima di ripetersi" salterebbe.
-        var unshown =
-            previous
-            .filter { $0.fireDate > now }
-            .sorted { $0.fireDate < $1.fireDate }
-            .map(\.codepoint)
-
         let dates = fireDates(now: now, settings: settings, anchor: anchor, usedToday: usedToday, calendar: calendar)
-        var reminders: [ScheduledReminder] = []
-        for fireDate in dates {
-            guard let codepoint = unshown.isEmpty ? cycle.next(using: &generator) : unshown.removeFirst() else {
-                break
-            }
-            reminders.append(ScheduledReminder(fireDate: fireDate, codepoint: codepoint))
-        }
-        return reminders
+        return AmbientEngine.plan(
+            fireDates: dates,
+            deck: deck,
+            state: ambient,
+            currentCodepoint: currentCodepoint,
+            newPerDay: settings.newKanjiPerDay,
+            calendar: calendar
+        )
+        .map { ScheduledReminder(fireDate: $0.fireDate, codepoint: $0.codepoint) }
     }
 
     private static func fireDates(

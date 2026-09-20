@@ -46,6 +46,7 @@ struct RescheduleRemindersTests {
         deck: KanjiDeck,
         settings: ReminderSettings = .default,
         state: InMemoryStore<ReminderState> = InMemoryStore(.empty),
+        ambient: InMemoryStore<AmbientState> = InMemoryStore(.empty),
         scheduler: FakeScheduler = FakeScheduler(),
         authorization: FakeAuthorizer = FakeAuthorizer(.authorized)
     ) -> (RescheduleReminders, InMemoryStore<ReminderState>, FakeScheduler) {
@@ -53,6 +54,7 @@ struct RescheduleRemindersTests {
             deck: deck,
             settings: InMemoryStore(settings),
             state: state,
+            ambient: ambient,
             scheduler: scheduler,
             authorization: authorization,
             now: { date("2026-05-10 09:12") },
@@ -91,18 +93,17 @@ struct RescheduleRemindersTests {
         #expect(state.value.scheduled.isEmpty)
     }
 
-    /// Il motivo per cui la coda precedente viene salvata: rischedulare due volte
-    /// di fila non deve consumare 128 kanji.
-    @Test func reschedulingTwiceDoesNotBurnTheDeck() async {
-        let deck = makeDeck()
-        let (useCase, state, _) = makeUseCase(deck: deck)
+    /// Rischedulare due volte di fila, senza che sia successo niente, deve dare la
+    /// stessa coda: il piano si ricalcola, non si consuma.
+    @Test func reschedulingTwiceGivesTheSameQueue() async {
+        let (useCase, state, _) = makeUseCase(deck: makeDeck())
 
         await useCase.execute()
-        let afterFirst = state.value.cycle.position
+        let afterFirst = state.value.scheduled
         await useCase.execute()
 
-        #expect(afterFirst == ReminderPlanner.systemLimit)
-        #expect(state.value.cycle.position == afterFirst)
+        #expect(afterFirst.count == ReminderPlanner.systemLimit)
+        #expect(state.value.scheduled == afterFirst)
     }
 
     @Test func carriesTheDiscreetModeToTheScheduler() async {

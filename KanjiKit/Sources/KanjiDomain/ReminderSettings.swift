@@ -48,6 +48,10 @@ public struct ReminderSettings: Equatable, Sendable, Codable {
     /// Il tema scelto. Sta qui e non in un archivio a parte perché segue le stesse regole
     /// di accesso delle altre scelte Premium, e si salva allo stesso modo.
     public var theme: AppTheme
+    /// Quanti volti nuovi può introdurre una giornata. Non si sceglie dalle
+    /// impostazioni: è il freno che tiene l'app un'esposizione durante il giorno
+    /// invece di un corso da seguire.
+    public var newKanjiPerDay: Int
 
     public init(
         intervalMinutes: Int,
@@ -55,7 +59,8 @@ public struct ReminderSettings: Equatable, Sendable, Codable {
         isPassive: Bool,
         grades: Set<Int> = KanjiLevel.freeGrades,
         dailyLimit: Int = ReminderSettings.defaultDailyLimit,
-        theme: AppTheme = .aiZome
+        theme: AppTheme = .aiZome,
+        newKanjiPerDay: Int = AmbientEngine.defaultNewPerDay
     ) {
         self.intervalMinutes = intervalMinutes
         self.activeHours = activeHours
@@ -63,6 +68,7 @@ public struct ReminderSettings: Equatable, Sendable, Codable {
         self.grades = grades
         self.dailyLimit = dailyLimit
         self.theme = theme
+        self.newKanjiPerDay = newKanjiPerDay
     }
 
     public init(from decoder: any Decoder) throws {
@@ -76,6 +82,8 @@ public struct ReminderSettings: Equatable, Sendable, Codable {
         dailyLimit = try container.decodeIfPresent(Int.self, forKey: .dailyLimit) ?? Self.defaultDailyLimit
         // Un tema sconosciuto, per esempio tolto in un aggiornamento, torna a quello di base.
         theme = (try? container.decodeIfPresent(AppTheme.self, forKey: .theme)) ?? .aiZome
+        newKanjiPerDay =
+            try container.decodeIfPresent(Int.self, forKey: .newKanjiPerDay) ?? AmbientEngine.defaultNewPerDay
     }
 
     public static let defaultDailyLimit = 10

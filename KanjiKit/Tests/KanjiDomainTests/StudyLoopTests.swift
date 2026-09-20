@@ -30,10 +30,9 @@ struct StudyLoopTests {
             scheduled: [reminder("2026-05-10 11:00", "bbbbb"), reminder("2026-05-10 10:00", "aaaaa")],
             session: studying("old00", since: "2026-05-10 09:00")
         )
-        var generator = SeededGenerator(seed: 1)
         let now = date("2026-05-10 09:12").addingTimeInterval(37)
 
-        let outcome = value.advance(after: "old00", now: now, dailyLimit: 10, using: &generator, calendar: calendar)
+        let outcome = value.advance(after: "old00", now: now, dailyLimit: 10, draw: { "zzzzz" }, calendar: calendar)
 
         #expect(outcome == .showing("aaaaa"))
         #expect(value.scheduled == [reminder("2026-05-10 11:00", "bbbbb")])
@@ -45,9 +44,8 @@ struct StudyLoopTests {
 
     @Test func withoutQueuedNotificationsNextDrawsFromTheDeck() {
         var value = state(scheduled: [])
-        var generator = SeededGenerator(seed: 1)
         let outcome = value.advance(
-            after: nil, now: date("2026-05-10 09:12"), dailyLimit: 10, using: &generator, calendar: calendar)
+            after: nil, now: date("2026-05-10 09:12"), dailyLimit: 10, draw: { "zzzzz" }, calendar: calendar)
         #expect(outcome == .showing("zzzzz"))
     }
 
@@ -59,10 +57,9 @@ struct StudyLoopTests {
             session: studying("old00", since: "2026-05-10 09:00"),
             today: DailyCount(day: calendar.startOfDay(for: now), count: 3)
         )
-        var generator = SeededGenerator(seed: 1)
 
         #expect(
-            value.advance(after: "old00", now: now, dailyLimit: 3, using: &generator, calendar: calendar)
+            value.advance(after: "old00", now: now, dailyLimit: 3, draw: { "zzzzz" }, calendar: calendar)
                 == .dailyLimitReached)
         #expect(value.scheduled.count == 1)
     }
@@ -75,10 +72,9 @@ struct StudyLoopTests {
             scheduled: [reminder("2026-05-10 10:00", "arrvd"), reminder("2026-05-10 11:00", "later")],
             session: studying("old00", since: "2026-05-10 09:55")
         )
-        var generator = SeededGenerator(seed: 1)
 
         #expect(
-            value.advance(after: "old00", now: now, dailyLimit: 10, using: &generator, calendar: calendar)
+            value.advance(after: "old00", now: now, dailyLimit: 10, draw: { "zzzzz" }, calendar: calendar)
                 == .showing("arrvd"))
         #expect(value.scheduled == [reminder("2026-05-10 11:00", "later")])
         #expect(value.today.count(on: now, calendar: calendar) == 1)
@@ -169,11 +165,22 @@ struct StudyLoopTests {
         }
     )
 
-    private func loop(state: InMemoryStore<ReminderState>, dailyLimit: Int = 10, at time: String) -> StudyLoop {
+    private func loop(
+        state: InMemoryStore<ReminderState>,
+        ambient: InMemoryStore<AmbientState> = InMemoryStore(.empty),
+        dailyLimit: Int = 10,
+        at time: String
+    ) -> StudyLoop {
         var settings = ReminderSettings.default
         settings.dailyLimit = dailyLimit
         return StudyLoop(
-            deck: deck, settings: InMemoryStore(settings), state: state, now: { date(time) }, calendar: calendar)
+            deck: deck,
+            settings: InMemoryStore(settings),
+            state: state,
+            ambient: ambient,
+            now: { date(time) },
+            calendar: calendar
+        )
     }
 
     /// Al primo avvio c'è subito un kanji, e conta nella giornata come un NEXT.

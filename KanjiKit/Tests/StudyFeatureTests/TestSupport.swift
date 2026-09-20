@@ -33,10 +33,17 @@ let waterDeck = KanjiDeck(viewBox: 109, attribution: "", kanji: [waterKanji])
 func makeStudyModel(
     deck: KanjiDeck = waterDeck,
     state: InMemoryStore<ReminderState> = InMemoryStore(.empty),
+    ambient: InMemoryStore<AmbientState> = InMemoryStore(.empty),
     now: @escaping () -> Date = Date.init
 ) -> StudyViewModel {
     StudyViewModel(
-        loop: StudyLoop(deck: deck, settings: InMemoryStore(ReminderSettings.default), state: state, now: now)
+        loop: StudyLoop(
+            deck: deck,
+            settings: InMemoryStore(ReminderSettings.default),
+            state: state,
+            ambient: ambient,
+            now: now
+        )
     )
 }
 

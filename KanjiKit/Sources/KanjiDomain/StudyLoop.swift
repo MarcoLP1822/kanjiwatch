@@ -14,15 +14,22 @@ extension ReminderState {
     }
 
     /// Il passo comune a ogni lettura dello stato, dell'app e dello scheduler.
+    ///
+    /// Qui le due memorie si incontrano: le notifiche che sono davvero arrivate
+    /// diventano esposizioni. Quelle ancora in coda no — il piano le ha previste,
+    /// e prevederle non è averle viste.
     mutating func catchUp(
         with deck: KanjiDeck,
         now: Date,
+        ambient: inout AmbientState,
         using generator: inout some RandomNumberGenerator,
         calendar: Calendar
     ) {
         // Un aggiornamento dell'app o un grado spento possono aver cambiato il mazzo.
         cycle.reconcile(with: deck.codepoints, using: &generator)
-        recordDeliveries(now: now, calendar: calendar)
+        for delivered in recordDeliveries(now: now, calendar: calendar) {
+            ambient.record(.presented, codepoint: delivered.codepoint, at: delivered.fireDate)
+        }
         // Senza, un kanji uscito dal mazzo resterebbe in coda per sempre: a ogni
         // rischedulazione tornerebbe in testa e verrebbe scartato di nuovo.
         scheduled.removeAll { deck[$0.codepoint] == nil }
@@ -30,9 +37,14 @@ extension ReminderState {
 
     /// Le notifiche arrivate dall'ultima volta contano nella loro giornata, e la più
     /// recente prende il posto del kanji in gioco se è arrivata dopo di lui.
-    public mutating func recordDeliveries(now: Date, calendar: Calendar) {
+    ///
+    /// Restituisce quelle arrivate, perché chi tiene lo storico delle esposizioni ha
+    /// bisogno di sapere quali sono: così la regola di apprendimento non finisce
+    /// dentro lo stato delle notifiche.
+    @discardableResult
+    public mutating func recordDeliveries(now: Date, calendar: Calendar) -> [ScheduledReminder] {
         let delivered = scheduled.filter { $0.fireDate <= now }
-        guard !delivered.isEmpty else { return }
+        guard !delivered.isEmpty else { return [] }
         scheduled.removeAll { $0.fireDate <= now }
         today.add(delivered.count { calendar.isDate($0.fireDate, inSameDayAs: now) }, on: now, calendar: calendar)
 
@@ -41,17 +53,21 @@ extension ReminderState {
         {
             session = StudySession(codepoint: latest.codepoint, isDone: false, since: latest.fireDate)
         }
+        return delivered
     }
 
     /// NEXT premuto guardando `onScreen`. Non inventa un kanji in più: prende quello
     /// della prossima notifica e lo anticipa, quindi conta nella giornata e fa
     /// ripartire l'intervallo da adesso. `dailyLimit` nil vale solo per il primissimo
     /// kanji, che non può essere negato.
+    ///
+    /// `draw` è l'Ambient Engine: serve solo quando non c'è nessuna notifica in coda
+    /// da anticipare — a permesso negato, o al primissimo avvio.
     public mutating func advance(
         after onScreen: String?,
         now: Date,
         dailyLimit: Int?,
-        using generator: inout some RandomNumberGenerator,
+        draw: () -> String?,
         calendar: Calendar
     ) -> NextOutcome {
         recordDeliveries(now: now, calendar: calendar)
@@ -67,7 +83,7 @@ extension ReminderState {
         if let upcoming = scheduled.min(by: { $0.fireDate < $1.fireDate }) {
             codepoint = upcoming.codepoint
             scheduled.removeAll { $0 == upcoming }
-        } else if let drawn = cycle.next(using: &generator) {
+        } else if let drawn = draw() {
             codepoint = drawn
         } else {
             return .emptyDeck
@@ -112,6 +128,7 @@ public struct StudyLoop {
     public let deck: KanjiDeck
     private let settings: any ValueStore<ReminderSettings>
     private let state: any ValueStore<ReminderState>
+    private let ambient: any ValueStore<AmbientState>
     private let now: () -> Date
     private let calendar: Calendar
 
@@ -119,12 +136,14 @@ public struct StudyLoop {
         deck: KanjiDeck,
         settings: any ValueStore<ReminderSettings>,
         state: any ValueStore<ReminderState>,
+        ambient: any ValueStore<AmbientState>,
         now: @escaping () -> Date = Date.init,
         calendar: Calendar = .current
     ) {
         self.deck = deck
         self.settings = settings
         self.state = state
+        self.ambient = ambient
         self.now = now
         self.calendar = calendar
     }
@@ -132,18 +151,15 @@ public struct StudyLoop {
     /// Cosa mostrare adesso. Al primissimo avvio, o se il kanji in gioco è uscito
     /// dal mazzo, se ne prende uno nuovo come con NEXT.
     public func current() -> Snapshot? {
-        update { value, moment, generator in
+        update { value, exposure, moment in
             guard value.session.codepoint.flatMap({ deck[$0] }) == nil else { return }
-            _ = value.advance(
-                after: value.session.codepoint, now: moment, dailyLimit: nil, using: &generator, calendar: calendar)
+            advance(&value, &exposure, after: value.session.codepoint, at: moment, dailyLimit: nil)
         }
     }
 
     public func next(after onScreen: String) -> Snapshot? {
-        update { value, moment, generator in
-            _ = value.advance(
-                after: onScreen, now: moment, dailyLimit: settings.load().dailyLimit, using: &generator,
-                calendar: calendar)
+        update { value, exposure, moment in
+            advance(&value, &exposure, after: onScreen, at: moment, dailyLimit: settings.load().dailyLimit)
         }
     }
 
@@ -152,23 +168,57 @@ public struct StudyLoop {
     }
 
     public func open(codepoint: String) -> Snapshot? {
-        update { value, moment, _ in
+        update { value, _, moment in
             guard deck[codepoint] != nil else { return }
             value.open(codepoint: codepoint, now: moment)
+        }
+    }
+
+    /// Mette in gioco il prossimo kanji e ne segna l'esposizione — ma solo se è
+    /// davvero un contatto nuovo: quello arrivato con una notifica l'ha già contato
+    /// `catchUp`, all'ora in cui è arrivato.
+    private func advance(
+        _ value: inout ReminderState,
+        _ exposure: inout AmbientState,
+        after onScreen: String?,
+        at moment: Date,
+        dailyLimit: Int?
+    ) {
+        let arrived = value.session.codepoint
+        let outcome = value.advance(
+            after: onScreen,
+            now: moment,
+            dailyLimit: dailyLimit,
+            draw: {
+                AmbientEngine.pick(
+                    at: moment,
+                    deck: deck,
+                    state: exposure,
+                    after: onScreen,
+                    newPerDay: settings.load().newKanjiPerDay,
+                    calendar: calendar
+                )?.codepoint
+            },
+            calendar: calendar
+        )
+        if case .showing(let codepoint) = outcome, codepoint != arrived {
+            exposure.record(.presented, codepoint: codepoint, at: moment)
         }
     }
 
     /// Carica, recupera, applica il gesto e salva: tutti i gesti passano di qui, così
     /// nessuno dimentica un passo.
     private func update(
-        _ change: (inout ReminderState, Date, inout SystemRandomNumberGenerator) -> Void
+        _ change: (inout ReminderState, inout AmbientState, Date) -> Void
     ) -> Snapshot? {
         let moment = now()
         var value = state.load()
+        var exposure = ambient.load()
         var generator = SystemRandomNumberGenerator()
-        value.catchUp(with: deck, now: moment, using: &generator, calendar: calendar)
-        change(&value, moment, &generator)
+        value.catchUp(with: deck, now: moment, ambient: &exposure, using: &generator, calendar: calendar)
+        change(&value, &exposure, moment)
         state.save(value)
+        ambient.save(exposure)
 
         guard let codepoint = value.session.codepoint, let kanji = deck[codepoint] else { return nil }
         return Snapshot(

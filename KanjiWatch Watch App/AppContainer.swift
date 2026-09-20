@@ -45,6 +45,9 @@ final class AppContainer {
     private let repository: BundledDeckRepository
     private let settingsStore = UserDefaultsStore<ReminderSettings>.settings()
     private let stateStore = UserDefaultsStore<ReminderState>.reminderState()
+    /// Lo storico delle esposizioni sta in un file suo: cresce con l'uso, e a
+    /// differenza delle altre due chiavi non lo legge nessun altro.
+    private let ambientStore = JSONFileStore<AmbientState>.ambientState()
     private let complicationStore = UserDefaultsStore<[GlanceEntry]>.complicationTimeline()
     private let subscriptionStore = UserDefaultsStore<SubscriptionStatus>(
         key: AppContainer.lastKnownSubscriptionKey,
@@ -190,7 +193,7 @@ final class AppContainer {
     }
 
     private func makeStudyLoop() -> StudyLoop {
-        StudyLoop(deck: deck, settings: effectiveSettings, state: stateStore)
+        StudyLoop(deck: deck, settings: effectiveSettings, state: stateStore, ambient: ambientStore)
     }
 
     /// Costruito al momento e non tenuto da parte: è una struct da niente, e così
@@ -200,6 +203,7 @@ final class AppContainer {
             deck: deck,
             settings: effectiveSettings,
             state: stateStore,
+            ambient: ambientStore,
             scheduler: scheduler,
             authorization: scheduler
         )

@@ -40,13 +40,15 @@ struct DailyRhythmTests {
     }
 
     @Test func thePlannerKeepsTheQueueFullAcrossDaysWithALimit() {
-        var generator = SeededGenerator(seed: 2)
-        var cycle = DeckCycle(codepoints: (1...200).map { String(format: "%05x", $0) }, using: &generator)
         var settings = ReminderSettings.default
         settings.dailyLimit = 5
 
         let reminders = ReminderPlanner.plan(
-            now: date("2026-05-10 07:00"), settings: settings, cycle: &cycle, using: &generator, calendar: calendar
+            now: date("2026-05-10 07:00"),
+            settings: settings,
+            deck: testDeck(count: 200),
+            ambient: .empty,
+            calendar: calendar
         )
 
         let perDay = Dictionary(grouping: reminders) { calendar.startOfDay(for: $0.fireDate) }.mapValues(\.count)

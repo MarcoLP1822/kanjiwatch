@@ -16,6 +16,7 @@ public struct RescheduleReminders {
     private let deck: KanjiDeck
     private let settings: any ValueStore<ReminderSettings>
     private let state: any ValueStore<ReminderState>
+    private let ambient: any ValueStore<AmbientState>
     private let scheduler: any ReminderScheduling
     private let authorization: any NotificationAuthorizing
     private let now: () -> Date
@@ -25,6 +26,7 @@ public struct RescheduleReminders {
         deck: KanjiDeck,
         settings: any ValueStore<ReminderSettings>,
         state: any ValueStore<ReminderState>,
+        ambient: any ValueStore<AmbientState>,
         scheduler: any ReminderScheduling,
         authorization: any NotificationAuthorizing,
         now: @escaping () -> Date = Date.init,
@@ -33,6 +35,7 @@ public struct RescheduleReminders {
         self.deck = deck
         self.settings = settings
         self.state = state
+        self.ambient = ambient
         self.scheduler = scheduler
         self.authorization = authorization
         self.now = now
@@ -48,15 +51,18 @@ public struct RescheduleReminders {
         let moment = now()
         let preferences = settings.load()
         var current = state.load()
+        var exposure = ambient.load()
         var generator = SystemRandomNumberGenerator()
         // Le notifiche già arrivate contano nella giornata prima di rifare la coda,
-        // altrimenti il tetto giornaliero non saprebbe quante ne sono passate.
-        current.catchUp(with: deck, now: moment, using: &generator, calendar: calendar)
+        // altrimenti il tetto giornaliero non saprebbe quante ne sono passate — e il
+        // motore non saprebbe quali kanji ti sono già passati davanti.
+        current.catchUp(with: deck, now: moment, ambient: &exposure, using: &generator, calendar: calendar)
 
         guard isAuthorized else {
             // Non arriverà niente: la schermata d'attesa non deve promettere un orario.
             current.scheduled = []
             state.save(current)
+            ambient.save(exposure)
             await scheduler.cancelAll()
             return .notAuthorized
         }
@@ -64,15 +70,16 @@ public struct RescheduleReminders {
         let reminders = ReminderPlanner.plan(
             now: moment,
             settings: preferences,
-            previous: current.scheduled,
-            cycle: &current.cycle,
-            using: &generator,
+            deck: deck,
+            ambient: exposure,
+            currentCodepoint: current.session.codepoint,
             anchor: current.anchor,
             usedToday: current.today.count(on: moment, calendar: calendar),
             calendar: calendar
         )
         current.scheduled = reminders
         state.save(current)
+        ambient.save(exposure)
         guard !reminders.isEmpty else { return .emptyDeck }
 
         let notifications = reminders.compactMap { reminder in

@@ -78,6 +78,10 @@ public enum AccessPolicy {
     public static let freeIntervalMinutes = ReminderSettings.default.intervalMinutes
     public static let freeActiveHours = ReminderSettings.default.activeHours
     public static let freeDailyLimit = ReminderSettings.default.dailyLimit
+    /// Tre volti nuovi al giorno invece di cinque. Il motore c'è anche senza
+    /// abbonamento — altrimenti la versione gratuita dimostrerebbe un prodotto
+    /// peggiore di quello che stiamo vendendo — ma introduce più piano.
+    public static let freeNewKanjiPerDay = 3
 
     /// Le impostazioni che valgono davvero per questo utente.
     ///
@@ -90,6 +94,7 @@ public enum AccessPolicy {
         limited.intervalMinutes = freeIntervalMinutes
         limited.activeHours = freeActiveHours
         limited.dailyLimit = freeDailyLimit
+        limited.newKanjiPerDay = freeNewKanjiPerDay
         limited.theme = theme(settings.theme, for: status)
         let freeGrades = settings.grades.intersection(KanjiLevel.freeGrades)
         // Mai un mazzo vuoto: chi aveva scelto solo gradi a pagamento riparte da
