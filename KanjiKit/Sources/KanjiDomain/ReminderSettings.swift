@@ -42,8 +42,9 @@ public struct ReminderSettings: Equatable, Sendable, Codable {
     public var isPassive: Bool
     /// I gradi scolastici da ripassare, cioè i mazzi attivi.
     public var grades: Set<Int>
-    /// Quanti kanji nuovi al giorno, tra notifiche arrivate e NEXT. L'intervallo dà
-    /// il ritmo, questo il tetto: raggiunto il numero, la giornata è finita.
+    /// Quanti promemoria al giorno, notifiche arrivate e NEXT insieme. Conta ogni
+    /// comparsa, ripassi compresi: non è la stessa cosa di `newKanjiPerDay`, che conta
+    /// solo i volti nuovi. L'intervallo dà il ritmo, questo il tetto.
     public var dailyLimit: Int
     /// Il tema scelto. Sta qui e non in un archivio a parte perché segue le stesse regole
     /// di accesso delle altre scelte Premium, e si salva allo stesso modo.

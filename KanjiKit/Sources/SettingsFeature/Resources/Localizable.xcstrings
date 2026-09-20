@@ -1,173 +1,303 @@
 {
-  "sourceLanguage" : "en",
-  "strings" : {
-    "Active" : {
-      "comment" : "Stato del permesso notifiche.",
-      "localizations" : {
-        "it" : { "stringUnit" : { "state" : "translated", "value" : "Attive" } }
-      }
-    },
-    "Active hours" : {
-      "localizations" : {
-        "it" : { "stringUnit" : { "state" : "translated", "value" : "Orari attivi" } }
-      }
-    },
-    "Brush ink on mustard paper" : {
-      "comment" : "Descrizione del tema Sumi-e senape.",
-      "localizations" : {
-        "it" : { "stringUnit" : { "state" : "translated", "value" : "Inchiostro a pennello su carta senape" } }
-      }
-    },
-    "Brush ink on washi paper" : {
-      "comment" : "Descrizione del tema Sumi-e washi.",
-      "localizations" : {
-        "it" : { "stringUnit" : { "state" : "translated", "value" : "Inchiostro a pennello su carta washi" } }
-      }
-    },
-    "Data sources" : {
-      "localizations" : {
-        "it" : { "stringUnit" : { "state" : "translated", "value" : "Fonti dati" } }
-      }
-    },
-    "Decks" : {
-      "comment" : "Sezione dei mazzi, uno per grado scolastico.",
-      "localizations" : {
-        "it" : { "stringUnit" : { "state" : "translated", "value" : "Mazzi" } }
-      }
-    },
-    "Discreet mode" : {
-      "localizations" : {
-        "it" : { "stringUnit" : { "state" : "translated", "value" : "Modalità discreta" } }
-      }
-    },
-    "Enable notifications" : {
-      "localizations" : {
-        "it" : { "stringUnit" : { "state" : "translated", "value" : "Attiva le notifiche" } }
-      }
-    },
-    "From" : {
-      "comment" : "Ora di inizio della finestra attiva.",
-      "localizations" : {
-        "it" : { "stringUnit" : { "state" : "translated", "value" : "Dalle" } }
-      }
-    },
-    "Grade %lld" : {
-      "comment" : "Mazzo di una classe delle elementari giapponesi, da 1 a 6.",
-      "localizations" : {
-        "it" : { "stringUnit" : { "state" : "translated", "value" : "Classe %lld" } }
-      }
-    },
-    "Included with Premium." : {
-      "comment" : "Sotto un'impostazione bloccata e come etichetta VoiceOver del lucchetto.",
-      "localizations" : {
-        "it" : { "stringUnit" : { "state" : "translated", "value" : "Incluso in Premium." } }
-      }
-    },
-    "Indigo on night" : {
-      "comment" : "Descrizione del tema Ai-zome.",
-      "localizations" : {
-        "it" : { "stringUnit" : { "state" : "translated", "value" : "Indaco su notte" } }
-      }
-    },
-    "Interval" : {
-      "localizations" : {
-        "it" : { "stringUnit" : { "state" : "translated", "value" : "Intervallo" } }
-      }
-    },
-    "Kanji opened with Next count too. Once the number is reached, reminders stop until tomorrow." : {
-      "comment" : "Nota sotto i promemoria: spiega il numero di kanji al giorno.",
-      "localizations" : {
-        "it" : { "stringUnit" : { "state" : "translated", "value" : "Contano anche quelli aperti con Avanti. Raggiunto il numero, le notifiche riprendono domani." } }
-      }
-    },
-    "New kanji per day" : {
-      "comment" : "Quanti kanji nuovi al massimo in una giornata, notifiche e Avanti insieme.",
-      "localizations" : {
-        "it" : { "stringUnit" : { "state" : "translated", "value" : "Kanji nuovi al giorno" } }
-      }
-    },
-    "Notifications" : {
-      "localizations" : {
-        "it" : { "stringUnit" : { "state" : "translated", "value" : "Notifiche" } }
-      }
-    },
-    "Notifications don't wake the screen: they pile up in the list." : {
-      "localizations" : {
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Le notifiche non accendono lo schermo: si accumulano nella lista."
+  "sourceLanguage": "en",
+  "strings": {
+    "Active": {
+      "comment": "Stato del permesso notifiche.",
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Attive"
           }
         }
       }
     },
-    "Outside this window nothing arrives." : {
-      "localizations" : {
-        "it" : { "stringUnit" : { "state" : "translated", "value" : "Fuori da questa fascia non arriva niente." } }
-      }
-    },
-    "Privacy" : {
-      "comment" : "Voce delle impostazioni che apre l'informativa privacy.",
-      "localizations" : {
-        "it" : { "stringUnit" : { "state" : "translated", "value" : "Privacy" } }
-      }
-    },
-    "Read online" : {
-      "comment" : "Link alla versione online di un documento.",
-      "localizations" : {
-        "it" : { "stringUnit" : { "state" : "translated", "value" : "Leggi online" } }
-      }
-    },
-    "Reminders" : {
-      "localizations" : {
-        "it" : { "stringUnit" : { "state" : "translated", "value" : "Promemoria" } }
-      }
-    },
-    "Secondary school" : {
-      "comment" : "Mazzo dei jōyō imparati dopo le elementari (grado 8 in KANJIDIC).",
-      "localizations" : {
-        "it" : { "stringUnit" : { "state" : "translated", "value" : "Medie e superiori" } }
-      }
-    },
-    "Sumi-e mustard" : {
-      "comment" : "Nome del tema: inchiostro a pennello su carta senape.",
-      "localizations" : {
-        "it" : { "stringUnit" : { "state" : "translated", "value" : "Sumi-e senape" } }
-      }
-    },
-    "Sumi-e washi" : {
-      "comment" : "Nome del tema: inchiostro a pennello su carta washi.",
-      "localizations" : {
-        "it" : { "stringUnit" : { "state" : "translated", "value" : "Sumi-e washi" } }
-      }
-    },
-    "Theme" : {
-      "comment" : "Sezione dei temi dell'app.",
-      "localizations" : {
-        "it" : { "stringUnit" : { "state" : "translated", "value" : "Tema" } }
-      }
-    },
-    "To" : {
-      "comment" : "Ora di fine della finestra attiva.",
-      "localizations" : {
-        "it" : { "stringUnit" : { "state" : "translated", "value" : "Alle" } }
-      }
-    },
-    "Turn them on in Settings › Notifications on your Watch." : {
-      "localizations" : {
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Attivale in Impostazioni › Notifiche sul Watch."
+    "Active hours": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Orari attivi"
           }
         }
       }
     },
-    "Unlock all kanji" : {
-      "localizations" : {
-        "it" : { "stringUnit" : { "state" : "translated", "value" : "Sblocca tutti i kanji" } }
+    "Brush ink on mustard paper": {
+      "comment": "Descrizione del tema Sumi-e senape.",
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inchiostro a pennello su carta senape"
+          }
+        }
+      }
+    },
+    "Brush ink on washi paper": {
+      "comment": "Descrizione del tema Sumi-e washi.",
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inchiostro a pennello su carta washi"
+          }
+        }
+      }
+    },
+    "Data sources": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fonti dati"
+          }
+        }
+      }
+    },
+    "Decks": {
+      "comment": "Sezione dei mazzi, uno per grado scolastico.",
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mazzi"
+          }
+        }
+      }
+    },
+    "Discreet mode": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Modalità discreta"
+          }
+        }
+      }
+    },
+    "Enable notifications": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Attiva le notifiche"
+          }
+        }
+      }
+    },
+    "From": {
+      "comment": "Ora di inizio della finestra attiva.",
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dalle"
+          }
+        }
+      }
+    },
+    "Grade %lld": {
+      "comment": "Mazzo di una classe delle elementari giapponesi, da 1 a 6.",
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Classe %lld"
+          }
+        }
+      }
+    },
+    "Included with Premium.": {
+      "comment": "Sotto un'impostazione bloccata e come etichetta VoiceOver del lucchetto.",
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Incluso in Premium."
+          }
+        }
+      }
+    },
+    "Indigo on night": {
+      "comment": "Descrizione del tema Ai-zome.",
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Indaco su notte"
+          }
+        }
+      }
+    },
+    "Interval": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Intervallo"
+          }
+        }
+      }
+    },
+    "Notifications": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notifiche"
+          }
+        }
+      }
+    },
+    "Notifications don't wake the screen: they pile up in the list.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Le notifiche non accendono lo schermo: si accumulano nella lista."
+          }
+        }
+      }
+    },
+    "Outside this window nothing arrives.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fuori da questa fascia non arriva niente."
+          }
+        }
+      }
+    },
+    "Privacy": {
+      "comment": "Voce delle impostazioni che apre l'informativa privacy.",
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Privacy"
+          }
+        }
+      }
+    },
+    "Read online": {
+      "comment": "Link alla versione online di un documento.",
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Leggi online"
+          }
+        }
+      }
+    },
+    "Reminders": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Promemoria"
+          }
+        }
+      }
+    },
+    "Reminders per day": {
+      "comment": "Quanti promemoria al massimo in una giornata: ripassi e Avanti compresi, non solo kanji nuovi.",
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Promemoria al giorno"
+          }
+        }
+      }
+    },
+    "Reviews and kanji opened with Next count too. Once the number is reached, reminders stop until tomorrow.": {
+      "comment": "Nota sotto i promemoria: spiega cosa conta nel numero del giorno.",
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Contano anche i ripassi e quelli aperti con Avanti. Raggiunto il numero, le notifiche riprendono domani."
+          }
+        }
+      }
+    },
+    "Secondary school": {
+      "comment": "Mazzo dei jōyō imparati dopo le elementari (grado 8 in KANJIDIC).",
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Medie e superiori"
+          }
+        }
+      }
+    },
+    "Sumi-e mustard": {
+      "comment": "Nome del tema: inchiostro a pennello su carta senape.",
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sumi-e senape"
+          }
+        }
+      }
+    },
+    "Sumi-e washi": {
+      "comment": "Nome del tema: inchiostro a pennello su carta washi.",
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sumi-e washi"
+          }
+        }
+      }
+    },
+    "Theme": {
+      "comment": "Sezione dei temi dell'app.",
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tema"
+          }
+        }
+      }
+    },
+    "To": {
+      "comment": "Ora di fine della finestra attiva.",
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alle"
+          }
+        }
+      }
+    },
+    "Turn them on in Settings › Notifications on your Watch.": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Attivale in Impostazioni › Notifiche sul Watch."
+          }
+        }
+      }
+    },
+    "Unlock all kanji": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sblocca tutti i kanji"
+          }
+        }
       }
     }
   },
-  "version" : "1.0"
+  "version": "1.0"
 }

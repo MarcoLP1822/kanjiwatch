@@ -45,9 +45,10 @@ public enum AmbientEngine {
         .learning, .new, .learning, .familiar, .learning, .new, .learning, .familiar, .learning, .new,
     ]
 
-    /// Il tetto ai kanji nuovi del giorno. Alzare la frequenza deve aumentare le
-    /// esposizioni, non la roba da imparare: con trenta contatti al giorno restano
-    /// cinque volti nuovi e venticinque incontri con quelli di prima.
+    /// Il tetto ai kanji nuovi del giorno — da non confondere con `dailyLimit`, che
+    /// è il tetto ai promemoria. Alzare la frequenza deve aumentare le esposizioni,
+    /// non la roba da imparare: con trenta promemoria al giorno restano cinque volti
+    /// nuovi e venticinque incontri con quelli di prima.
     public static let defaultNewPerDay = 5
 
     public static func plan(

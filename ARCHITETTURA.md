@@ -265,9 +265,21 @@ all'avvio, al ritorno in foreground, alla gestione di una notifica toccata e dop
 ogni NEXT. Una rischedulazione alla volta: all'apertura da una notifica ne partono
 due insieme, e due code rifatte in parallelo mescolerebbero le loro notifiche.
 
-### Il ritmo della giornata: intervallo e tetto
+### Il ritmo della giornata: intervallo e due tetti
 
-L'intervallo dà il ritmo, il **numero di kanji nuovi al giorno** il tetto (default 10).
+L'intervallo dà il ritmo, e i tetti sono **due cose diverse** da quando esiste
+l'Ambient Engine:
+
+- **`dailyLimit`, i promemoria al giorno** (default 10): quante volte l'app si fa
+  viva, ripassi compresi. È quello che si sceglie dalle impostazioni.
+- **`newKanjiPerDay`, i volti nuovi al giorno** (5, 3 senza abbonamento): quanti kanji
+  mai visti può introdurre la giornata. Non si sceglie: è il freno che tiene l'app
+  un'esposizione durante il giorno invece di un corso da seguire (§6, il ritmo).
+
+Prima della F13 coincidevano — ogni notifica pescava un kanji diverso dal mazzo
+mescolato — e per questo l'impostazione si chiamava «kanji nuovi al giorno». Adesso
+alzare il primo aumenta gli incontri, non la roba da imparare.
+
 Contano le notifiche arrivate e i NEXT; raggiunto il numero, le notifiche di quel
 giorno si fermano e riprendono il giorno dopo. Il conteggio è per giorno di
 calendario e sta nello stato salvato: prima di rifare la coda si contano le notifiche
@@ -617,7 +629,7 @@ database.
 
 | Chiave | Contenuto | Default |
 |---|---|---|
-| `reminder.settings` | intervallo, fascia attiva, modalità discreta, gradi, kanji al giorno | 60 min, 8→22, spenta, 1-2, 10 |
+| `reminder.settings` | intervallo, fascia attiva, modalità discreta, gradi, promemoria al giorno, volti nuovi al giorno | 60 min, 8→22, spenta, 1-2, 10, 5 |
 | `reminder.state` | coda programmata, kanji in gioco, conteggio del giorno, ancora dell'ultimo NEXT | coda vuota |
 
 Due chiavi e non cinque: coda programmata, kanji in gioco e conteggio del giorno si
@@ -724,8 +736,9 @@ successiva, portandosi dietro l'allargamento del mazzo: 300 kanji non reggono un
 abbonamento, 2.136 sì.
 
 - **Gratis:** classi 1 e 2 (240 kanji), un promemoria all'ora dalle 8 alle 22, 10
-  kanji al giorno, modalità discreta, tema Ai-zome. **Premium:** tutti i gradi,
-  intervallo, fascia oraria e numero di kanji al giorno liberi, e i temi sumi-e.
+  promemoria al giorno, tre kanji nuovi al giorno, modalità discreta, tema Ai-zome.
+  **Premium:** tutti i gradi, intervallo, fascia oraria e promemoria al giorno liberi,
+  cinque kanji nuovi al giorno, e i temi sumi-e.
 - La regola sta in `AccessPolicy`, nel dominio. Scheduler e caricamento del mazzo
   leggono le impostazioni *effettive*; quelle scelte restano salvate intatte, così
   se l'abbonamento scade e poi si rinnova le scelte tornano da sole.

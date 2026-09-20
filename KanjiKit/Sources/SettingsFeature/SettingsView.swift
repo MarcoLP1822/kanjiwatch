@@ -88,19 +88,19 @@ public struct SettingsView<Premium: View>: View {
                             Text(count, format: .number).tag(count)
                         }
                     } label: {
-                        Text("New kanji per day", bundle: .module)
+                        Text("Reminders per day", bundle: .module)
                     }
                 } else {
                     lockedValue(
                         Text("Interval", bundle: .module), value: intervalLabel(model.effective.intervalMinutes))
                     lockedValue(
-                        Text("New kanji per day", bundle: .module), value: model.effective.dailyLimit.formatted())
+                        Text("Reminders per day", bundle: .module), value: model.effective.dailyLimit.formatted())
                 }
             } header: {
                 Text("Reminders", bundle: .module)
             } footer: {
                 Text(
-                    "Kanji opened with Next count too. Once the number is reached, reminders stop until tomorrow.",
+                    "Reviews and kanji opened with Next count too. Once the number is reached, reminders stop until tomorrow.",
                     bundle: .module)
             }
 
