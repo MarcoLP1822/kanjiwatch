@@ -63,7 +63,7 @@ public struct UserNotificationScheduler: ReminderScheduling, NotificationAuthori
         // leggi alzando il polso per mezzo secondo.
         content.title = notification.character
         content.body = String(localized: "Tap for stroke order", bundle: .module)
-        content.userInfo = ReminderPayload.userInfo(codepoint: notification.codepoint)
+        content.userInfo = ReminderPayload.userInfo(for: notification.destination)
         content.categoryIdentifier = ReminderPayload.categoryIdentifier
         content.sound = nil
         // Modalità discreta: la notifica non accende lo schermo e si accumula

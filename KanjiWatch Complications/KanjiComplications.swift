@@ -74,7 +74,7 @@ struct GlanceComplicationView: View {
         Group {
             if let glance = entry.glance {
                 content(for: glance)
-                    .widgetURL(KanjiLink.url(for: glance.codepoint))
+                    .widgetURL(KanjiLink.url(for: ReminderDestination(codepoint: glance.codepoint)))
             }
         }
         .containerBackground(for: .widget) { Color.clear }

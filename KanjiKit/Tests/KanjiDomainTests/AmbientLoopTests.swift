@@ -53,7 +53,7 @@ struct AmbientLoopTests {
         #expect(ambient.value.records[planned.codepoint]?.presentationCount == 1)
         #expect(ambient.value.records[planned.codepoint]?.lastPresentedAt == planned.fireDate)
 
-        _ = loop({ clock }).open(codepoint: planned.codepoint)
+        _ = loop({ clock }).open(planned.destination)
         loop({ clock }).readingsViewed(planned.codepoint)
         let studied = try #require(ambient.value.records[planned.codepoint])
         #expect(studied.openedCount == 1)

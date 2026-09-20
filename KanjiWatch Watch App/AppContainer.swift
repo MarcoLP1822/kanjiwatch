@@ -120,10 +120,10 @@ final class AppContainer {
         Task { await subscriptionDidChange(await subscriptions.currentStatus()) }
     }
 
-    /// Dalla notifica o dalla complication: apre sul kanji che hai guardato al polso
-    /// e rimette in moto la coda.
-    func open(codepoint: String) {
-        study.open(codepoint: codepoint)
+    /// Dalla notifica o dalla complication: apre sul kanji che hai guardato al polso,
+    /// nella stessa forma in cui l'hai visto, e rimette in moto la coda.
+    func open(_ destination: ReminderDestination) {
+        study.open(destination)
         reschedule()
     }
 

@@ -31,7 +31,9 @@ struct StudyLoopTests {
         )
         let now = date("2026-05-10 09:12").addingTimeInterval(37)
 
-        let outcome = value.advance(after: "old00", now: now, dailyLimit: 10, draw: { "zzzzz" }, calendar: calendar)
+        let outcome = value.advance(
+            after: "old00", now: now, dailyLimit: 10, draw: { ReminderDestination(codepoint: "zzzzz") },
+            calendar: calendar)
 
         #expect(outcome == .showing("aaaaa"))
         #expect(value.scheduled == [reminder("2026-05-10 11:00", "bbbbb")])
@@ -44,7 +46,8 @@ struct StudyLoopTests {
     @Test func withoutQueuedNotificationsNextDrawsFromTheDeck() {
         var value = state(scheduled: [])
         let outcome = value.advance(
-            after: nil, now: date("2026-05-10 09:12"), dailyLimit: 10, draw: { "zzzzz" }, calendar: calendar)
+            after: nil, now: date("2026-05-10 09:12"), dailyLimit: 10,
+            draw: { ReminderDestination(codepoint: "zzzzz") }, calendar: calendar)
         #expect(outcome == .showing("zzzzz"))
     }
 
@@ -58,7 +61,9 @@ struct StudyLoopTests {
         )
 
         #expect(
-            value.advance(after: "old00", now: now, dailyLimit: 3, draw: { "zzzzz" }, calendar: calendar)
+            value.advance(
+                after: "old00", now: now, dailyLimit: 3, draw: { ReminderDestination(codepoint: "zzzzz") },
+                calendar: calendar)
                 == .dailyLimitReached)
         #expect(value.scheduled.count == 1)
     }
@@ -73,7 +78,9 @@ struct StudyLoopTests {
         )
 
         #expect(
-            value.advance(after: "old00", now: now, dailyLimit: 10, draw: { "zzzzz" }, calendar: calendar)
+            value.advance(
+                after: "old00", now: now, dailyLimit: 10, draw: { ReminderDestination(codepoint: "zzzzz") },
+                calendar: calendar)
                 == .showing("arrvd"))
         #expect(value.scheduled == [reminder("2026-05-10 11:00", "later")])
         #expect(value.today.count(on: now, calendar: calendar) == 1)
@@ -293,7 +300,7 @@ struct StudyLoopTests {
         let ambient = InMemoryStore(AmbientState.empty)
         let opened = deck.kanji[2].codepoint
 
-        _ = loop(state: store, ambient: ambient, at: "2026-05-10 09:12").open(codepoint: opened)
+        _ = loop(state: store, ambient: ambient, at: "2026-05-10 09:12").open(ReminderDestination(codepoint: opened))
 
         #expect(ambient.value.records[opened]?.openedCount == 1)
     }
@@ -309,7 +316,7 @@ struct StudyLoopTests {
         let ambient = InMemoryStore(AmbientState.empty)
 
         _ = loop(state: store, ambient: ambient, at: "2026-05-10 09:12").current()
-        _ = loop(state: store, ambient: ambient, at: "2026-05-10 09:13").open(codepoint: arrived)
+        _ = loop(state: store, ambient: ambient, at: "2026-05-10 09:13").open(ReminderDestination(codepoint: arrived))
 
         let exposure = try #require(ambient.value.records[arrived])
         #expect(exposure.presentationCount == 1)
@@ -337,13 +344,66 @@ struct StudyLoopTests {
         let ambient = InMemoryStore(AmbientState.empty)
         let studied = deck.kanji[0].codepoint
         let loop = loop(state: store, ambient: ambient, at: "2026-05-10 09:12")
-        _ = loop.open(codepoint: studied)
+        _ = loop.open(ReminderDestination(codepoint: studied))
         let before = try #require(ambient.value.records[studied]?.nextDueAt)
 
         loop.readingsViewed(studied)
 
         #expect(ambient.value.records[studied]?.readingsViewedCount == 1)
         #expect(try #require(ambient.value.records[studied]?.nextDueAt) > before)
+    }
+
+    // MARK: - La forma che viaggia col kanji
+
+    /// La notifica arrivata porta con sé la sua forma: se al polso hai visto la
+    /// parola, l'app non riparte dal significato.
+    @Test func anArrivedNotificationKeepsItsForm() {
+        var value = state(
+            scheduled: [ScheduledReminder(fireDate: date("2026-05-10 09:00"), codepoint: "aaaaa", content: .context)]
+        )
+
+        value.recordDeliveries(now: date("2026-05-10 09:12"), calendar: calendar)
+
+        #expect(value.session.codepoint == "aaaaa")
+        #expect(value.session.content == .context)
+    }
+
+    /// NEXT anticipa la notifica intera, non solo il suo kanji.
+    @Test func nextPullsTheFormForwardToo() {
+        var value = state(
+            scheduled: [ScheduledReminder(fireDate: date("2026-05-10 11:00"), codepoint: "bbbbb", content: .recall)],
+            session: studying("old00", since: "2026-05-10 09:00")
+        )
+
+        let outcome = value.advance(
+            after: "old00", now: date("2026-05-10 09:12"), dailyLimit: 10,
+            draw: { ReminderDestination(codepoint: "zzzzz") }, calendar: calendar)
+
+        #expect(outcome == .showing("bbbbb"))
+        #expect(value.session.content == .recall)
+        // E non resta in coda: arriverebbe una seconda volta.
+        #expect(value.scheduled.isEmpty)
+    }
+
+    /// Il tocco sulla notifica apre nella forma che stavi guardando.
+    @Test func openingKeepsTheFormYouWereLookingAt() throws {
+        let store = InMemoryStore(ReminderState.empty)
+        let ambient = InMemoryStore(AmbientState.empty)
+        let destination = ReminderDestination(codepoint: deck.kanji[1].codepoint, content: .context)
+
+        _ = loop(state: store, ambient: ambient, at: "2026-05-10 09:12").open(destination)
+
+        #expect(store.value.session.content == .context)
+    }
+
+    /// Sessioni salvate prima della micro-sequenza: si leggono, e valgono come
+    /// "kanji e significato".
+    @Test func aSessionSavedBeforeTheSequenceIsAnIntroduce() throws {
+        let saved = #"{"scheduled":[],"session":{"codepoint":"04e00","isDone":false}}"#
+        let value = try JSONDecoder().decode(ReminderState.self, from: Data(saved.utf8))
+
+        #expect(value.session.codepoint == "04e00")
+        #expect(value.session.content == .introduce)
     }
 
     /// Chi arriva da una notifica ricomincia da quel kanji, anche se aveva chiuso il giro.
@@ -354,7 +414,8 @@ struct StudyLoopTests {
             )
         )
 
-        let opened = try #require(loop(state: store, at: "2026-05-10 09:12").open(codepoint: deck.kanji[2].codepoint))
+        let opened = try #require(
+            loop(state: store, at: "2026-05-10 09:12").open(ReminderDestination(codepoint: deck.kanji[2].codepoint)))
 
         #expect(opened.current == deck.kanji[2])
         #expect(!opened.isDone)

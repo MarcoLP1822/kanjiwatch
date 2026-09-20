@@ -54,7 +54,8 @@ extension ReminderState {
         if let latest = delivered.max(by: { $0.fireDate < $1.fireDate }),
             latest.fireDate > (session.since ?? .distantPast)
         {
-            session = StudySession(codepoint: latest.codepoint, isDone: false, since: latest.fireDate)
+            session = StudySession(
+                codepoint: latest.codepoint, isDone: false, since: latest.fireDate, content: latest.content)
         }
         return delivered
     }
@@ -70,7 +71,7 @@ extension ReminderState {
         after onScreen: String?,
         now: Date,
         dailyLimit: Int?,
-        draw: () -> String?,
+        draw: () -> ReminderDestination?,
         calendar: Calendar
     ) -> NextOutcome {
         recordDeliveries(now: now, calendar: calendar)
@@ -82,18 +83,21 @@ extension ReminderState {
             return .dailyLimitReached
         }
 
-        let codepoint: String
+        let next: ReminderDestination
         if let upcoming = scheduled.min(by: { $0.fireDate < $1.fireDate }) {
-            codepoint = upcoming.codepoint
+            next = upcoming.destination
+            // Anticipata vuol dire consumata: lasciarla in coda la farebbe arrivare
+            // una seconda volta, contata e mostrata di nuovo.
             scheduled.removeAll { $0 == upcoming }
         } else if let drawn = draw() {
-            codepoint = drawn
+            next = drawn
         } else {
             return .emptyDeck
         }
 
+        let codepoint = next.codepoint
         today.add(1, on: now, calendar: calendar)
-        session = StudySession(codepoint: codepoint, isDone: false, since: now)
+        session = StudySession(codepoint: codepoint, isDone: false, since: now, content: next.content)
         // Al minuto, come i trigger delle notifiche: con i secondi l'app crederebbe
         // arrivata alle 10:12:37 una notifica che il sistema consegna alle 10:12:00.
         anchor = calendar.dateInterval(of: .minute, for: now)?.start ?? now
@@ -107,10 +111,11 @@ extension ReminderState {
         session.isDone = true
     }
 
-    /// Una notifica toccata: il suo kanji entra in gioco, da capo. L'arrivo l'ha già
-    /// contato `recordDeliveries`.
-    public mutating func open(codepoint: String, now: Date) {
-        session = StudySession(codepoint: codepoint, isDone: false, since: now)
+    /// Una notifica toccata: il suo kanji entra in gioco, da capo, nella forma in cui
+    /// l'hai guardato al polso. L'arrivo l'ha già contato `recordDeliveries`.
+    public mutating func open(_ destination: ReminderDestination, now: Date) {
+        session = StudySession(
+            codepoint: destination.codepoint, isDone: false, since: now, content: destination.content)
     }
 }
 
@@ -171,11 +176,11 @@ public struct StudyLoop {
     }
 
     /// Aprire è un segnale più forte di vedere: la notifica l'hai guardata davvero.
-    public func open(codepoint: String) -> Snapshot? {
+    public func open(_ destination: ReminderDestination) -> Snapshot? {
         update { value, exposure, moment in
-            guard deck[codepoint] != nil else { return }
-            value.open(codepoint: codepoint, now: moment)
-            exposure.record(.opened, codepoint: codepoint, at: moment)
+            guard deck[destination.codepoint] != nil else { return }
+            value.open(destination, now: moment)
+            exposure.record(.opened, codepoint: destination.codepoint, at: moment)
         }
     }
 
@@ -210,7 +215,8 @@ public struct StudyLoop {
                     after: onScreen,
                     newPerDay: settings.load().newKanjiPerDay,
                     calendar: calendar
-                )?.codepoint
+                )
+                .map { ReminderDestination(codepoint: $0.codepoint, content: $0.content) }
             },
             calendar: calendar
         )

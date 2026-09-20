@@ -14,9 +14,9 @@ final class KanjiNotificationController: WKUserNotificationHostingController<Rem
     private var kanji: Kanji?
 
     override func didReceive(_ notification: UNNotification) {
-        let codepoint = ReminderPayload.codepoint(from: notification.request.content.userInfo)
+        let destination = ReminderPayload.destination(from: notification.request.content.userInfo)
         // Il corpo lo rivaluta il sistema dopo questo metodo: qui basta il dato.
-        kanji = codepoint.flatMap { AppContainer.shared.deck[$0] }
+        kanji = destination.flatMap { AppContainer.shared.deck[$0.codepoint] }
     }
 
     override var body: ReminderGlanceView {

@@ -24,11 +24,18 @@ public struct PlannedNotification: Equatable, Sendable {
     public let fireDate: Date
     public let codepoint: String
     public let character: String
+    /// In che forma mostrarlo. Decisa dal piano, non ricalcolata da chi consegna.
+    public let content: ExposureContent
 
-    public init(fireDate: Date, codepoint: String, character: String) {
+    public init(fireDate: Date, codepoint: String, character: String, content: ExposureContent = .introduce) {
         self.fireDate = fireDate
         self.codepoint = codepoint
         self.character = character
+        self.content = content
+    }
+
+    public var destination: ReminderDestination {
+        ReminderDestination(codepoint: codepoint, content: content)
     }
 }
 
