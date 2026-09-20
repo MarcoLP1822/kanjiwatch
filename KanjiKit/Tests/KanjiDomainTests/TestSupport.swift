@@ -41,3 +41,28 @@ struct SeededGenerator: RandomNumberGenerator {
         return state
     }
 }
+
+/// Un mazzo finto con codepoint prevedibili e frequenza crescente: così l'ordine con
+/// cui l'Ambient Engine introduce i kanji nuovi si legge a occhio nei test.
+func testDeck(count: Int, grade: (Int) -> Int = { _ in 1 }) -> KanjiDeck {
+    KanjiDeck(
+        viewBox: 109,
+        attribution: "",
+        kanji: (0..<count).map { index in
+            Kanji(
+                character: String(UnicodeScalar(0x4E00 + index)!),
+                codepoint: testCodepoint(index),
+                strokes: ["M0,0"],
+                onReadings: [],
+                kunReadings: [],
+                meanings: ["kanji \(index)"],
+                grade: grade(index),
+                frequencyRank: index + 1
+            )
+        }
+    )
+}
+
+func testCodepoint(_ index: Int) -> String {
+    String(format: "%05x", 0x4E00 + index)
+}
