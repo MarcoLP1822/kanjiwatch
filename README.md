@@ -10,7 +10,9 @@ Quale kanji ti arriva lo decide un motore che guarda cosa ti è già passato dav
 qualcosa di nuovo, qualcosa da rivedere, qualcosa che conosci di vista. E decide anche
 come: la prima volta col significato, poi il kanji da solo — mezzo secondo per
 ricordartelo — e più avanti dentro una parola vera. Nessun voto e nessun «lo so / non
-lo so»: bastano i segnali che lasci aprendo l'app.
+lo so»: bastano i segnali che lasci aprendo l'app. Con l'abbonamento fa un passo in
+più — i kanji che vai ad aprire quando li vedi da soli tornano un po' prima e con
+qualcosa a cui aggrapparsi, senza che tu abbia configurato niente.
 
 Tutti i 2.136 jōyō, in mazzi per classe scolastica. Niente account, niente rete,
 niente arretrati da smaltire.

@@ -425,6 +425,46 @@ Lo schermo dell'app **non cambia**: kanji → tratti → letture è già l'inter
 pochi secondi che vogliamo, e chi arriva da una notifica col contesto tocca e trova lo
 stesso giro di sempre.
 
+### Il ritmo personale, col Premium
+
+Il motore conosce due modi. `standard` è quello descritto fin qui, uguale per tutti.
+`adaptive` guarda in più **quanto quel kanji sembra chiederti un appiglio**.
+
+**Non è la sua difficoltà.** Di quella non sappiamo niente e non abbiamo modo di
+saperla: quello che possiamo osservare è che, vedendo il kanji da solo, sei andato a
+cercare il resto. Per questo il segnale conta **solo sulla forma `recall`**: aprire un
+kanji che aveva già il significato scritto sotto è il comportamento normale di chi
+guarda, non una richiesta. E ignorare una notifica non abbassa niente — non sappiamo
+se lo sapevi o se non hai nemmeno alzato il polso.
+
+| Gesto sul richiamo | Peso |
+|---|---|
+| apri l'app su quel kanji | +0,30 |
+| arrivi fino a letture e parola | +0,25 |
+
+Il punteggio sta fra 0 e 1, non si mostra mai, e **si dimezza ogni due settimane**: una
+fatica di marzo non deve perseguitare un kanji a maggio. Sotto 0,25 è `low`, sotto 0,60
+`medium`, oltre `high`.
+
+**Cosa cambia.** Non `nextDueAt`, che resta la linea di base per tutti: il ritmo
+personale è una lettura diversa dello stesso dato (`effectiveDueAt`), così quando
+l'abbonamento finisce il ritmo di base è ancora lì intatto.
+
+| Supporto | Attesa | Giro delle forme dalla quarta volta |
+|---|---|---|
+| `low` | invariata | richiamo, parola, richiamo, significato |
+| `medium` | × 0,65 | parola, richiamo, significato, richiamo |
+| `high` | × 0,40 | significato, parola, richiamo, parola |
+
+Mai meno di sei ore dall'ultima comparsa: un kanji che costa fatica non deve diventare
+una raffica. E il richiamo resta in tutti e tre i giri — trasformare tutto in risposte
+pronte vorrebbe dire non far più ricordare niente. Le prime tre esposizioni non
+cambiano mai: sono la grammatica dell'app.
+
+**I segnali si raccolgono sempre, anche gratis**, e semplicemente non si usano. Chi
+prova l'app per due settimane e poi si abbona trova un motore che lo conosce già,
+invece di uno che riparte da zero il giorno del pagamento.
+
 Il carattere viaggia dentro la notifica:
 
 ```swift
@@ -722,6 +762,7 @@ Non è un parere legale.
 | **F12** | Linee guida | ✅ manifest privacy, informativa nell'app, bottoni accessibili, Riduci movimento |
 | **F13** | Ambient Engine | ✅ lo storico decide cosa ti passa davanti: nuovo, rinforzo, familiare |
 | **F14** | Micro-sequenza | ✅ e decide anche come: il kanji, il richiamo, la parola |
+| **F15** | Ritmo personale | ✅ col Premium ogni kanji si fa il suo ritmo, senza che tu dica niente |
 
 F2 è già un'app che usi a mano. F5 è il momento in cui diventa quello che avevi in
 mente. Non invertire: se parti dalle notifiche, debugghi lo scheduler prima di aver
@@ -782,6 +823,13 @@ L'abbonamento cambia di conseguenza: non vendiamo 2.136 kanji, vendiamo il fluss
 personale che si aggiorna da solo. Per questo il motore c'è anche nella versione
 gratuita — dimostrare un prodotto peggiore di quello che vendi è un modo sicuro di non
 venderlo — e Premium allarga il mazzo e il controllo del ritmo.
+
+**Sulla F15.** È la fase che dà un senso ricorrente all'abbonamento: non un catalogo
+più grande, un flusso che continua a personalizzarsi. Il dominio resta ignorante di
+RevenueCat — conosce `AmbientMode` e basta, e chi mette insieme l'app gliene passa uno
+guardando l'abbonamento. Nel paywall il primo vantaggio diventa «Ripassi che si
+adattano a te» e i temi scendono a bonus. Niente «intelligenza artificiale»: non lo è,
+e non serve che lo sia.
 
 **Sulla F14.** La micro-sequenza (§6) è il secondo passo dello stesso motore: prima
 *cosa*, adesso *come*. Anche qui nessuna schermata nuova — cambiano la notifica e il
