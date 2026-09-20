@@ -201,6 +201,20 @@ struct AmbientEngineTests {
         #expect(state.records["0ffff"] != nil)
     }
 
+    /// Le esposizioni simulate restano nella copia: pianificare non è mostrare, e
+    /// uno storico sporcato dalle previsioni sarebbe il modo più silenzioso di
+    /// rompere tutto.
+    @Test func planningLeavesTheHistoryUntouched() {
+        let before = started()
+        var state = before
+
+        _ = AmbientEngine.plan(fireDates: hours(20), deck: deck, state: state, calendar: calendar)
+        state.record(.presented, codepoint: testCodepoint(0), at: date("2026-05-10 08:00"))
+
+        #expect(before.records == started().records)
+        #expect(state.records[testCodepoint(0)]?.presentationCount == 2)
+    }
+
     @Test func anEmptyDeckPlansNothing() {
         #expect(plan(hours(5), deck: testDeck(count: 0)).isEmpty)
     }

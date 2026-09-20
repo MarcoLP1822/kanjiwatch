@@ -15,9 +15,15 @@ extension ReminderState {
 
     /// Il passo comune a ogni lettura dello stato, dell'app e dello scheduler.
     ///
-    /// Qui le due memorie si incontrano: le notifiche che sono davvero arrivate
-    /// diventano esposizioni. Quelle ancora in coda no — il piano le ha previste,
-    /// e prevederle non è averle viste.
+    /// Qui le due memorie si incontrano: le notifiche la cui ora è passata diventano
+    /// esposizioni. Quelle ancora in coda no — il piano le ha previste, e prevederle
+    /// non è averle viste.
+    ///
+    /// Sappiamo che l'ora è passata, non che l'utente abbia guardato il polso: è
+    /// un'approssimazione, ed è consapevole. watchOS non dà nessun evento affidabile
+    /// che dica "l'ha vista", e chiederglielo sarebbe la domanda che quest'app non fa.
+    /// I segnali veri — `opened`, `readingsViewed` — pesano di più proprio per questo.
+    /// Contarle una volta sola invece è garantito: chi è arrivato esce dalla coda.
     mutating func catchUp(
         with deck: KanjiDeck,
         now: Date,

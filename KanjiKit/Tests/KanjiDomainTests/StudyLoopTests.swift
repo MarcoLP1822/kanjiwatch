@@ -298,6 +298,40 @@ struct StudyLoopTests {
         #expect(ambient.value.records[opened]?.openedCount == 1)
     }
 
+    /// Il giro che conterebbe due volte se non stessimo attenti: la notifica scade,
+    /// l'app la recupera, e il tocco sulla notifica apre quel kanji. È una comparsa
+    /// e un'apertura, non due comparse.
+    @Test func anExpiredNotificationOpenedFromTheWristCountsOnce() throws {
+        let arrived = deck.kanji[1].codepoint
+        let store = InMemoryStore(
+            ReminderState(scheduled: [ScheduledReminder(fireDate: date("2026-05-10 09:00"), codepoint: arrived)])
+        )
+        let ambient = InMemoryStore(AmbientState.empty)
+
+        _ = loop(state: store, ambient: ambient, at: "2026-05-10 09:12").current()
+        _ = loop(state: store, ambient: ambient, at: "2026-05-10 09:13").open(codepoint: arrived)
+
+        let exposure = try #require(ambient.value.records[arrived])
+        #expect(exposure.presentationCount == 1)
+        #expect(exposure.openedCount == 1)
+    }
+
+    /// Due recuperi di fila: la seconda volta la notifica non c'è più in coda, quindi
+    /// non può essere contata un'altra volta.
+    @Test func catchingUpTwiceDoesNotCountTheSameNotificationTwice() throws {
+        let arrived = deck.kanji[0].codepoint
+        let store = InMemoryStore(
+            ReminderState(scheduled: [ScheduledReminder(fireDate: date("2026-05-10 09:00"), codepoint: arrived)])
+        )
+        let ambient = InMemoryStore(AmbientState.empty)
+
+        _ = loop(state: store, ambient: ambient, at: "2026-05-10 09:12").current()
+        _ = loop(state: store, ambient: ambient, at: "2026-05-10 09:13").current()
+
+        #expect(ambient.value.records[arrived]?.presentationCount == 1)
+        #expect(store.value.today.count(on: date("2026-05-10 09:13"), calendar: calendar) == 1)
+    }
+
     @Test func readingsPushTheKanjiFurtherAway() throws {
         let store = InMemoryStore(ReminderState.empty)
         let ambient = InMemoryStore(AmbientState.empty)

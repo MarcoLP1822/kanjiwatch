@@ -71,6 +71,19 @@ struct AmbientStateTests {
         #expect(exposure.lastEngagedAt == date("2026-05-10 09:01"))
     }
 
+    /// Nemmeno arrivare alle letture è una comparsa in più: sposta il ritmo, non il
+    /// conteggio di quante volte il kanji ti è passato davanti.
+    @Test func readingsDoNotCountAsAnotherSighting() throws {
+        var state = AmbientState.empty
+        state.record(.presented, codepoint: kanji, at: date("2026-05-10 09:00"))
+        state.record(.readingsViewed, codepoint: kanji, at: date("2026-05-10 09:01"))
+        state.record(.readingsViewed, codepoint: kanji, at: date("2026-05-10 09:02"))
+
+        let exposure = try #require(state.records[kanji])
+        #expect(exposure.presentationCount == 1)
+        #expect(exposure.readingsViewedCount == 2)
+    }
+
     /// Aprire è un segnale, non una nuova esposizione: il ritmo non si sposta.
     @Test func openingCountsWithoutChangingTheRhythm() throws {
         var state = AmbientState.empty

@@ -17,12 +17,12 @@ public struct JSONFileStore<Value: Codable>: ValueStore {
     }
 
     public func load() -> Value {
-        guard
-            let data = try? Data(contentsOf: url),
-            let decoded = try? JSONDecoder().decode(Value.self, from: data)
-        else {
-            // File non ancora scritto, o illeggibile dopo un cambio di formato: si
-            // riparte da zero invece di bloccare l'app.
+        guard let data = try? Data(contentsOf: url) else { return fallback }
+        guard let decoded = try? JSONDecoder().decode(Value.self, from: data) else {
+            // Illeggibile: si riparte da zero invece di bloccare l'app, ma il file si
+            // mette da parte invece di lasciarlo sovrascrivere dal primo salvataggio.
+            // È l'unica copia di una storia lunga mesi.
+            try? FileManager.default.replaceItemAt(url.appendingPathExtension("broken"), withItemAt: url)
             return fallback
         }
         return decoded
