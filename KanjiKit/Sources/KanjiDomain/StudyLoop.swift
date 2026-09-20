@@ -167,11 +167,21 @@ public struct StudyLoop {
         update { value, _, _ in value.markDone(onScreen) }
     }
 
+    /// Aprire è un segnale più forte di vedere: la notifica l'hai guardata davvero.
     public func open(codepoint: String) -> Snapshot? {
-        update { value, _, moment in
+        update { value, exposure, moment in
             guard deck[codepoint] != nil else { return }
             value.open(codepoint: codepoint, now: moment)
+            exposure.record(.opened, codepoint: codepoint, at: moment)
         }
+    }
+
+    /// Sei arrivato a letture e parola. È il segnale più forte che abbiamo senza
+    /// chiederti niente, e allontana il momento in cui quel kanji tornerà.
+    public func readingsViewed(_ codepoint: String) {
+        var exposure = ambient.load()
+        exposure.record(.readingsViewed, codepoint: codepoint, at: now())
+        ambient.save(exposure)
     }
 
     /// Mette in gioco il prossimo kanji e ne segna l'esposizione — ma solo se è

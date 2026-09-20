@@ -215,6 +215,103 @@ struct StudyLoopTests {
         #expect(refused == second)
     }
 
+    // MARK: - I segnali che finiscono nello storico
+
+    /// Una notifica arrivata è un'esposizione, all'ora in cui è arrivata. Una ancora
+    /// in coda no: il piano l'ha prevista, e prevederla non è averla vista.
+    @Test func onlyNotificationsThatArrivedCount() throws {
+        let store = InMemoryStore(
+            ReminderState(
+                cycle: DeckCycle(order: [], position: 0),
+                scheduled: [
+                    ScheduledReminder(fireDate: date("2026-05-10 09:00"), codepoint: deck.kanji[0].codepoint),
+                    ScheduledReminder(fireDate: date("2026-05-10 11:00"), codepoint: deck.kanji[1].codepoint),
+                ]
+            )
+        )
+        let ambient = InMemoryStore(AmbientState.empty)
+
+        _ = loop(state: store, ambient: ambient, at: "2026-05-10 09:12").current()
+
+        let arrived = try #require(ambient.value.records[deck.kanji[0].codepoint])
+        #expect(arrived.presentationCount == 1)
+        #expect(arrived.lastPresentedAt == date("2026-05-10 09:00"))
+        #expect(ambient.value.records[deck.kanji[1].codepoint] == nil)
+    }
+
+    /// Il primo avvio non ha niente in coda: il kanji lo sceglie il motore, e conta.
+    @Test func theFirstKanjiOfAllIsASighting() throws {
+        let store = InMemoryStore(ReminderState.empty)
+        let ambient = InMemoryStore(AmbientState.empty)
+
+        let snapshot = try #require(loop(state: store, ambient: ambient, at: "2026-05-10 09:12").current())
+
+        #expect(ambient.value.records[snapshot.current.codepoint]?.presentationCount == 1)
+        #expect(ambient.value.records.count == 1)
+    }
+
+    /// NEXT anticipa la prossima notifica: quel kanji lo stai vedendo adesso, non
+    /// all'ora in cui sarebbe arrivato.
+    @Test func nextCountsAsASightingNow() throws {
+        let store = InMemoryStore(
+            ReminderState(
+                cycle: DeckCycle(order: [], position: 0),
+                scheduled: [ScheduledReminder(fireDate: date("2026-05-10 11:00"), codepoint: deck.kanji[1].codepoint)],
+                session: StudySession(
+                    codepoint: deck.kanji[0].codepoint, isDone: false, since: date("2026-05-10 09:00"))
+            )
+        )
+        let ambient = InMemoryStore(AmbientState.empty)
+
+        _ = loop(state: store, ambient: ambient, at: "2026-05-10 09:12").next(after: deck.kanji[0].codepoint)
+
+        let exposure = try #require(ambient.value.records[deck.kanji[1].codepoint])
+        #expect(exposure.presentationCount == 1)
+        #expect(exposure.lastPresentedAt == date("2026-05-10 09:12"))
+    }
+
+    /// Una notifica arrivata mentre studiavi conta una volta sola, anche se poi
+    /// premi NEXT e ti ritrovi davanti proprio quella.
+    @Test func aKanjiArrivedWhileStudyingIsNotCountedTwice() throws {
+        let store = InMemoryStore(
+            ReminderState(
+                cycle: DeckCycle(order: [], position: 0),
+                scheduled: [ScheduledReminder(fireDate: date("2026-05-10 09:00"), codepoint: deck.kanji[1].codepoint)],
+                session: StudySession(
+                    codepoint: deck.kanji[0].codepoint, isDone: false, since: date("2026-05-10 08:55"))
+            )
+        )
+        let ambient = InMemoryStore(AmbientState.empty)
+
+        _ = loop(state: store, ambient: ambient, at: "2026-05-10 09:12").next(after: deck.kanji[0].codepoint)
+
+        #expect(ambient.value.records[deck.kanji[1].codepoint]?.presentationCount == 1)
+    }
+
+    @Test func openingFromANotificationIsAStrongerSignal() throws {
+        let store = InMemoryStore(ReminderState.empty)
+        let ambient = InMemoryStore(AmbientState.empty)
+        let opened = deck.kanji[2].codepoint
+
+        _ = loop(state: store, ambient: ambient, at: "2026-05-10 09:12").open(codepoint: opened)
+
+        #expect(ambient.value.records[opened]?.openedCount == 1)
+    }
+
+    @Test func readingsPushTheKanjiFurtherAway() throws {
+        let store = InMemoryStore(ReminderState.empty)
+        let ambient = InMemoryStore(AmbientState.empty)
+        let studied = deck.kanji[0].codepoint
+        let loop = loop(state: store, ambient: ambient, at: "2026-05-10 09:12")
+        _ = loop.open(codepoint: studied)
+        let before = try #require(ambient.value.records[studied]?.nextDueAt)
+
+        loop.readingsViewed(studied)
+
+        #expect(ambient.value.records[studied]?.readingsViewedCount == 1)
+        #expect(try #require(ambient.value.records[studied]?.nextDueAt) > before)
+    }
+
     /// Chi arriva da una notifica ricomincia da quel kanji, anche se aveva chiuso il giro.
     @Test func openingANotificationStartsItsKanjiAgain() throws {
         let store = InMemoryStore(

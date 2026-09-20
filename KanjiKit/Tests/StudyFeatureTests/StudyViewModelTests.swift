@@ -66,4 +66,25 @@ struct StudyViewModelTests {
 
         #expect(asked == 1)
     }
+
+    /// Il permesso si chiede una volta, ma il segnale si registra ogni volta: è
+    /// quello che dice al motore quali kanji ti interessano davvero.
+    @Test func everyTimeYouReachTheReadingsItIsRecorded() throws {
+        var clock = Date(timeIntervalSince1970: 1_800_000_000)
+        let ambient = InMemoryStore(AmbientState.empty)
+        let model = makeStudyModel(deck: deck, ambient: ambient, now: { clock })
+        let studied = model.kanji
+
+        for _ in 0..<2 {
+            model.send(.tapped)
+            model.send(.drawingFinished)
+            model.send(.tapped)
+            clock += 60
+            model.next()
+            clock += 60
+        }
+
+        #expect(ambient.value.records[studied.codepoint]?.readingsViewedCount == 1)
+        #expect(ambient.value.records.values.map(\.readingsViewedCount).reduce(0, +) == 2)
+    }
 }

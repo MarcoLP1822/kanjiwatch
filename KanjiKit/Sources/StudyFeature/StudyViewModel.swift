@@ -48,8 +48,14 @@ public final class StudyViewModel {
     public var kanji: Kanji { snapshot.current }
 
     public func send(_ event: StudyState.Event) {
+        let previous = state.phase
         perform(state.handle(event))
-        if state.phase == .readings, !hasShownReadings {
+        guard previous != .readings, state.phase == .readings else { return }
+
+        // Ogni volta che arrivi in fondo a un kanji, non solo la prima: è così che
+        // l'app capisce quali kanji ti interessano, senza chiedertelo.
+        loop.readingsViewed(kanji.codepoint)
+        if !hasShownReadings {
             hasShownReadings = true
             onReadingsFirstShown?()
         }
