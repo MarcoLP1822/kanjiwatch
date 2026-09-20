@@ -28,6 +28,10 @@ public final class StudyViewModel {
     @ObservationIgnored public var onReadingsFirstShown: (() -> Void)?
     @ObservationIgnored private var hasShownReadings = false
 
+    /// "Riduci movimento": i tratti compaiono interi, uno alla volta, con le stesse pause.
+    /// L'ordine resta leggibile, che è lo scopo, senza niente che scorra sullo schermo.
+    @ObservationIgnored public var reducesMotion = false
+
     public init(loop: StudyLoop) {
         guard let snapshot = loop.current() else {
             preconditionFailure("il mazzo nel bundle non può essere vuoto")
@@ -131,8 +135,12 @@ public final class StudyViewModel {
         drawing = Task { [weak self] in
             for (position, duration) in glyph.durations.enumerated() {
                 guard !Task.isCancelled else { return }
-                withAnimation(.linear(duration: duration)) {
+                if self?.reducesMotion == true {
                     self?.send(.drawingAdvanced(to: Double(position + 1)))
+                } else {
+                    withAnimation(.linear(duration: duration)) {
+                        self?.send(.drawingAdvanced(to: Double(position + 1)))
+                    }
                 }
                 try? await Task.sleep(for: .seconds(duration + DS.Motion.strokePause))
             }

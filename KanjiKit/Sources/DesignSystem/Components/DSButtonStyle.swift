@@ -39,3 +39,20 @@ extension ButtonStyle where Self == DSButtonStyle {
     public static var dsPrimary: DSButtonStyle { DSButtonStyle(.primary) }
     public static var dsSecondary: DSButtonStyle { DSButtonStyle(.secondary) }
 }
+
+/// Un'area da toccare con la semantica di un bottone ma senza il suo aspetto: su watchOS
+/// lo stile di sistema impone sfondo e margini e si mangerebbe il quadrante. È un bottone
+/// vero, e non un tocco su una view, perché VoiceOver lo annunci e lo attivi come tale.
+public struct DSTapAreaStyle: ButtonStyle {
+    public init() {}
+
+    public func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .contentShape(.rect)
+            .opacity(configuration.isPressed ? DS.Control.tapAreaPressedOpacity : 1)
+    }
+}
+
+extension ButtonStyle where Self == DSTapAreaStyle {
+    public static var dsTapArea: DSTapAreaStyle { DSTapAreaStyle() }
+}

@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Kanji Watch non traccia e non raccoglie dati: impostazioni e stato del ripasso restano
+  sul Watch. UserDefaults è un'API "a motivo obbligatorio":
+  - CA92.1: impostazioni, stato del ripasso e abbonamento, letti solo dall'app;
+  - 1C8F.1: la timeline della complication, condivisa con l'estensione tramite App Group.
+  RevenueCat dichiara i suoi dati nel proprio manifest, dentro RevenueCat_RevenueCat.bundle.
+-->
+<plist version="1.0">
+<dict>
+	<key>NSPrivacyTracking</key>
+	<false/>
+	<key>NSPrivacyTrackingDomains</key>
+	<array/>
+	<key>NSPrivacyCollectedDataTypes</key>
+	<array/>
+	<key>NSPrivacyAccessedAPITypes</key>
+	<array>
+		<dict>
+			<key>NSPrivacyAccessedAPIType</key>
+			<string>NSPrivacyAccessedAPICategoryUserDefaults</string>
+			<key>NSPrivacyAccessedAPITypeReasons</key>
+			<array>
+				<string>CA92.1</string>
+				<string>1C8F.1</string>
+			</array>
+		</dict>
+	</array>
+</dict>
+</plist>

@@ -4,12 +4,13 @@ import SwiftUI
 
 /// La schermata di ripasso: il kanji, i tratti, le letture; poi l'attesa del prossimo.
 ///
-/// Il tocco sul glifo sta su una `ZStack` e non su un `Button` di proposito: su
-/// watchOS il bottone impone lo stile di sistema e si mangia l'area utile del quadrante.
+/// Il tocco sul glifo è un `Button` con lo stile `dsTapArea`: la semantica del bottone
+/// per VoiceOver, senza lo sfondo di sistema che si mangerebbe il quadrante.
 public struct StudyView: View {
     private let model: StudyViewModel
     @State private var crown: Double = 0
     @Environment(\.dsTheme) private var theme
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     public init(model: StudyViewModel) {
         self.model = model
@@ -28,15 +29,44 @@ public struct StudyView: View {
                 glyph
             }
         }
-        .animation(DS.Motion.phase, value: model.state.phase)
-        .animation(DS.Motion.phase, value: model.snapshot.isDone)
+        // Con "Riduci movimento" i cambi di passo avvengono senza movimento. Le dissolvenze
+        // restano: non spostano niente sullo schermo.
+        .animation(reduceMotion ? nil : DS.Motion.phase, value: model.state.phase)
+        .animation(reduceMotion ? nil : DS.Motion.phase, value: model.snapshot.isDone)
+        .onChange(of: reduceMotion, initial: true) { _, reduce in model.reducesMotion = reduce }
         .onAppear { crown = model.state.progress }
         .onChange(of: model.snapshot.startedAt) { _, _ in crown = model.state.progress }
     }
 
     // MARK: - Kanji e tratti
 
+    /// Un bottone vero con lo stile dell'area da toccare: VoiceOver lo annuncia col kanji
+    /// e il suo significato, e lo attiva come ogni bottone. La corona sta sul contenitore,
+    /// fuori dal bottone, così il fuoco della corona non cambia il suo comportamento.
     private var glyph: some View {
+        ZStack {
+            Button {
+                model.send(.tapped)
+            } label: {
+                glyphContent
+            }
+            .buttonStyle(.dsTapArea)
+            .accessibilityLabel(
+                Text("Kanji \(model.kanji.character), meaning \(model.kanji.shortMeaning)", bundle: .module)
+            )
+            .accessibilityHint(hint ?? Text(verbatim: ""))
+        }
+        .dsCrownScrubbing($crown, upTo: Double(model.state.strokeCount))
+        .onChange(of: crown) { _, turned in
+            // La corona vale solo quando la muovi tu: quando è il disegno a far
+            // avanzare il progresso, il valore della corona resta dov'è.
+            if abs(turned - model.state.progress) > 0.01 {
+                model.send(.crownMoved(to: turned))
+            }
+        }
+    }
+
+    private var glyphContent: some View {
         VStack(spacing: DS.Spacing.s) {
             drawing
                 .frame(maxHeight: .infinity)
@@ -58,22 +88,6 @@ public struct StudyView: View {
             }
         }
         .padding(DS.Spacing.m)
-        .contentShape(.rect)
-        .onTapGesture { model.send(.tapped) }
-        .dsCrownScrubbing($crown, upTo: Double(model.state.strokeCount))
-        .onChange(of: crown) { _, turned in
-            // La corona vale solo quando la muovi tu: quando è il disegno a far
-            // avanzare il progresso, il valore della corona resta dov'è.
-            if abs(turned - model.state.progress) > 0.01 {
-                model.send(.crownMoved(to: turned))
-            }
-        }
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel(
-            Text("Kanji \(model.kanji.character), meaning \(model.kanji.shortMeaning)", bundle: .module)
-        )
-        .accessibilityHint(hint ?? Text(verbatim: ""))
-        .accessibilityAddTraits(.isButton)
     }
 
     /// Cosa fa il prossimo tocco. Durante il disegno niente scritta: il tocco lo

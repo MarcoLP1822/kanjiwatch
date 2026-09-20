@@ -106,6 +106,18 @@
         "it" : { "stringUnit" : { "state" : "translated", "value" : "Fuori da questa fascia non arriva niente." } }
       }
     },
+    "Privacy" : {
+      "comment" : "Voce delle impostazioni che apre l'informativa privacy.",
+      "localizations" : {
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Privacy" } }
+      }
+    },
+    "Read online" : {
+      "comment" : "Link alla versione online di un documento.",
+      "localizations" : {
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Leggi online" } }
+      }
+    },
     "Reminders" : {
       "localizations" : {
         "it" : { "stringUnit" : { "state" : "translated", "value" : "Promemoria" } }

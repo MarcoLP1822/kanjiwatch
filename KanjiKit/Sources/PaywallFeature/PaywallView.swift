@@ -71,8 +71,12 @@ public struct PaywallView: View {
     private var plans: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.s) {
             ForEach(model.offers) { offer in
-                PlanRow(offer: offer, savings: model.savings(for: offer), isSelected: model.selectedID == offer.id)
-                    .onTapGesture { model.select(offer) }
+                Button {
+                    model.select(offer)
+                } label: {
+                    PlanRow(offer: offer, savings: model.savings(for: offer), isSelected: model.selectedID == offer.id)
+                }
+                .buttonStyle(.dsTapArea)
             }
 
             Button {
@@ -195,9 +199,8 @@ private struct PlanRow: View {
             RoundedRectangle(cornerRadius: DS.Radius.m)
                 .strokeBorder(.dsAccent.opacity(isSelected ? 1 : 0), lineWidth: 2)
         }
-        .contentShape(.rect)
         .accessibilityElement(children: .combine)
-        .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 
     private var periodName: Text {

@@ -1,0 +1,19 @@
+Informativa sulla privacy — Kanji Watch
+Ultimo aggiornamento: 18 settembre 2026
+
+Kanji Watch è un'app per Apple Watch per ripassare i kanji. È fatta per sapere di te il meno possibile.
+
+Cosa resta sul tuo Watch
+Le impostazioni (intervallo dei promemoria, orari attivi, mazzi, tema) e lo stato del ripasso (il kanji in gioco, quanti ne hai visti oggi, i prossimi promemoria) sono salvati solo sul tuo Apple Watch. L'app li condivide con la sua complication sullo stesso Watch, e con nessun altro. Si cancellano quando cancelli l'app.
+
+Cosa l'app non fa
+Kanji Watch non ha account né server propri. Non raccoglie statistiche d'uso, non ti traccia tra app o siti web, non mostra pubblicità e non accede a posizione, dati sulla salute, contatti o foto. I promemoria sono notifiche locali, programmate sul Watch stesso.
+
+Acquisti
+Gli abbonamenti li vende Apple tramite l'App Store, e per il pagamento vale l'informativa privacy di Apple. Per sapere se un abbonamento è attivo l'app usa RevenueCat, un servizio di gestione degli abbonamenti. RevenueCat riceve un identificativo anonimo creato dall'app e la cronologia dei tuoi acquisti, e li usa solo per far funzionare acquisti e ripristini. L'app non gli invia mai il tuo nome né il tuo indirizzo email. Informativa privacy di RevenueCat: https://www.revenuecat.com/privacy
+
+Statistiche di Apple
+Se nelle impostazioni del dispositivo hai scelto di condividere le analisi con gli sviluppatori, Apple può fornire statistiche aggregate e anonime sull'app. L'app di suo non aggiunge nulla.
+
+Modifiche e domande
+Se questa informativa cambia, la nuova versione sarà pubblicata allo stesso indirizzo con una nuova data. Per qualunque domanda usa il link di supporto nella pagina dell'app su App Store.

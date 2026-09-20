@@ -24,6 +24,8 @@ extension DS {
         public static let height: CGFloat = 44
         public static let borderWidth: CGFloat = 1.5
         public static let pressedOpacity: Double = 0.6
+        /// Più leggera: sotto il dito c'è il kanji, e non deve sparire.
+        public static let tapAreaPressedOpacity: Double = 0.8
     }
 
     /// Token di componente per il tratto a pennello dei temi sumi-e.

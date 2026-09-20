@@ -598,6 +598,7 @@ Non è un parere legale.
 | **F9** | Loop di studio | ✅ un tocco per passo, DONE/NEXT, attesa, kanji al giorno |
 | **F10** | Pronta per la prova | ✅ icona, negozio simulato, flussi verificati sul simulatore |
 | **F11** | Temi | ✅ Ai-zome gratis; sumi-e washi e senape Premium, col pennello e il sigillo |
+| **F12** | Linee guida | ✅ manifest privacy, informativa nell'app, bottoni accessibili, Riduci movimento |
 
 F2 è già un'app che usi a mano. F5 è il momento in cui diventa quello che avevi in
 mente. Non invertire: se parti dalle notifiche, debugghi lo scheduler prima di aver
@@ -677,3 +678,51 @@ non si ritocca a mano.
   fluido, sul Watch vero va verificato.
 - **Tempo reale sul polso.** Il simulatore mente sulle notifiche e sulle performance.
   Prova sul Watch vero già in F2, non in F6.
+
+---
+
+## 15. Privacy e accessibilità — quello che chiede Apple
+
+**Privacy manifest.** Ogni bundle che finisce nell'app ne vuole uno:
+`KanjiWatch Watch App/PrivacyInfo.xcprivacy` e `KanjiWatch Complications/PrivacyInfo.xcprivacy`
+(RevenueCat porta il suo). Dentro: nessun tracciamento, nessun dominio, nessun dato
+raccolto, e l'unica API a motivo obbligato che usiamo — `UserDefaults`, con i motivi
+`CA92.1` (dati della sola app) e `1C8F.1` (dati condivisi col proprio App Group).
+`PrivacyManifestTests` li legge e fallisce se un motivo sparisce.
+
+**Informativa sulla privacy.** La 5.1.1 la vuole in due posti: nei metadati su App Store
+Connect e dentro l'app. Nell'app sta in Impostazioni › Privacy, dal bundle
+(`PrivacyPolicy.txt`, italiano e inglese). Lo stesso testo va pubblicato a un indirizzo
+raggiungibile e messo in `AppConfiguration.privacyPolicyURL`: allora la schermata mostra
+anche "Leggi online". Finché l'indirizzo manca, un `#warning` lo ricorda a ogni build.
+
+**VoiceOver.** Tutto ciò che si tocca è un `Button` vero, mai un `onTapGesture`: il glifo
+usa `DSTapAreaStyle` (semantica del bottone, nessuno sfondo di sistema) e annuncia kanji
+e significato; le righe dei piani nel paywall sono bottoni con il tratto `.isSelected`.
+Un `onTapGesture` VoiceOver non lo annuncia e non lo attiva: è il motivo per cui non c'è.
+
+**Riduci movimento.** `@Environment(\.accessibilityReduceMotion)` spegne le animazioni di
+passo e il disegno progressivo: i tratti compaiono interi, uno alla volta, al ritmo di
+prima. Le dissolvenze restano, non spostano niente.
+
+### Prima della review
+
+| Cosa | Stato |
+|---|---|
+| Privacy manifest nei due bundle | ✅ |
+| Informativa dentro l'app, italiano e inglese | ✅ |
+| Indirizzo pubblico dell'informativa in `AppConfiguration` e su App Store Connect | ❌ serve un hosting |
+| Indirizzo di assistenza su App Store Connect | ❌ da decidere |
+| Autorizzazioni EDRDG e KanjiVG per il DRM (§12) | ❌ mail pronte, non inviate |
+| Programma Sviluppatori, prodotti e RevenueCat (§13) | ❌ |
+| Modello di abbonamento: solo abbonamenti o anche acquisto una tantum | ❌ decisione |
+| Prova a mano: VoiceOver, Testo grande, Grassetto, Distingui senza colore | ❌ solo sul Watch |
+
+L'ultima riga è l'unica che il simulatore non copre: `simctl ui content_size` risponde
+*"Runtime does not support dynamic text"* su watchOS, e l'ispettore di accessibilità non
+legge le app del Watch. Riduci movimento invece si prova, scrivendo la preferenza nel
+simulatore:
+
+```
+xcrun simctl spawn <udid> defaults write com.apple.Accessibility ReduceMotionEnabled -bool true
+```

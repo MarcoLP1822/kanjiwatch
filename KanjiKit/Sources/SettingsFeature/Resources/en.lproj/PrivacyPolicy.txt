@@ -1,0 +1,19 @@
+Privacy Policy — Kanji Watch
+Last updated: 18 September 2026
+
+Kanji Watch is an Apple Watch app for reviewing kanji. It is built to know as little about you as possible.
+
+What stays on your watch
+Your settings (reminder interval, active hours, decks, theme) and the state of your review (the kanji in play, today's count, the upcoming reminders) are stored only on your Apple Watch. The app shares them with its own complication on the same watch and nowhere else. They are deleted when you delete the app.
+
+What the app does not do
+Kanji Watch has no account and no servers of its own. It collects no analytics, does not track you across apps or websites, shows no ads, and does not access your location, health data, contacts or photos. Reminders are local notifications scheduled on the watch itself.
+
+Purchases
+Subscriptions are sold by Apple through the App Store, and Apple's privacy policy applies to the payment. To check whether a subscription is active, the app uses RevenueCat, a subscription management service. RevenueCat receives an anonymous identifier created by the app and your purchase history, and uses them only to make purchases and restores work. The app never sends it your name or email address. RevenueCat's privacy policy: https://www.revenuecat.com/privacy
+
+Statistics from Apple
+If you have chosen to share analytics with app developers in your device settings, Apple may provide aggregated, anonymous statistics about the app. The app itself adds nothing to them.
+
+Changes and questions
+If this policy changes, the new version will be published at the same address with a new date. For any question, use the support link on the app's page in the App Store.

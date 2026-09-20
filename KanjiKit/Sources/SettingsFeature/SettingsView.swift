@@ -11,11 +11,18 @@ import SwiftUI
 public struct SettingsView<Premium: View>: View {
     @Bindable private var model: SettingsViewModel
     private let attribution: String
+    private let privacyURL: URL?
     private let premium: () -> Premium
 
-    public init(model: SettingsViewModel, attribution: String, @ViewBuilder premium: @escaping () -> Premium) {
+    public init(
+        model: SettingsViewModel,
+        attribution: String,
+        privacyURL: URL?,
+        @ViewBuilder premium: @escaping () -> Premium
+    ) {
         self.model = model
         self.attribution = attribution
+        self.privacyURL = privacyURL
         self.premium = premium
     }
 
@@ -130,10 +137,18 @@ public struct SettingsView<Premium: View>: View {
             }
 
             Section {
+                // Le licenze di KanjiVG ed EDRDG chiedono l'attribuzione dentro l'app; EDRDG
+                // accetta per i programmi una schermata a parte, raggiungibile da un menu.
                 NavigationLink {
-                    DataSourcesView(text: attribution)
+                    DocumentView(text: attribution)
                 } label: {
                     Text("Data sources", bundle: .module)
+                }
+                // App Store vuole l'informativa raggiungibile dentro l'app, non solo online.
+                NavigationLink {
+                    DocumentView(text: PrivacyPolicy.text, onlineURL: privacyURL)
+                } label: {
+                    Text("Privacy", bundle: .module)
                 }
             }
         }

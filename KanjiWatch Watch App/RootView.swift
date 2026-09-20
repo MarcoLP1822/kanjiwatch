@@ -22,7 +22,11 @@ struct RootView: View {
                 .toolbar {
                     ToolbarItem(placement: .topBarLeading) {
                         NavigationLink {
-                            SettingsView(model: container.settings, attribution: container.catalog.attribution) {
+                            SettingsView(
+                                model: container.settings,
+                                attribution: container.catalog.attribution,
+                                privacyURL: AppConfiguration.privacyPolicyURL
+                            ) {
                                 PaywallScreen()
                             }
                         } label: {
