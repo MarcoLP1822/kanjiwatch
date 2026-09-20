@@ -84,6 +84,36 @@ struct SettingsViewModelTests {
         #expect(store.value.grades == [1, 2, 3])
     }
 
+    /// Due numeri diversi: quante volte l'app si fa viva, e quanti kanji mai visti
+    /// può introdurre la giornata. Il secondo si salva come il primo.
+    @Test func theTwoDailyNumbersAreSavedSeparately() {
+        let store = InMemoryStore(ReminderSettings.default)
+        let model = makeModel(store: store)
+
+        model.dailyLimit = 20
+        model.setNewKanjiPerDay(8)
+
+        #expect(store.value.dailyLimit == 20)
+        #expect(store.value.newKanjiPerDay == 8)
+    }
+
+    /// Promettere otto volti nuovi con tre promemoria al giorno sarebbe una promessa
+    /// che la giornata non può mantenere.
+    @Test func newKanjiNeverExceedTheRemindersOfTheDay() {
+        let store = InMemoryStore(ReminderSettings.default)
+        let model = makeModel(store: store)
+
+        model.dailyLimit = 20
+        model.setNewKanjiPerDay(8)
+        model.dailyLimit = 3
+
+        #expect(model.newKanjiPerDay == 3)
+        #expect(store.value.newKanjiPerDay == 3)
+
+        model.setNewKanjiPerDay(10)
+        #expect(model.newKanjiPerDay == 3)
+    }
+
     /// Un'app di ripasso senza niente da ripassare è solo un'app rotta.
     @Test func refusesToTurnOffTheLastDeck() {
         var onlyFirst = ReminderSettings.default

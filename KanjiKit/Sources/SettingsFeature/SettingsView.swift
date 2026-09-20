@@ -90,11 +90,23 @@ public struct SettingsView<Premium: View>: View {
                     } label: {
                         Text("Reminders per day", bundle: .module)
                     }
+                    Picker(selection: newKanjiBinding) {
+                        // Mai più volti nuovi di quante volte l'app si fa viva.
+                        ForEach(ReminderSettings.offeredNewKanjiPerDay.filter { $0 <= model.dailyLimit }, id: \.self) {
+                            count in
+                            Text(count, format: .number).tag(count)
+                        }
+                    } label: {
+                        Text("New kanji per day", bundle: .module)
+                    }
                 } else {
                     lockedValue(
                         Text("Interval", bundle: .module), value: intervalLabel(model.effective.intervalMinutes))
                     lockedValue(
                         Text("Reminders per day", bundle: .module), value: model.effective.dailyLimit.formatted())
+                    lockedValue(
+                        Text("New kanji per day", bundle: .module),
+                        value: model.effective.newKanjiPerDay.formatted())
                 }
             } header: {
                 Text("Reminders", bundle: .module)
@@ -255,6 +267,10 @@ public struct SettingsView<Premium: View>: View {
                 Image(systemName: "lock.fill").foregroundStyle(.dsInkSecondary)
             }
         }
+    }
+
+    private var newKanjiBinding: Binding<Int> {
+        Binding(get: { model.newKanjiPerDay }, set: { model.setNewKanjiPerDay($0) })
     }
 
     private func deckBinding(for level: KanjiLevel) -> Binding<Bool> {

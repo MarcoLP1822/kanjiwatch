@@ -105,4 +105,8 @@ public struct ReminderSettings: Equatable, Sendable, Codable {
     public static let offeredIntervals = [15, 30, 45, 60, 90, 120, 180, 240]
 
     public static let offeredDailyLimits = [3, 5, 10, 15, 20, 30]
+
+    /// Quanti volti nuovi al giorno si possono scegliere. Si parte da uno: c'è chi
+    /// vuole incontrare un kanji nuovo ogni tanto e per il resto rivedere.
+    public static let offeredNewKanjiPerDay = [1, 2, 3, 5, 8, 10]
 }

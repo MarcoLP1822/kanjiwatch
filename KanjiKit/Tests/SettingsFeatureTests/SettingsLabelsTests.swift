@@ -29,22 +29,19 @@ struct SettingsLabelsTests {
         return unit?["value"] as? String
     }
 
-    @Test func theDailyNumberIsAboutReminders() throws {
+    /// Due numeri, due nomi: quante volte l'app si fa viva, e quanti kanji mai visti
+    /// può introdurre la giornata.
+    @Test func theTwoDailyNumbersHaveTheirOwnNames() throws {
         let strings = try catalog()
 
         #expect(italian("Reminders per day", in: strings) == "Promemoria al giorno")
+        #expect(italian("New kanji per day", in: strings) == "Kanji nuovi al giorno")
         #expect(
             italian(
                 "Reviews and kanji opened with Next count too. "
                     + "Once the number is reached, reminders stop until tomorrow.",
                 in: strings
-            )?.hasPrefix("Contano anche i ripassi") == true
+            )?.contains("i kanji nuovi sono quelli mai visti prima") == true
         )
-    }
-
-    /// La chiave vecchia non deve restare: una chiave che non traduce più mostra
-    /// l'inglese a chi ha l'orologio in italiano.
-    @Test func theOldWordingIsGone() throws {
-        #expect(try catalog()["New kanji per day"] == nil)
     }
 }

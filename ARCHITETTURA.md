@@ -273,8 +273,9 @@ l'Ambient Engine:
 - **`dailyLimit`, i promemoria al giorno** (default 10): quante volte l'app si fa
   viva, ripassi compresi. È quello che si sceglie dalle impostazioni.
 - **`newKanjiPerDay`, i volti nuovi al giorno** (5, 3 senza abbonamento): quanti kanji
-  mai visti può introdurre la giornata. Non si sceglie: è il freno che tiene l'app
-  un'esposizione durante il giorno invece di un corso da seguire (§6, il ritmo).
+  mai visti può introdurre la giornata. Col Premium si sceglie anche questo, ma non
+  può superare i promemoria: otto volti nuovi con tre promemoria sarebbe una promessa
+  che la giornata non può mantenere.
 
 Prima della F13 coincidevano — ogni notifica pescava un kanji diverso dal mazzo
 mescolato — e per questo l'impostazione si chiamava «kanji nuovi al giorno». Adesso

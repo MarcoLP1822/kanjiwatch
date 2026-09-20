@@ -139,6 +139,17 @@
         }
       }
     },
+    "New kanji per day": {
+      "comment": "Quanti kanji mai visti può introdurre una giornata: è un'altra cosa dai promemoria al giorno.",
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kanji nuovi al giorno"
+          }
+        }
+      }
+    },
     "Notifications": {
       "localizations": {
         "it": {
@@ -218,7 +229,7 @@
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Contano anche i ripassi e quelli aperti con Avanti. Raggiunto il numero, le notifiche riprendono domani."
+            "value": "I promemoria contano anche i ripassi e quelli aperti con Avanti; i kanji nuovi sono quelli mai visti prima."
           }
         }
       }
