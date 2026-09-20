@@ -188,6 +188,49 @@ struct AmbientEngineTests {
         #expect(Set(selections.map(\.codepoint)) == [testCodepoint(0)])
     }
 
+    // MARK: - La forma dell'esposizione
+
+    /// Dentro un piano solo, lo stesso kanji cambia forma a ogni ritorno: la
+    /// sequenza si legge sulla copia proiettata, non sullo storico salvato.
+    @Test func theSameKanjiChangesFormEveryTimeItComesBack() {
+        let selections = plan(hours(20, everyMinutes: 30))
+        let first = testCodepoint(0)
+
+        let forms = selections.filter { $0.codepoint == first }.map(\.content)
+        #expect(forms.count >= 4)
+        #expect(Array(forms.prefix(4)) == [.introduce, .recall, .context, .recall])
+    }
+
+    /// Un kanji nuovo si presenta sempre col significato: vedere 議 e basta, la prima
+    /// volta, non insegna niente.
+    @Test func everyNewKanjiStartsWithItsMeaning() {
+        let selections = plan(hours(20, everyMinutes: 30))
+        #expect(selections.filter { $0.kind == .new }.allSatisfy { $0.content == .introduce })
+    }
+
+    /// Un mazzo senza parole d'esempio non mostra mai il contesto.
+    @Test func withoutExampleWordsThereIsNoContext() {
+        let selections = plan(hours(20, everyMinutes: 30), deck: testDeck(count: 30, withWord: false))
+        #expect(selections.allSatisfy { $0.content != .context })
+    }
+
+    /// Le due decisioni restano separate: cambiare la forma non cambia chi viene
+    /// scelto né perché.
+    @Test func theFormDoesNotDisturbTheChoice() {
+        let withWords = plan(hours(20, everyMinutes: 30), state: started())
+        let withoutWords = plan(
+            hours(20, everyMinutes: 30), state: started(), deck: testDeck(count: 30, withWord: false))
+
+        #expect(withWords.map(\.codepoint) == withoutWords.map(\.codepoint))
+        #expect(withWords.map(\.kind) == withoutWords.map(\.kind))
+        #expect(withWords.map(\.content) != withoutWords.map(\.content))
+    }
+
+    @Test func replanningGivesTheSameForms() {
+        let dates = hours(20, everyMinutes: 30)
+        #expect(plan(dates, state: started()).map(\.content) == plan(dates, state: started()).map(\.content))
+    }
+
     // MARK: - Il mazzo
 
     @Test func onlyTheKanjiOfTheCurrentDeckAreShown() {

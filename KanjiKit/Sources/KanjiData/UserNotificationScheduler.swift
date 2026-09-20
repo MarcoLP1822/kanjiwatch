@@ -60,10 +60,22 @@ public struct UserNotificationScheduler: ReminderScheduling, NotificationAuthori
     private func content(for notification: PlannedNotification, isPassive: Bool) -> UNNotificationContent {
         let content = UNMutableNotificationContent()
         // Il kanji è il titolo, non il corpo: sul Watch il titolo è quello che
-        // leggi alzando il polso per mezzo secondo.
-        content.title = notification.character
-        content.body = String(localized: "Tap for stroke order", bundle: .module)
-        content.userInfo = ReminderPayload.userInfo(codepoint: notification.codepoint)
+        // leggi alzando il polso per mezzo secondo. Nella forma col contesto il
+        // titolo è la parola intera, che è proprio la cosa da leggere.
+        switch notification.content {
+        case .introduce:
+            content.title = notification.character
+            content.body = notification.meaning
+        case .recall:
+            content.title = notification.character
+            // Nessun significato: l'invito ad aprire non è una risposta.
+            content.body = String(localized: "Tap for stroke order", bundle: .module)
+        case .context:
+            let word = notification.word
+            content.title = word?.text ?? notification.character
+            content.body = [word?.reading, word?.shortMeaning].compactMap { $0 }.joined(separator: " · ")
+        }
+        content.userInfo = ReminderPayload.userInfo(for: notification.destination)
         content.categoryIdentifier = ReminderPayload.categoryIdentifier
         content.sound = nil
         // Modalità discreta: la notifica non accende lo schermo e si accumula

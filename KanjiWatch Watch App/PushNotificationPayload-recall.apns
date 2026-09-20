@@ -3,10 +3,10 @@
   "aps": {
     "alert": {
       "title": "水",
-      "body": "water"
+      "body": "Tocca per l'ordine dei tratti"
     },
     "category": "KANJI_REVIEW"
   },
   "cp": "06c34",
-  "ec": "introduce"
+  "ec": "recall"
 }

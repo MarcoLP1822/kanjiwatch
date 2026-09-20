@@ -20,15 +20,47 @@ public protocol NotificationAuthorizing {
 /// Una notifica pronta da consegnare al sistema: il carattere serve perché è lui
 /// il titolo — è quello che leggi alzando il polso per mezzo secondo — e il
 /// codepoint per riaprire l'app sul kanji giusto.
+///
+/// Porta anche significato e parola d'esempio: l'adattatore deve poter scrivere
+/// tutte e tre le forme senza andarsi a ricaricare il mazzo.
 public struct PlannedNotification: Equatable, Sendable {
     public let fireDate: Date
     public let codepoint: String
     public let character: String
+    public let meaning: String
+    public let word: Kanji.Word?
+    /// In che forma mostrarlo. Decisa dal piano, non ricalcolata da chi consegna.
+    public let content: ExposureContent
 
-    public init(fireDate: Date, codepoint: String, character: String) {
+    public init(
+        fireDate: Date,
+        codepoint: String,
+        character: String,
+        meaning: String = "",
+        word: Kanji.Word? = nil,
+        content: ExposureContent = .introduce
+    ) {
         self.fireDate = fireDate
         self.codepoint = codepoint
         self.character = character
+        self.meaning = meaning
+        self.word = word
+        self.content = content.resolved(hasWord: word != nil)
+    }
+
+    public init(fireDate: Date, kanji: Kanji, content: ExposureContent) {
+        self.init(
+            fireDate: fireDate,
+            codepoint: kanji.codepoint,
+            character: kanji.character,
+            meaning: kanji.shortMeaning,
+            word: kanji.commonWord,
+            content: content
+        )
+    }
+
+    public var destination: ReminderDestination {
+        ReminderDestination(codepoint: codepoint, content: content)
     }
 }
 

@@ -13,9 +13,10 @@ struct KanjiWatchApp: App {
         WindowGroup {
             RootView()
                 .onOpenURL { url in
-                    // Dalla complication: apre sul kanji che era sul quadrante.
-                    if let codepoint = KanjiLink.codepoint(from: url) {
-                        container.open(codepoint: codepoint)
+                    // Dalla complication: apre sul kanji che era sul quadrante, nella
+                    // forma in cui lo stavi guardando.
+                    if let destination = KanjiLink.destination(from: url) {
+                        container.open(destination)
                     }
                 }
                 .onChange(of: scenePhase, initial: true) { _, phase in

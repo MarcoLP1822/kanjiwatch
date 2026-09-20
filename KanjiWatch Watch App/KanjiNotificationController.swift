@@ -12,17 +12,20 @@ import WatchKit
 /// letteralmente il ripasso passivo che si vuole ottenere.
 final class KanjiNotificationController: WKUserNotificationHostingController<ReminderGlanceView> {
     private var kanji: Kanji?
+    private var content: ExposureContent = .introduce
 
     override func didReceive(_ notification: UNNotification) {
-        let codepoint = ReminderPayload.codepoint(from: notification.request.content.userInfo)
+        let destination = ReminderPayload.destination(from: notification.request.content.userInfo)
         // Il corpo lo rivaluta il sistema dopo questo metodo: qui basta il dato.
-        kanji = codepoint.flatMap { AppContainer.shared.deck[$0] }
+        kanji = destination.flatMap { AppContainer.shared.deck[$0.codepoint] }
+        content = destination?.content ?? .introduce
     }
 
     override var body: ReminderGlanceView {
         ReminderGlanceView(
             kanji: kanji,
             viewBox: AppContainer.shared.deck.viewBox,
+            content: content,
             theme: DSTheme.named(AppContainer.shared.settings.appliedTheme.rawValue)
         )
     }

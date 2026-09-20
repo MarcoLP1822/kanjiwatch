@@ -74,7 +74,7 @@ struct GlanceComplicationView: View {
         Group {
             if let glance = entry.glance {
                 content(for: glance)
-                    .widgetURL(KanjiLink.url(for: glance.codepoint))
+                    .widgetURL(KanjiLink.url(for: glance.destination))
             }
         }
         .containerBackground(for: .widget) { Color.clear }
@@ -88,8 +88,11 @@ struct GlanceComplicationView: View {
         case .accessoryInline:
             Text(verbatim: glance.inlineLabel)
         case .accessoryCorner:
-            GlanceGlyph(entry: glance, viewBox: entry.viewBox)
-                .widgetLabel(glance.meaning)
+            if let label = glance.cornerLabel {
+                GlanceGlyph(entry: glance, viewBox: entry.viewBox).widgetLabel(label)
+            } else {
+                GlanceGlyph(entry: glance, viewBox: entry.viewBox)
+            }
         default:
             ZStack {
                 AccessoryWidgetBackground()

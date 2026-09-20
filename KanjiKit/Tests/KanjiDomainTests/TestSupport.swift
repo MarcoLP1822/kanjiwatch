@@ -29,7 +29,7 @@ private let formatter: DateFormatter = {
 
 /// Un mazzo finto con codepoint prevedibili e frequenza crescente: così l'ordine con
 /// cui l'Ambient Engine introduce i kanji nuovi si legge a occhio nei test.
-func testDeck(count: Int, grade: (Int) -> Int = { _ in 1 }) -> KanjiDeck {
+func testDeck(count: Int, withWord: Bool = true, grade: (Int) -> Int = { _ in 1 }) -> KanjiDeck {
     KanjiDeck(
         viewBox: 109,
         attribution: "",
@@ -41,6 +41,11 @@ func testDeck(count: Int, grade: (Int) -> Int = { _ in 1 }) -> KanjiDeck {
                 onReadings: [],
                 kunReadings: [],
                 meanings: ["kanji \(index)"],
+                commonWord: withWord
+                    ? Kanji.Word(
+                        text: "\(Character(UnicodeScalar(0x4E00 + index)!))語", reading: "ご",
+                        meanings: ["parola \(index)"])
+                    : nil,
                 grade: grade(index),
                 frequencyRank: index + 1
             )

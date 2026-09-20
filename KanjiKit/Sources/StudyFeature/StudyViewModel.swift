@@ -73,9 +73,10 @@ public final class StudyViewModel {
         }
     }
 
-    /// Dalla notifica o dalla complication: il kanji che hai guardato al polso, da capo.
-    public func open(codepoint: String) {
-        apply(loop.open(codepoint: codepoint))
+    /// Dalla notifica o dalla complication: il kanji che hai guardato al polso, da
+    /// capo, nella forma in cui l'hai visto.
+    public func open(_ destination: ReminderDestination) {
+        apply(loop.open(destination))
     }
 
     /// Al ritorno in primo piano e dopo ogni rischedulazione: una notifica arrivata

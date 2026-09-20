@@ -46,11 +46,24 @@ public struct StudySession: Equatable, Sendable, Codable {
     public var isDone: Bool
     /// Quando è entrato in gioco. Una notifica arrivata dopo ne prende il posto.
     public var since: Date?
+    /// In che forma è arrivato: la stessa della notifica che l'ha portato. Il
+    /// quadrante la rilegge da qui, così i due non si contraddicono.
+    public var content: ExposureContent
 
-    public init(codepoint: String?, isDone: Bool, since: Date?) {
+    public init(codepoint: String?, isDone: Bool, since: Date?, content: ExposureContent = .introduce) {
         self.codepoint = codepoint
         self.isDone = isDone
         self.since = since
+        self.content = content
+    }
+
+    public init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        codepoint = try container.decodeIfPresent(String.self, forKey: .codepoint)
+        isDone = try container.decode(Bool.self, forKey: .isDone)
+        since = try container.decodeIfPresent(Date.self, forKey: .since)
+        // Sessioni salvate prima della micro-sequenza: erano tutte "kanji e significato".
+        content = (try? container.decodeIfPresent(ExposureContent.self, forKey: .content)) ?? .introduce
     }
 
     public static let none = StudySession(codepoint: nil, isDone: false, since: nil)

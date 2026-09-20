@@ -2,47 +2,76 @@ import DesignSystem
 import KanjiDomain
 import SwiftUI
 
-/// Il contenuto della notifica: il kanji grande e, sotto, una riga piccola col
-/// significato.
+/// Il contenuto della notifica, in una delle tre forme della micro-sequenza.
 ///
-/// Niente letture, di proposito. Se la notifica te le dà subito non provi a
-/// ricordarle, e il ripasso — che è tutto il punto dell'app — non avviene.
+/// Niente letture del kanji, di proposito. Se la notifica te le dà subito non provi
+/// a ricordarle, e il ripasso — che è tutto il punto dell'app — non avviene.
 public struct ReminderGlanceView: View {
     private let kanji: Kanji?
     private let glyph: StrokeGlyph?
+    private let content: ExposureContent
     private let theme: DSTheme
 
     /// Il tema arriva come parametro: la notifica la mostra il sistema, fuori dalla
     /// gerarchia di view dell'app, e l'ambiente dell'app qui non arriva.
-    public init(kanji: Kanji?, viewBox: Double, theme: DSTheme = .aiZome) {
+    public init(kanji: Kanji?, viewBox: Double, content: ExposureContent = .introduce, theme: DSTheme = .aiZome) {
         self.kanji = kanji
         self.glyph = kanji.flatMap { try? StrokeGlyph(kanji: $0, viewBox: viewBox) }
+        self.content = content.resolved(hasWord: kanji?.commonWord != nil)
         self.theme = theme
     }
 
     public var body: some View {
         VStack(spacing: DS.Spacing.s) {
-            if let glyph {
-                KanjiGlyphView(glyph: glyph, progress: Double(glyph.strokeCount))
-            } else if let kanji {
-                // Tracciati illeggibili: il carattere si vede comunque.
-                Text(verbatim: kanji.character)
-                    .font(.system(size: 64))
-                    .foregroundStyle(.dsInk)
-                    .dsJapanese()
-            }
-
-            if let kanji {
-                Text(verbatim: kanji.shortMeaning)
-                    .font(.dsLabel)
-                    .foregroundStyle(.dsInkSecondary)
-                    .multilineTextAlignment(.center)
+            if let word = kanji?.commonWord, content == .context {
+                context(word)
+            } else {
+                character
+                if let kanji, content == .introduce {
+                    Text(verbatim: kanji.shortMeaning)
+                        .font(.dsLabel)
+                        .foregroundStyle(.dsInkSecondary)
+                        .multilineTextAlignment(.center)
+                }
             }
         }
         .padding(DS.Spacing.m)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(.dsBackground)
         .dsTheme(theme)
+    }
+
+    /// Il kanji e basta. Nella forma `recall` è tutto quello che c'è: mezzo secondo
+    /// per pensarci, e scrivere "ricordi?" sarebbe rumore su uno schermo così.
+    @ViewBuilder
+    private var character: some View {
+        if let glyph {
+            KanjiGlyphView(glyph: glyph, progress: Double(glyph.strokeCount))
+        } else if let kanji {
+            // Tracciati illeggibili: il carattere si vede comunque.
+            Text(verbatim: kanji.character)
+                .font(.system(size: 64))
+                .foregroundStyle(.dsInk)
+                .dsJapanese()
+        }
+    }
+
+    /// Il kanji dentro una parola vera, con la lettura in kana. Qui il carattere non
+    /// si disegna: la parola è il punto, e il kanji si riconosce perché è acceso.
+    private func context(_ word: Kanji.Word) -> some View {
+        VStack(spacing: DS.Spacing.xs) {
+            HighlightedWord(word.text, highlighting: kanji?.character ?? "")
+                .font(.dsWordLarge)
+                .minimumScaleFactor(0.5)
+            Text(verbatim: word.reading)
+                .font(.dsReading)
+                .foregroundStyle(.dsInkSecondary)
+                .dsJapanese()
+            Text(verbatim: word.shortMeaning)
+                .font(.dsBody)
+                .foregroundStyle(.dsInk)
+        }
+        .multilineTextAlignment(.center)
     }
 }
 
