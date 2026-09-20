@@ -90,19 +90,15 @@ public enum AmbientEngine {
 
             // La forma si decide **prima** di segnare la comparsa simulata: alla prima
             // volta il kanji ha zero comparse, e zero comparse vuol dire "presentalo".
+            let content = ExposureContent.forSightings(
+                projected.records[choice.codepoint]?.presentationCount ?? 0,
+                hasWord: deck[choice.codepoint]?.commonWord != nil
+            )
             selections.append(
                 AmbientSelection(
-                    fireDate: fireDate,
-                    codepoint: choice.codepoint,
-                    kind: choice.kind,
-                    content: ExposureContent.forSightings(
-                        projected.records[choice.codepoint]?.presentationCount ?? 0,
-                        hasWord: deck[choice.codepoint]?.commonWord != nil
-                    )
-                )
-            )
+                    fireDate: fireDate, codepoint: choice.codepoint, kind: choice.kind, content: content))
             if choice.kind == .new { introduced[day] = already + 1 }
-            projected.record(.presented, codepoint: choice.codepoint, at: fireDate)
+            projected.record(.presented, codepoint: choice.codepoint, content: content, at: fireDate)
             recent.append(choice.codepoint)
             if recent.count > 2 { recent.removeFirst() }
         }

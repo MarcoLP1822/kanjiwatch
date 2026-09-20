@@ -31,7 +31,8 @@ extension ReminderState {
         calendar: Calendar
     ) {
         for delivered in recordDeliveries(now: now, calendar: calendar) {
-            ambient.record(.presented, codepoint: delivered.codepoint, at: delivered.fireDate)
+            ambient.record(
+                .presented, codepoint: delivered.codepoint, content: delivered.content, at: delivered.fireDate)
         }
         // Senza, un kanji uscito dal mazzo resterebbe in coda per sempre: a ogni
         // rischedulazione tornerebbe in testa e verrebbe scartato di nuovo.
@@ -180,15 +181,20 @@ public struct StudyLoop {
         update { value, exposure, moment in
             guard deck[destination.codepoint] != nil else { return }
             value.open(destination, now: moment)
-            exposure.record(.opened, codepoint: destination.codepoint, at: moment)
+            exposure.record(.opened, codepoint: destination.codepoint, content: destination.content, at: moment)
         }
     }
 
     /// Sei arrivato a letture e parola. È il segnale più forte che abbiamo senza
     /// chiederti niente, e allontana il momento in cui quel kanji tornerà.
     public func readingsViewed(_ codepoint: String) {
+        let session = state.load().session
+        // La forma è quella con cui il kanji è entrato in gioco: se era lì da solo,
+        // essere arrivato fin qui vuol dire qualcosa; se il significato c'era già
+        // scritto, no.
+        let content = session.codepoint == codepoint ? session.content : .introduce
         var exposure = ambient.load()
-        exposure.record(.readingsViewed, codepoint: codepoint, at: now())
+        exposure.record(.readingsViewed, codepoint: codepoint, content: content, at: now())
         ambient.save(exposure)
     }
 
@@ -221,7 +227,7 @@ public struct StudyLoop {
             calendar: calendar
         )
         if case .showing(let codepoint) = outcome, codepoint != arrived {
-            exposure.record(.presented, codepoint: codepoint, at: moment)
+            exposure.record(.presented, codepoint: codepoint, content: value.session.content, at: moment)
         }
     }
 
