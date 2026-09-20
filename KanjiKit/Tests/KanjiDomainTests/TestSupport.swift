@@ -66,3 +66,26 @@ func testDeck(count: Int, grade: (Int) -> Int = { _ in 1 }) -> KanjiDeck {
 func testCodepoint(_ index: Int) -> String {
     String(format: "%05x", 0x4E00 + index)
 }
+
+final class FakeScheduler: ReminderScheduling {
+    var notifications: [PlannedNotification] = []
+    var isPassive = false
+    var cancelledAll = false
+
+    func replacePending(with notifications: [PlannedNotification], isPassive: Bool) async {
+        self.notifications = notifications
+        self.isPassive = isPassive
+    }
+
+    func cancelAll() async {
+        cancelledAll = true
+        notifications = []
+    }
+}
+
+final class FakeAuthorizer: NotificationAuthorizing {
+    var status: NotificationAuthorization
+    init(_ status: NotificationAuthorization) { self.status = status }
+    func authorizationStatus() async -> NotificationAuthorization { status }
+    func requestAuthorization() async -> Bool { status == .authorized }
+}

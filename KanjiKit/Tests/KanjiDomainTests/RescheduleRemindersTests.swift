@@ -3,29 +3,6 @@ import Testing
 
 @testable import KanjiDomain
 
-private final class FakeScheduler: ReminderScheduling {
-    var notifications: [PlannedNotification] = []
-    var isPassive = false
-    var cancelledAll = false
-
-    func replacePending(with notifications: [PlannedNotification], isPassive: Bool) async {
-        self.notifications = notifications
-        self.isPassive = isPassive
-    }
-
-    func cancelAll() async {
-        cancelledAll = true
-        notifications = []
-    }
-}
-
-private final class FakeAuthorizer: NotificationAuthorizing {
-    var status: NotificationAuthorization
-    init(_ status: NotificationAuthorization) { self.status = status }
-    func authorizationStatus() async -> NotificationAuthorization { status }
-    func requestAuthorization() async -> Bool { status == .authorized }
-}
-
 @Suite("Rischedulazione")
 struct RescheduleRemindersTests {
     private func makeDeck(count: Int = 120) -> KanjiDeck {
