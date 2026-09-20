@@ -18,10 +18,12 @@ Documento di design. Versione 3 — impianto a notifiche con una complication, n
 - 100% offline, nessun account, nessun backend, nessun companion iOS
 - tutti i 2.136 jōyō, in mazzi per grado scolastico; le prime due classi sono gratis
 
-**Fuori scope, esplicitamente:** SRS, progressi e gamification, iCloud, audio,
-riconoscimento della scrittura, statistiche. Due voci stavano in questo elenco e sono
-rientrate dopo: la monetizzazione (F7) e la complication (F8), che è esposizione
-passiva in più e non chiede impegno.
+**Fuori scope, esplicitamente:** progressi e gamification, iCloud, audio,
+riconoscimento della scrittura, statistiche, e ogni bottone «lo so / non lo so». Tre
+voci stavano in questo elenco e sono rientrate: la monetizzazione (F7); la complication
+(F8), che è esposizione passiva in più e non chiede impegno; e la ripetizione
+distanziata (F13), ma **invisibile** — nessun arretrato da smaltire, nessun voto, solo
+segnali che l'utente lascia senza fare niente.
 
 Il valore dell'app è il ripasso **passivo**. Se l'80% delle volte guardi la notifica e
 non apri niente, l'app sta funzionando come deve.
@@ -219,6 +221,30 @@ misurato lì.
 
 ---
 
+### Lo storico delle esposizioni
+
+```swift
+public struct AmbientState: Codable {
+    public var records: [String: KanjiExposure]   // per codepoint, non per mazzo
+}
+
+public struct KanjiExposure: Codable {
+    public var firstSeenAt: Date
+    public var lastPresentedAt: Date
+    public var presentationCount: Int             // comparse: notifica, NEXT, avvio
+    public var openedCount: Int                   // app aperta su questo kanji
+    public var readingsViewedCount: Int           // arrivato fino a letture e parola
+    public var lastEngagedAt: Date?
+    public var nextDueAt: Date                    // chiave d'ordinamento, non scadenza
+}
+```
+
+Per **codepoint**: spegnere un grado nelle impostazioni non cancella la storia dei suoi
+kanji, e riaccenderlo la ritrova. Nessuno stadio salvato qui dentro: la familiarità si
+ricalcola a ogni lettura (§6).
+
+---
+
 ## 6. Lo scheduler — il cuore dell'app
 
 ### Vincoli reali
@@ -294,21 +320,60 @@ che lo verifica.
 Casi limite da testare, perché è qui che si rompe: mezzanotte, cambio dell'ora legale,
 finestra che attraversa la mezzanotte (22–6), `everyMinutes` più grande della finestra.
 
-### Scelta del kanji: ciclo mescolato
+### Scelta del kanji: l'Ambient Engine
 
-Senza widget non serve alcuna funzione deterministica del tempo: c'è un solo processo,
-quindi lo stato può semplicemente essere salvato.
+Non è un mazzo mescolato che si consuma — lo era, fino alla F13 — perché la promessa
+dell'app non è «ti faccio vedere tutti i 2.136 kanji», è «ti tengo in contatto col
+giapponese durante la giornata». Cambia chi decide: non l'ordine di un mazzo, ma quello
+che ti è già passato davanti.
 
-```swift
-public struct DeckCycle {
-    /// Permutazione del deck; quando finisce, rimescola.
-    /// Garantisce che ogni kanji esca una volta prima che se ne ripeta uno.
-    public mutating func next() -> Kanji
-}
+**Lo storico.** Un record per ogni kanji incontrato (`AmbientState`, §5): quante volte è
+comparso, quante volte hai aperto l'app su di lui, quante volte sei arrivato alle
+letture, e da quando ha di nuovo senso riproporlo. Nessun "lo so / non lo so": chiederlo
+sarebbe lavoro, e i segnali che bastano l'utente li lascia gratis.
+
+**La familiarità si calcola, non si salva.** `fresh` → `reinforcing` → `familiar`, dai
+conteggi e dal tempo. Salvarla vorrebbe dire poterla avere disallineata. E si ferma a
+`familiar`, che vuol dire «ci sei passato davanti parecchie volte»: che tu *conosca* 水
+non abbiamo nessun modo di saperlo, e fingere di saperlo sarebbe la bugia comoda su cui
+poi si costruisce tutto storto. Ci si arriva per due strade: quattro comparse con due
+visite alle letture in due giorni, **oppure** otto comparse in una settimana senza
+toccare niente. La seconda è quella che conta: se l'esposizione passiva non valesse,
+l'app tornerebbe a chiedere impegno.
+
+**Il ritmo.** Ogni dieci contatti: cinque rinforzi, tre nuovi, due familiari. Un pattern
+fisso, non una probabilità — il caso, su dieci estrazioni, regala giornate da sei kanji
+nuovi, cioè l'opposto di quello che deve fare quest'app — e con un tetto ai volti nuovi
+del giorno (cinque, tre senza abbonamento). Alzare la frequenza aumenta gli incontri,
+non la roba da imparare: con trenta contatti al giorno restano cinque kanji nuovi e
+venticinque ripassi.
+
+**Chi vince.** Fra i già visti, quello più in ritardo su `nextDueAt` (che è una chiave
+d'ordinamento, non una scadenza: il primo giorno sono tutti in anticipo e il kanji delle
+8 torna alle 10). Fra i nuovi, la classe scolastica e poi la frequenza sui giornali.
+Mai lo stesso kanji due volte di fila.
+
+**Il punto delicato: prevedere senza contare.** watchOS tiene in coda fino a 64
+notifiche mentre l'app non gira, quindi il motore deve decidere *adesso* anche cosa
+mostrare fra tre giorni. Simula le esposizioni future su una copia dello storico — così
+la coda alterna invece di ripetere — ma quella copia non si salva: un'esposizione conta
+solo quando il suo momento arriva davvero, e lo registra `catchUp` guardando quali
+notifiche sono passate.
+
+```
+storico esposizioni + mazzo attivo + momento
+                  ↓
+           Ambient Engine
+                  ↓
+     nuovo / rinforzo / familiare
+                  ↓
+    notifica, complication, schermata
 ```
 
-Salvi in `UserDefaults` la permutazione corrente e la posizione. Meglio del random puro:
-niente doppioni ravvicinati, e copertura completa del deck garantita.
+Tutto deterministico: stesso storico e stesse date, stessa coda. Rischedulare non
+"consuma" più niente, e non serve conservare i kanji delle notifiche mai arrivate. Se
+invece nel frattempo hai aperto qualcosa, il piano cambia da sé — che è esattamente il
+motivo per cui l'abbonamento ha un valore ricorrente: non il catalogo, il flusso.
 
 Il carattere viaggia dentro la notifica:
 
@@ -516,13 +581,19 @@ database.
 | Chiave | Contenuto | Default |
 |---|---|---|
 | `reminder.settings` | intervallo, fascia attiva, modalità discreta, gradi, kanji al giorno | 60 min, 8→22, spenta, 1-2, 10 |
-| `reminder.state` | permutazione del mazzo, posizione, coda programmata, kanji in gioco, conteggio del giorno, ancora dell'ultimo NEXT | mazzo mescolato, coda vuota |
+| `reminder.state` | coda programmata, kanji in gioco, conteggio del giorno, ancora dell'ultimo NEXT | coda vuota |
 
-Due chiavi e non sei: posizione nel mazzo, coda programmata e conteggio del giorno
-si leggono e si scrivono **insieme**, ed è proprio questo che evita di bruciare il
-mazzo a ogni rischedulazione o di contare due volte una notifica. Tenerli separati
-vorrebbe dire poterli disallineare. I campi aggiunti dopo si decodificano con un
-default, così un aggiornamento dell'app non perde il punto del giro.
+Due chiavi e non cinque: coda programmata, kanji in gioco e conteggio del giorno si
+leggono e si scrivono **insieme**, ed è questo che evita di contare due volte una
+notifica. Tenerli separati vorrebbe dire poterli disallineare. I campi aggiunti dopo si
+decodificano con un default, e quelli spariti — la permutazione del mazzo, fino alla
+F13 — si ignorano: aggiornare l'app non deve perdere il resto.
+
+Lo storico delle esposizioni invece **non** sta in `UserDefaults`: è un file JSON,
+`Application Support/ambient-state.json`, dietro lo stesso `ValueStore`. Cresce con
+l'uso — un record per kanji incontrato — e non lo legge nessun altro, complication
+compresa. Se il file manca o è illeggibile si riparte da vuoto: si perde la memoria del
+motore, non la giornata.
 I significati restano in inglese: KANJIDIC2 non ha l'italiano (solo en/fr/es/pt),
 quindi non c'è nessuna impostazione di lingua da salvare.
 
@@ -599,6 +670,7 @@ Non è un parere legale.
 | **F10** | Pronta per la prova | ✅ icona, negozio simulato, flussi verificati sul simulatore |
 | **F11** | Temi | ✅ Ai-zome gratis; sumi-e washi e senape Premium, col pennello e il sigillo |
 | **F12** | Linee guida | ✅ manifest privacy, informativa nell'app, bottoni accessibili, Riduci movimento |
+| **F13** | Ambient Engine | ✅ lo storico decide cosa ti passa davanti: nuovo, rinforzo, familiare |
 
 F2 è già un'app che usi a mano. F5 è il momento in cui diventa quello che avevi in
 mente. Non invertire: se parti dalle notifiche, debugghi lo scheduler prima di aver
@@ -641,6 +713,27 @@ Nelle build di sviluppo senza chiave il negozio è simulato
 che riescono sempre, stato ricordato tra un avvio e l'altro. Serve a provare paywall e
 Premium sul simulatore; per tornare gratuiti si cancella e si reinstalla l'app. Nelle
 build di rilascio non esiste.
+
+**Sulla F13.** È il cambio di direzione del prodotto, e quasi tutto sta nel dominio:
+l'interfaccia non guadagna una schermata. Kanji Watch non deve sembrare un'app di
+studio ma un contatto continuo col giapponese — «impara un po' di giapponese ogni volta
+che guardi l'ora» — quindi ogni funzione nuova passa da una domanda sola: *si impara
+qualcosa in meno di dieci secondi, senza decidere di mettersi a studiare?* Se serve
+sedersi e fare esercizi, non è di quest'app.
+
+Da qui anche la regola che vale più di tutte: **niente da recuperare.** Anki dice «hai
+83 carte da ripassare», Duolingo «mantieni la serie»; qui non esiste un arretrato,
+perché un arretrato è un debito, e un debito lo si abbandona. Guarda pure l'ora: al
+resto pensa il motore.
+
+L'abbonamento cambia di conseguenza: non vendiamo 2.136 kanji, vendiamo il flusso
+personale che si aggiorna da solo. Per questo il motore c'è anche nella versione
+gratuita — dimostrare un prodotto peggiore di quello che vendi è un modo sicuro di non
+venderlo — e Premium allarga il mazzo e il controllo del ritmo.
+
+Le prossime fasi, quando questa avrà girato per qualche giorno: la micro-sequenza
+(kanji → significato → vocabolo, distribuita nella giornata invece che tutta insieme) e
+poi il resto del vocabolario.
 
 **Sulla F10.** Verificato sul simulatore Watch, in italiano: paywall con acquisto
 simulato che si chiude da solo e sblocca le impostazioni; coda rifatta con intervallo e

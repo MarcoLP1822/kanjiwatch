@@ -6,8 +6,12 @@ Toccandola si apre l'app: un tocco mostra l'ordine dei tratti animato, un altro 
 letture, il significato e una parola d'esempio. Poi Fatto, che chiude il giro, o
 Avanti, che passa subito al prossimo.
 
+Quale kanji ti arriva lo decide un motore che guarda cosa ti è già passato davanti:
+qualcosa di nuovo, qualcosa da rivedere, qualcosa che conosci di vista. Nessun voto e
+nessun «lo so / non lo so» — bastano i segnali che lasci aprendo l'app.
+
 Tutti i 2.136 jōyō, in mazzi per classe scolastica. Niente account, niente rete,
-niente progressi da inseguire.
+niente arretrati da smaltire.
 
 Le decisioni di progetto, l'architettura e la roadmap stanno in
 [ARCHITETTURA.md](ARCHITETTURA.md).
