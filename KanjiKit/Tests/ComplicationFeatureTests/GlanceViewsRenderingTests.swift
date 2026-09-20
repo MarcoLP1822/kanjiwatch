@@ -12,10 +12,10 @@ import Testing
 @Suite("Rendering della complication")
 @MainActor
 struct GlanceViewsRenderingTests {
-    private func waterEntry() throws -> (GlanceEntry, Double) {
+    private func waterEntry(_ content: ExposureContent = .introduce) throws -> (GlanceEntry, Double) {
         let deck = try BundledDeckRepository().loadDeck(grades: [1])
         let water = try #require(deck["06c34"])
-        return (GlanceEntry(date: .now, kanji: water), deck.viewBox)
+        return (GlanceEntry(date: .now, kanji: water, content: content), deck.viewBox)
     }
 
     private func onWatchFace(_ view: some View) -> some View {
@@ -43,6 +43,40 @@ struct GlanceViewsRenderingTests {
         )
         #expect(inkPixels(rectangular) > 300)
         #expect(entry.inlineLabel == "水 water")
+    }
+
+    /// Le tre forme sul rettangolo: il significato, il kanji da solo, la parola.
+    @Test func theRectangleFollowsTheSequence() throws {
+        let (introduce, viewBox) = try waterEntry()
+        let (recall, _) = try waterEntry(.recall)
+        let (context, _) = try waterEntry(.context)
+
+        let sizes = try [introduce, recall, context].map { entry in
+            inkPixels(
+                try renderImage(
+                    onWatchFace(GlanceCard(entry: entry, viewBox: viewBox)),
+                    size: CGSize(width: 180, height: 56),
+                    named: "complication-rectangular-\(entry.content.rawValue)"
+                ))
+        }
+        // Il richiamo è il più scarno dei tre: solo il glifo, nessuna parola.
+        #expect(sizes[1] < sizes[0])
+        #expect(sizes[2] > 0)
+    }
+
+    /// Il formato in linea è solo testo, e su quella riga ci sta poco: mai la
+    /// parola col suo significato in coda.
+    @Test func theInlineLabelSaysTheMinimum() throws {
+        #expect(try waterEntry(.recall).0.inlineLabel == "水")
+        #expect(try waterEntry(.context).0.inlineLabel == "水曜日 すいようび")
+    }
+
+    /// Sull'angolo l'etichetta curva è la risposta: nella forma del richiamo non
+    /// c'è, altrimenti sarebbe come non chiedere niente.
+    @Test func theCornerLabelKeepsTheAnswerHiddenWhenItShould() throws {
+        #expect(try waterEntry().0.cornerLabel == "water")
+        #expect(try waterEntry(.recall).0.cornerLabel == nil)
+        #expect(try waterEntry(.context).0.cornerLabel == "水曜日")
     }
 }
 #endif

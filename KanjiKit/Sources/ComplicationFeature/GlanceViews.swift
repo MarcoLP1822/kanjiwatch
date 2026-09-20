@@ -28,8 +28,11 @@ public struct GlanceGlyph: View {
     }
 }
 
-/// Il formato rettangolare: kanji e significato, niente letture. È la stessa regola
-/// della notifica: se le letture te le dà il quadrante, non provi a ricordarle.
+/// Il formato rettangolare, nella forma che tocca a quel momento: il kanji col suo
+/// significato, il kanji da solo, o la parola che lo contiene.
+///
+/// Niente letture del kanji, mai: è la stessa regola della notifica, se te le dà il
+/// quadrante non provi a ricordarle.
 public struct GlanceCard: View {
     private let entry: GlanceEntry
     private let viewBox: Double
@@ -40,20 +43,60 @@ public struct GlanceCard: View {
     }
 
     public var body: some View {
-        HStack(spacing: DS.Spacing.m) {
-            GlanceGlyph(entry: entry, viewBox: viewBox)
-            Text(verbatim: entry.meaning)
-                .font(.headline)
-                .lineLimit(2)
-                .minimumScaleFactor(0.8)
-                .frame(maxWidth: .infinity, alignment: .leading)
+        switch entry.content {
+        case .introduce:
+            HStack(spacing: DS.Spacing.m) {
+                glyph
+                Text(verbatim: entry.meaning)
+                    .font(.headline)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.8)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+        case .recall:
+            // Solo il kanji, al centro: qui la domanda è il carattere stesso.
+            glyph.frame(maxWidth: .infinity)
+        case .context:
+            VStack(alignment: .leading, spacing: 0) {
+                Text(verbatim: entry.word ?? entry.character)
+                    .font(.headline)
+                    .dsJapanese()
+                Text(verbatim: entry.wordReading ?? "")
+                    .font(.caption2)
+                    .dsJapanese()
+                // Il significato solo se ci sta: su due righe di quadrante la parola
+                // e la sua lettura vengono prima.
+                Text(verbatim: entry.wordMeaning ?? "")
+                    .font(.caption2)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
+    }
+
+    private var glyph: GlanceGlyph {
+        GlanceGlyph(entry: entry, viewBox: viewBox)
     }
 }
 
 extension GlanceEntry {
     /// Il formato in linea accetta solo testo: lì il sistema non disegna forme.
     public var inlineLabel: String {
-        "\(character) \(meaning)"
+        switch content {
+        case .introduce: "\(character) \(meaning)"
+        case .recall: character
+        case .context: [word, wordReading].compactMap { $0 }.joined(separator: " ")
+        }
+    }
+
+    /// L'etichetta curva del formato d'angolo. Nella forma del richiamo non c'è:
+    /// scrivere la risposta lì sotto sarebbe come non chiederla.
+    public var cornerLabel: String? {
+        switch content {
+        case .introduce: meaning
+        case .recall: nil
+        case .context: word
+        }
     }
 }

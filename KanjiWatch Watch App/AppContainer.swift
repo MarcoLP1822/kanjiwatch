@@ -177,11 +177,18 @@ final class AppContainer {
         await current.value
     }
 
-    /// Sul quadrante il kanji in gioco, poi uno per ogni notifica in coda.
+    /// Sul quadrante il kanji in gioco, poi uno per ogni notifica in coda — ciascuno
+    /// nella forma della notifica che lo porta.
     private func publishComplication() {
+        let state = stateStore.load()
         complicationStore.save(
             ComplicationTimeline.entries(
-                now: Date(), current: study.kanji, upcoming: stateStore.load().scheduled, deck: deck)
+                now: Date(),
+                current: study.kanji,
+                currentContent: state.session.content,
+                upcoming: state.scheduled,
+                deck: deck
+            )
         )
         WidgetCenter.shared.reloadAllTimelines()
     }
