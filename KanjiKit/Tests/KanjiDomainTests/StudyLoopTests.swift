@@ -353,6 +353,69 @@ struct StudyLoopTests {
         #expect(try #require(ambient.value.records[studied]?.nextDueAt) > before)
     }
 
+    // MARK: - La forma dice se era una richiesta di aiuto
+
+    /// Il giro che fa nascere il ritmo personale: il kanji arriva da solo, lo tocchi,
+    /// arrivi alle letture. Tutti e tre i segnali sanno che era un richiamo.
+    @Test func openingAKanjiShownAloneIsRecordedAsARequest() throws {
+        let alone = deck.kanji[0].codepoint
+        let store = InMemoryStore(
+            ReminderState(
+                scheduled: [ScheduledReminder(fireDate: date("2026-05-10 09:00"), codepoint: alone, content: .recall)]
+            )
+        )
+        let ambient = InMemoryStore(AmbientState.empty)
+
+        _ = loop(state: store, ambient: ambient, at: "2026-05-10 09:12").current()
+        _ = loop(state: store, ambient: ambient, at: "2026-05-10 09:13")
+            .open(ReminderDestination(codepoint: alone, content: .recall))
+        loop(state: store, ambient: ambient, at: "2026-05-10 09:14").readingsViewed(alone)
+
+        let exposure = try #require(ambient.value.records[alone])
+        #expect(exposure.presentationCount == 1)
+        // 0.30 per il tocco e 0.25 per le letture, meno il minuto di decadimento
+        // passato fra i due: il punteggio invecchia da subito.
+        #expect(abs(exposure.supportScore - 0.55) < 0.001)
+        #expect(exposure.supportLevel(at: date("2026-05-10 09:14")) == .medium)
+    }
+
+    /// Lo stesso giro su un kanji che aveva già il significato sotto non chiede
+    /// niente: stavi solo guardando.
+    @Test func openingAKanjiWithItsMeaningAsksForNothing() throws {
+        let explained = deck.kanji[1].codepoint
+        let store = InMemoryStore(
+            ReminderState(
+                scheduled: [
+                    ScheduledReminder(fireDate: date("2026-05-10 09:00"), codepoint: explained, content: .introduce)
+                ]
+            )
+        )
+        let ambient = InMemoryStore(AmbientState.empty)
+
+        _ = loop(state: store, ambient: ambient, at: "2026-05-10 09:12").current()
+        _ = loop(state: store, ambient: ambient, at: "2026-05-10 09:13")
+            .open(ReminderDestination(codepoint: explained, content: .introduce))
+        loop(state: store, ambient: ambient, at: "2026-05-10 09:14").readingsViewed(explained)
+
+        #expect(try #require(ambient.value.records[explained]).supportScore == 0)
+    }
+
+    /// Le letture prendono la forma dalla sessione in corso, non dall'ultima notifica
+    /// che è passata: è quella che hai davanti agli occhi.
+    @Test func theReadingsSignalFollowsTheSessionForm() throws {
+        let studied = deck.kanji[2].codepoint
+        let store = InMemoryStore(
+            ReminderState(
+                session: StudySession(
+                    codepoint: studied, isDone: false, since: date("2026-05-10 09:00"), content: .recall))
+        )
+        let ambient = InMemoryStore(AmbientState.empty)
+
+        loop(state: store, ambient: ambient, at: "2026-05-10 09:12").readingsViewed(studied)
+
+        #expect(try #require(ambient.value.records[studied]).supportScore == 0.25)
+    }
+
     // MARK: - La forma che viaggia col kanji
 
     /// La notifica arrivata porta con sé la sua forma: se al polso hai visto la

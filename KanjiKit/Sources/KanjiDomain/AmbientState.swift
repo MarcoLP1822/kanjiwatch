@@ -19,6 +19,13 @@ public struct KanjiExposure: Equatable, Sendable, Codable {
     /// Da quando ha di nuovo senso riproporlo. Non è una scadenza da rispettare: è
     /// la chiave con cui il motore decide chi è più in ritardo.
     public var nextDueAt: Date
+    /// Quanto quel kanji sembra chiedere un appiglio, da 0 a 1. Cresce solo quando,
+    /// vedendolo da solo, sei andato a cercare il resto; e cala da sé col tempo,
+    /// perché una fatica di due mesi fa non deve perseguitare un kanji per sempre.
+    public var supportScore: Double
+    /// Quando il punteggio è stato toccato l'ultima volta: senza, non si saprebbe da
+    /// quando farlo decadere.
+    public var supportUpdatedAt: Date?
 
     public init(
         firstSeenAt: Date,
@@ -27,7 +34,9 @@ public struct KanjiExposure: Equatable, Sendable, Codable {
         openedCount: Int = 0,
         readingsViewedCount: Int = 0,
         lastEngagedAt: Date? = nil,
-        nextDueAt: Date
+        nextDueAt: Date,
+        supportScore: Double = 0,
+        supportUpdatedAt: Date? = nil
     ) {
         self.firstSeenAt = firstSeenAt
         self.lastPresentedAt = lastPresentedAt
@@ -36,6 +45,23 @@ public struct KanjiExposure: Equatable, Sendable, Codable {
         self.readingsViewedCount = readingsViewedCount
         self.lastEngagedAt = lastEngagedAt
         self.nextDueAt = nextDueAt
+        self.supportScore = supportScore
+        self.supportUpdatedAt = supportUpdatedAt
+    }
+
+    public init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        firstSeenAt = try container.decode(Date.self, forKey: .firstSeenAt)
+        lastPresentedAt = try container.decode(Date.self, forKey: .lastPresentedAt)
+        presentationCount = try container.decode(Int.self, forKey: .presentationCount)
+        openedCount = try container.decode(Int.self, forKey: .openedCount)
+        readingsViewedCount = try container.decode(Int.self, forKey: .readingsViewedCount)
+        lastEngagedAt = try container.decodeIfPresent(Date.self, forKey: .lastEngagedAt)
+        nextDueAt = try container.decode(Date.self, forKey: .nextDueAt)
+        // Storici salvati prima del ritmo personale: nessun segnale, e si riparte
+        // da lì invece di buttare via mesi di esposizioni.
+        supportScore = try container.decodeIfPresent(Double.self, forKey: .supportScore) ?? 0
+        supportUpdatedAt = try container.decodeIfPresent(Date.self, forKey: .supportUpdatedAt)
     }
 }
 
@@ -80,7 +106,20 @@ public struct AmbientState: Equatable, Sendable, Codable {
         records[codepoint]?.stage(at: date)
     }
 
-    public mutating func record(_ event: ExposureEvent, codepoint: String, at date: Date) {
+    /// Quanto supporto sembra chiedere quel kanji, adesso.
+    public func support(of codepoint: String, at date: Date) -> SupportLevel {
+        records[codepoint]?.supportLevel(at: date) ?? .low
+    }
+
+    /// `content` dice in che forma il kanji era davanti agli occhi: toccare un kanji
+    /// mostrato da solo vuol dire una cosa, toccarlo mentre c'è già il significato
+    /// scritto sotto non vuol dire niente.
+    public mutating func record(
+        _ event: ExposureEvent,
+        codepoint: String,
+        content: ExposureContent = .introduce,
+        at date: Date
+    ) {
         var exposure =
             records[codepoint]
             ?? KanjiExposure(firstSeenAt: date, lastPresentedAt: date, nextDueAt: date)
@@ -100,6 +139,14 @@ public struct AmbientState: Equatable, Sendable, Codable {
         // Un kanji aperto è stato per forza mostrato, anche se la notifica che l'ha
         // portato è arrivata prima che esistesse questo storico.
         exposure.presentationCount = max(exposure.presentationCount, 1)
+
+        // Solo il richiamo dice qualcosa: se il kanji era lì da solo e sei andato a
+        // cercare il resto, un appiglio in più può servire. Cercarlo quando il
+        // significato c'era già scritto è comportamento normale, non una richiesta.
+        if content == .recall, let weight = KanjiExposure.supportWeight(for: event) {
+            exposure.supportScore = min(1, exposure.support(at: date) + weight)
+            exposure.supportUpdatedAt = date
+        }
 
         switch event {
         case .presented:
@@ -131,6 +178,59 @@ extension KanjiExposure {
         if presentationCount >= 8, age >= 7 * .day { return .familiar }
         if presentationCount < 3, readingsViewedCount == 0 { return .fresh }
         return .reinforcing
+    }
+
+    /// Il punteggio di adesso: quello salvato, dimezzato ogni due settimane. Così
+    /// un kanji che ti aveva dato filo da torcere a marzo, se a maggio lo guardi e
+    /// basta, torna a essere un kanji come gli altri.
+    public func support(at date: Date) -> Double {
+        guard let supportUpdatedAt, supportScore > 0 else { return 0 }
+        let elapsed = max(date.timeIntervalSince(supportUpdatedAt), 0)
+        return supportScore * pow(0.5, elapsed / Self.supportHalfLife)
+    }
+
+    public func supportLevel(at date: Date) -> SupportLevel {
+        switch support(at: date) {
+        case ..<0.25: .low
+        case ..<0.60: .medium
+        default: .high
+        }
+    }
+
+    /// Quando torna davvero, col ritmo personale acceso.
+    ///
+    /// `nextDueAt` resta la linea di base per tutti e non si tocca: il ritmo
+    /// personale è una lettura diversa dello stesso dato, non una riscrittura. Così
+    /// se l'abbonamento finisce, il ritmo di base è ancora lì intatto.
+    public func effectiveDueAt(mode: AmbientMode, at date: Date) -> Date {
+        guard mode == .adaptive else { return nextDueAt }
+        let factor = Self.spacingFactor(for: supportLevel(at: date))
+        guard factor < 1 else { return nextDueAt }
+
+        // Si accorcia l'attesa, ma mai sotto le sei ore dall'ultima volta: un kanji
+        // che sembra costare fatica non deve diventare una raffica.
+        let shortened = lastPresentedAt + max(nextDueAt.timeIntervalSince(lastPresentedAt) * factor, Self.firstSpacing)
+        return min(nextDueAt, shortened)
+    }
+
+    static func spacingFactor(for support: SupportLevel) -> Double {
+        switch support {
+        case .low: 1
+        case .medium: 0.65
+        case .high: 0.40
+        }
+    }
+
+    static let supportHalfLife: TimeInterval = 14 * .day
+
+    /// Aprire l'app su un kanji mostrato da solo pesa più che arrivare fino alle
+    /// letture: il primo tocco è già la richiesta, il resto è la conferma.
+    static func supportWeight(for event: ExposureEvent) -> Double? {
+        switch event {
+        case .opened: 0.30
+        case .readingsViewed: 0.25
+        case .presented: nil
+        }
     }
 
     /// Il ritmo. Numeri scelti a occhio e da ritoccare con l'uso: non stiamo

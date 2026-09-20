@@ -31,7 +31,8 @@ extension ReminderState {
         calendar: Calendar
     ) {
         for delivered in recordDeliveries(now: now, calendar: calendar) {
-            ambient.record(.presented, codepoint: delivered.codepoint, at: delivered.fireDate)
+            ambient.record(
+                .presented, codepoint: delivered.codepoint, content: delivered.content, at: delivered.fireDate)
         }
         // Senza, un kanji uscito dal mazzo resterebbe in coda per sempre: a ogni
         // rischedulazione tornerebbe in testa e verrebbe scartato di nuovo.
@@ -137,6 +138,9 @@ public struct StudyLoop {
     private let settings: any ValueStore<ReminderSettings>
     private let state: any ValueStore<ReminderState>
     private let ambient: any ValueStore<AmbientState>
+    /// Una funzione e non un valore: l'abbonamento può cambiare mentre l'app è
+    /// aperta, e il loro loop vive quanto la schermata.
+    private let mode: () -> AmbientMode
     private let now: () -> Date
     private let calendar: Calendar
 
@@ -145,6 +149,7 @@ public struct StudyLoop {
         settings: any ValueStore<ReminderSettings>,
         state: any ValueStore<ReminderState>,
         ambient: any ValueStore<AmbientState>,
+        mode: @escaping () -> AmbientMode = { .standard },
         now: @escaping () -> Date = Date.init,
         calendar: Calendar = .current
     ) {
@@ -152,6 +157,7 @@ public struct StudyLoop {
         self.settings = settings
         self.state = state
         self.ambient = ambient
+        self.mode = mode
         self.now = now
         self.calendar = calendar
     }
@@ -180,15 +186,20 @@ public struct StudyLoop {
         update { value, exposure, moment in
             guard deck[destination.codepoint] != nil else { return }
             value.open(destination, now: moment)
-            exposure.record(.opened, codepoint: destination.codepoint, at: moment)
+            exposure.record(.opened, codepoint: destination.codepoint, content: destination.content, at: moment)
         }
     }
 
     /// Sei arrivato a letture e parola. È il segnale più forte che abbiamo senza
     /// chiederti niente, e allontana il momento in cui quel kanji tornerà.
     public func readingsViewed(_ codepoint: String) {
+        let session = state.load().session
+        // La forma è quella con cui il kanji è entrato in gioco: se era lì da solo,
+        // essere arrivato fin qui vuol dire qualcosa; se il significato c'era già
+        // scritto, no.
+        let content = session.codepoint == codepoint ? session.content : .introduce
         var exposure = ambient.load()
-        exposure.record(.readingsViewed, codepoint: codepoint, at: now())
+        exposure.record(.readingsViewed, codepoint: codepoint, content: content, at: now())
         ambient.save(exposure)
     }
 
@@ -214,6 +225,7 @@ public struct StudyLoop {
                     state: exposure,
                     after: onScreen,
                     newPerDay: settings.load().newKanjiPerDay,
+                    mode: mode(),
                     calendar: calendar
                 )
                 .map { ReminderDestination(codepoint: $0.codepoint, content: $0.content) }
@@ -221,7 +233,7 @@ public struct StudyLoop {
             calendar: calendar
         )
         if case .showing(let codepoint) = outcome, codepoint != arrived {
-            exposure.record(.presented, codepoint: codepoint, at: moment)
+            exposure.record(.presented, codepoint: codepoint, content: value.session.content, at: moment)
         }
     }
 

@@ -13,7 +13,20 @@ public final class SettingsViewModel {
     public var startHour: Int { didSet { settingsChanged() } }
     public var endHour: Int { didSet { settingsChanged() } }
     public var isPassive: Bool { didSet { settingsChanged() } }
-    public var dailyLimit: Int { didSet { settingsChanged() } }
+    public var dailyLimit: Int {
+        didSet {
+            // I volti nuovi non possono superare le volte che l'app si fa viva:
+            // sarebbe una promessa che la giornata non può mantenere. Qui si può
+            // assegnare perché `newKanjiPerDay` non ha osservatori: con `@Observable`
+            // il `didSet` finisce dentro il setter, e assegnarsi da lì rientrerebbe
+            // all'infinito.
+            newKanjiPerDay = min(newKanjiPerDay, dailyLimit)
+            settingsChanged()
+        }
+    }
+    /// Si cambia solo con `setNewKanjiPerDay`, che tiene il vincolo col numero di
+    /// promemoria — come `grades` e `theme`, che hanno vincoli loro.
+    public private(set) var newKanjiPerDay: Int
 
     /// I mazzi disponibili nel bundle, dal catalogo.
     public let levels: [KanjiLevel]
@@ -57,6 +70,7 @@ public final class SettingsViewModel {
         endHour = current.activeHours.endHour
         isPassive = current.isPassive
         dailyLimit = current.dailyLimit
+        newKanjiPerDay = min(current.newKanjiPerDay, current.dailyLimit)
         grades = current.grades
         theme = current.theme
     }
@@ -67,6 +81,13 @@ public final class SettingsViewModel {
     /// bloccati: chi non è abbonato deve vedere il ritmo vero, non quello scelto.
     public var effective: ReminderSettings {
         AccessPolicy.effective(store.load(), for: subscription)
+    }
+
+    public func setNewKanjiPerDay(_ count: Int) {
+        let clamped = min(count, dailyLimit)
+        guard clamped != newKanjiPerDay else { return }
+        newKanjiPerDay = clamped
+        settingsChanged()
     }
 
     public func isLocked(_ level: KanjiLevel) -> Bool {
@@ -128,6 +149,7 @@ public final class SettingsViewModel {
         settings.activeHours = ActiveHours(startHour: startHour, endHour: endHour)
         settings.isPassive = isPassive
         settings.dailyLimit = dailyLimit
+        settings.newKanjiPerDay = newKanjiPerDay
         settings.grades = grades
         settings.theme = theme
         store.save(settings)

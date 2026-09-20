@@ -45,4 +45,19 @@ struct JSONFileStoreTests {
         store.save(sampleState())
         #expect(store.load() == sampleState())
     }
+
+    /// Seconda volta che si rompe: il file da parte c'è già, e lo spostamento non
+    /// deve fallire in silenzio lasciando il file rotto al suo posto.
+    @Test func aSecondBreakStillSetsTheFileAside() throws {
+        let broken = url.appendingPathExtension("broken")
+        store.save(sampleState())
+        try Data("primo rotto".utf8).write(to: url)
+        _ = store.load()
+
+        try Data("secondo rotto".utf8).write(to: url)
+        #expect(store.load() == .empty)
+
+        #expect(!FileManager.default.fileExists(atPath: url.path))
+        #expect(try String(contentsOf: broken, encoding: .utf8) == "secondo rotto")
+    }
 }

@@ -50,6 +50,7 @@ public enum ReminderPlanner {
         deck: KanjiDeck,
         ambient: AmbientState,
         currentCodepoint: String? = nil,
+        mode: AmbientMode = .standard,
         anchor: Date? = nil,
         usedToday: Int = 0,
         calendar: Calendar = .current
@@ -61,6 +62,7 @@ public enum ReminderPlanner {
             state: ambient,
             currentCodepoint: currentCodepoint,
             newPerDay: settings.newKanjiPerDay,
+            mode: mode,
             calendar: calendar
         )
         .map { ScheduledReminder(fireDate: $0.fireDate, codepoint: $0.codepoint, content: $0.content) }
