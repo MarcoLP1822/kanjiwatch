@@ -112,9 +112,9 @@ JPDB (freq, Yomitan)  ─┘
 
 - KanjiVG — https://github.com/KanjiVG/kanjivg/releases (`*-main.zip`), tracciati
 - KANJIDIC2 — http://www.edrdg.org/kanjidic/kanjidic2.xml.gz, letture e significati
-- JMdict — http://ftp.edrdg.org/pub/Nihongo/JMdict_e.gz, la parola di esempio
+- JMdict — http://ftp.edrdg.org/pub/Nihongo/JMdict_e.gz, le parole di esempio
 - JPDB — dizionario di frequenza Yomitan, **solo per ordinare**: nel bundle finiscono
-  le 300 parole scelte, non la lista
+  le parole scelte, non la lista
 
 ```bash
 python3 Scripts/build_kanji_data.py \
@@ -133,6 +133,16 @@ corpus è di anime e light novel: le parole che JMdict marca `uk` (si scrivono i
 kana: 貴方, 勿論, 何所) e una dozzina di casi in `Scripts/word_overrides.json`
 (王国 → 外国, 野郎 → 野球). Senza JPDB lo script funziona lo stesso, con `nfXX`.
 
+**Fino a tre parole per kanji** (F16). La prima si sceglie come sempre, e resta
+identica a quella di prima della F16 per tutti i 2.136 kanji: è la verifica che la
+regola non è cambiata. Le altre due sono varietà, e la varietà vale solo se aggiunge
+qualcosa, quindi devono essere composti veri che stanno sul quadrante (non il kanji
+da solo, non oltre tre caratteri) e **non ripetere il significato** di una parola già
+scelta — senza questo 大 prendeva 大きい e 大きな, tutte e due "big", e 食 prendeva 食べる
+e 食う. Una grafia sola per kanji. `word_overrides.json` accetta una grafia o una
+lista, e le scelte a mano stanno davanti nell'ordine dato, purché JMdict le conosca.
+Risultato: 6.365 parole, 2.106 kanji con tre, 2 senza nessuna (且, 𠮟).
+
 Il self-check della selezione: `python3 Scripts/test_build_kanji_data.py`.
 
 Nel bundle vanno `kanji-catalog.json` e un `kanji-grade-N.json` per grado. Non si
@@ -149,7 +159,7 @@ questo `jlptOld` non viene nemmeno più esportato.
 ```json
 // kanji-catalog.json — meno di 1 KB, si legge sempre
 {
-  "version": 2,
+  "version": 3,
   "viewBox": 109,
   "count": 2136,
   "attribution": "This app includes data derived from: ...",
@@ -165,12 +175,19 @@ questo `jlptOld` non viene nemmeno più esportato.
       "ends": "hwww",
       "on": ["スイ"], "kun": ["みず"],
       "meanings": { "en": ["water"] },
-      "word": { "w": "水曜日", "r": "すいようび", "g": ["Wednesday"] },
+      "words": [
+        { "w": "水曜日", "r": "すいようび", "g": ["Wednesday"] },
+        { "w": "水着", "r": "みずぎ", "g": ["bathing suit", "swimsuit"] },
+        { "w": "水面", "r": "すいめん", "g": ["water's surface"] }
+      ],
       "grade": 1
     }
   ]
 }
 ```
+
+Lo schema 2 aveva `"word": {...}`, una parola sola: il decoder lo legge ancora e lo
+trasforma in una lista da una.
 
 Tutti i tracciati KanjiVG vivono in un sistema di coordinate **109 × 109**.
 È l'unico numero magico del progetto e sta in `viewBox`.
@@ -195,7 +212,8 @@ public struct Kanji: Identifiable, Hashable, Sendable {
     public let onReadings: [String]
     public let kunReadings: [String]
     public let meanings: [String]     // inglese: KANJIDIC2 non ha l'italiano
-    public let commonWord: Word?      // grafia, lettura, significati
+    public let words: [Word]          // fino a tre: grafia, lettura, significati
+                                      // commonWord è la prima
     public let grade: Int?
     public let frequencyRank: Int?
 }
@@ -414,9 +432,22 @@ lun 09:00   水  water         lun 15:00   水          mar 10:00   水曜日
                                                                   すいようび
 ```
 
-**La forma viaggia col kanji.** `ReminderDestination` — codepoint e forma — passa dalla
-coda alla notifica (`ec` nel payload), dalla notifica alla sessione, dalla sessione al
-quadrante, e dal tocco all'app (`?content=` nel link della complication). Decisa dal
+**Quale parola, nel contesto** (F16). Ogni kanji ha fino a tre parole, e girano: la
+prima volta che compare dentro una parola è 水曜日, la seconda 水着, la terza 水面, poi
+di nuovo 水曜日. Lo decide `contextPresentationCount`, che conta solo le comparse in
+forma `context` e non tocca nient'altro — né la familiarità, né il ritmo, né il
+supporto. Il motore sceglie **prima** di segnare la comparsa simulata, come per la
+forma, e la scelta viaggia in `ExposureReference` accanto a `ExposureContent`: la forma
+dice *come*, il riferimento *con cosa*. Un indice che non c'è più — il mazzo
+rigenerato con meno parole — ricade sulla più comune.
+
+Il ritmo personale non ha bisogno di niente in più: un kanji che chiede supporto torna
+più spesso e con più contesti, quindi incontra prima le sue altre parole.
+
+**La forma viaggia col kanji.** `ReminderDestination` — codepoint, forma e parola — passa
+dalla coda alla notifica (`ec` e `wi` nel payload), dalla notifica alla sessione, dalla
+sessione al quadrante, e dal tocco all'app (`?content=…&wi=…` nel link della
+complication). Le letture nell'app mostrano la parola della notifica che le ha aperte. Decisa dal
 piano una volta sola e mai ricalcolata: altrimenti la notifica delle 15:00 mostrerebbe
 la parola e il quadrante, dopo la prima rischedulazione, tornerebbe al significato.
 Dove manca — notifiche già in coda, link vecchi, stati salvati — vale `introduce`.
@@ -763,6 +794,7 @@ Non è un parere legale.
 | **F13** | Ambient Engine | ✅ lo storico decide cosa ti passa davanti: nuovo, rinforzo, familiare |
 | **F14** | Micro-sequenza | ✅ e decide anche come: il kanji, il richiamo, la parola |
 | **F15** | Ritmo personale | ✅ col Premium ogni kanji si fa il suo ritmo, senza che tu dica niente |
+| **F16** | Profondità di vocabolario | ✅ fino a tre parole per kanji, che girano un contesto dopo l'altro |
 
 F2 è già un'app che usi a mano. F5 è il momento in cui diventa quello che avevi in
 mente. Non invertire: se parti dalle notifiche, debugghi lo scheduler prima di aver
@@ -823,6 +855,15 @@ L'abbonamento cambia di conseguenza: non vendiamo 2.136 kanji, vendiamo il fluss
 personale che si aggiorna da solo. Per questo il motore c'è anche nella versione
 gratuita — dimostrare un prodotto peggiore di quello che vendi è un modo sicuro di non
 venderlo — e Premium allarga il mazzo e il controllo del ritmo.
+
+**Sulla F16.** Primo pezzo della Fase 4, «dal kanji al giapponese»: per chi la usa l'app
+funziona esattamente come prima, solo che dopo qualche giorno si accorge che lo stesso
+kanji gli apre pezzi diversi della lingua. Un costo da tenere d'occhio: gli oggetti da
+decodificare raddoppiano, e sul Mac la decodifica passa da 22 a 31 ms per il mazzo
+gratuito e da 225 a 307 ms per tutti i jōyō (build di debug). Sul Watch va misurato; se
+pesa, le parole si possono scrivere come array invece che come oggetti. Poi, in ordine:
+micro-frasi, coppie da confondere, un focus JLPT dichiaratamente non ufficiale — il JLPT
+non pubblica liste dal 2010.
 
 **Sulla F15.** È la fase che dà un senso ricorrente all'abbonamento: non un catalogo
 più grande, un flusso che continua a personalizzarsi. Il dominio resta ignorante di

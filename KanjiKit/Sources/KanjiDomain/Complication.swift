@@ -25,6 +25,7 @@ public struct GlanceEntry: Equatable, Sendable, Codable {
     /// In che forma mostrarlo, la stessa della notifica di quel momento: il polso
     /// non deve raccontare due cose diverse nello stesso istante.
     public let content: ExposureContent
+    public let reference: ExposureReference
     public let character: String
     public let meaning: String
     public let strokes: [String]
@@ -32,16 +33,25 @@ public struct GlanceEntry: Equatable, Sendable, Codable {
     public let wordReading: String?
     public let wordMeaning: String?
 
-    public init(date: Date, kanji: Kanji, content: ExposureContent = .introduce) {
+    public init(
+        date: Date,
+        kanji: Kanji,
+        content: ExposureContent = .introduce,
+        reference: ExposureReference = .none
+    ) {
+        // La parola si risolve qui, dove il mazzo c'è: l'estensione del quadrante
+        // riceve il testo pronto e non deve nemmeno sapere che le parole sono tre.
+        let word = kanji.word(for: reference)
         self.date = date
         self.codepoint = kanji.codepoint
-        self.content = content.resolved(hasWord: kanji.commonWord != nil)
+        self.content = content.resolved(hasWord: word != nil)
+        self.reference = reference
         self.character = kanji.character
         self.meaning = kanji.shortMeaning
         self.strokes = kanji.strokes
-        self.word = kanji.commonWord?.text
-        self.wordReading = kanji.commonWord?.reading
-        self.wordMeaning = kanji.commonWord?.shortMeaning
+        self.word = word?.text
+        self.wordReading = word?.reading
+        self.wordMeaning = word?.shortMeaning
     }
 
     public init(from decoder: any Decoder) throws {
@@ -56,10 +66,11 @@ public struct GlanceEntry: Equatable, Sendable, Codable {
         wordMeaning = try container.decodeIfPresent(String.self, forKey: .wordMeaning)
         // Timeline scritte prima della micro-sequenza: erano tutte "kanji e significato".
         content = (try? container.decodeIfPresent(ExposureContent.self, forKey: .content)) ?? .introduce
+        reference = (try? container.decodeIfPresent(ExposureReference.self, forKey: .reference)) ?? .none
     }
 
     public var destination: ReminderDestination {
-        ReminderDestination(codepoint: codepoint, content: content)
+        ReminderDestination(codepoint: codepoint, content: content, reference: reference)
     }
 }
 
@@ -72,6 +83,7 @@ public enum ComplicationTimeline {
         now: Date,
         current: Kanji,
         currentContent: ExposureContent = .introduce,
+        currentReference: ExposureReference = .none,
         upcoming: [ScheduledReminder],
         deck: KanjiDeck
     ) -> [GlanceEntry] {
@@ -82,9 +94,10 @@ public enum ComplicationTimeline {
             // Un kanji uscito dal mazzo dopo la programmazione si salta.
             .compactMap { reminder in
                 deck[reminder.codepoint].map {
-                    GlanceEntry(date: reminder.fireDate, kanji: $0, content: reminder.content)
+                    GlanceEntry(
+                        date: reminder.fireDate, kanji: $0, content: reminder.content, reference: reminder.reference)
                 }
             }
-        return [GlanceEntry(date: now, kanji: current, content: currentContent)] + queued
+        return [GlanceEntry(date: now, kanji: current, content: currentContent, reference: currentReference)] + queued
     }
 }

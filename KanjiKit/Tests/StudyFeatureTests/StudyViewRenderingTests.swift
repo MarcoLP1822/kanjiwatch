@@ -16,6 +16,29 @@ import Testing
 @MainActor
 struct StudyViewRenderingTests {
 
+    /// Le letture mostrano la parola della notifica che ha aperto il giro: con una
+    /// parola diversa la schermata è diversa.
+    @Test func theReadingsShowTheWordOfTheNotification() throws {
+        let model = makeStudyModel()
+        let render = { (word: Kanji.Word?, name: String) in
+            try renderWatchSized(
+                ReadingsContent(
+                    kanji: model.kanji, glyph: model.glyph, word: word, dailyLimitReached: false, onDone: {},
+                    onNext: {}
+                )
+                .padding(DS.Spacing.m)
+                .background(.dsBackground),
+                named: name
+            )
+        }
+
+        let common = inkPixels(try render(nil, "study-readings-common"))
+        let chosen = inkPixels(try render(model.kanji.words[1], "study-readings-word1"))
+
+        #expect(chosen != common)
+        #expect(inkPixels(try render(model.kanji.words[0], "study-readings-word0")) == common)
+    }
+
     @Test func everyStepDrawsSomethingDifferent() throws {
         let kanji = try renderWatchSized(StudyView(model: makeStudyModel()), named: "study-kanji")
 

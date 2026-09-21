@@ -67,6 +67,17 @@ struct StudyViewModelTests {
         #expect(asked == 1)
     }
 
+    /// Aperta dalla notifica che mostrava 水着, l'app porta 水着 fino alle letture:
+    /// mai la notifica su una parola e la schermata su un'altra.
+    @Test func openingFromAWordKeepsThatWordForTheReadings() {
+        let model = makeStudyModel(deck: deck)
+
+        model.open(ReminderDestination(codepoint: waterKanji.codepoint, content: .context, reference: .word(1)))
+
+        #expect(model.snapshot.reference == .word(1))
+        #expect(model.kanji.word(for: model.snapshot.reference)?.text == "水着")
+    }
+
     /// Il permesso si chiede una volta, ma il segnale si registra ogni volta: è
     /// quello che dice al motore quali kanji ti interessano davvero.
     @Test func everyTimeYouReachTheReadingsItIsRecorded() throws {

@@ -26,6 +26,10 @@ public struct KanjiExposure: Equatable, Sendable, Codable {
     /// Quando il punteggio è stato toccato l'ultima volta: senza, non si saprebbe da
     /// quando farlo decadere.
     public var supportUpdatedAt: Date?
+    /// Quante volte il kanji è comparso dentro una parola. Decide quale parola tocca
+    /// la prossima volta, e nient'altro: non conta come comparsa in più, non cambia la
+    /// familiarità, non sposta il ritmo.
+    public var contextPresentationCount: Int
 
     public init(
         firstSeenAt: Date,
@@ -36,7 +40,8 @@ public struct KanjiExposure: Equatable, Sendable, Codable {
         lastEngagedAt: Date? = nil,
         nextDueAt: Date,
         supportScore: Double = 0,
-        supportUpdatedAt: Date? = nil
+        supportUpdatedAt: Date? = nil,
+        contextPresentationCount: Int = 0
     ) {
         self.firstSeenAt = firstSeenAt
         self.lastPresentedAt = lastPresentedAt
@@ -47,6 +52,7 @@ public struct KanjiExposure: Equatable, Sendable, Codable {
         self.nextDueAt = nextDueAt
         self.supportScore = supportScore
         self.supportUpdatedAt = supportUpdatedAt
+        self.contextPresentationCount = contextPresentationCount
     }
 
     public init(from decoder: any Decoder) throws {
@@ -62,6 +68,9 @@ public struct KanjiExposure: Equatable, Sendable, Codable {
         // da lì invece di buttare via mesi di esposizioni.
         supportScore = try container.decodeIfPresent(Double.self, forKey: .supportScore) ?? 0
         supportUpdatedAt = try container.decodeIfPresent(Date.self, forKey: .supportUpdatedAt)
+        // Storici di prima della profondità di vocabolario: si riparte dalla prima
+        // parola, che è quella che si è sempre vista.
+        contextPresentationCount = try container.decodeIfPresent(Int.self, forKey: .contextPresentationCount) ?? 0
     }
 }
 
@@ -129,6 +138,7 @@ public struct AmbientState: Equatable, Sendable, Codable {
         case .presented:
             exposure.presentationCount += 1
             exposure.lastPresentedAt = date
+            if content == .context { exposure.contextPresentationCount += 1 }
         case .opened:
             exposure.openedCount += 1
             exposure.lastEngagedAt = date

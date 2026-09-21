@@ -10,9 +10,27 @@ import Testing
 @MainActor
 struct GlanceRenderingTests {
 
-    private func render(_ content: ExposureContent, kanji: Kanji = waterKanji) throws -> NSBitmapImageRep {
+    private func render(
+        _ content: ExposureContent,
+        kanji: Kanji = waterKanji,
+        reference: ExposureReference = .none
+    ) throws -> NSBitmapImageRep {
         try renderWatchSized(
-            ReminderGlanceView(kanji: kanji, viewBox: 109, content: content), named: "glance-\(content.rawValue)")
+            ReminderGlanceView(kanji: kanji, viewBox: 109, content: content, reference: reference),
+            named: "glance-\(content.rawValue)\(reference == .none ? "" : "-\(reference)")")
+    }
+
+    /// La notifica col contesto mostra la parola che il piano ha scelto, non sempre la
+    /// più comune: 水着 alle 16, non 水曜日.
+    @Test func contextShowsTheWordThatWasChosen() throws {
+        let common = inkPixels(try render(.context))
+        let second = inkPixels(try render(.context, reference: .word(1)))
+        let third = inkPixels(try render(.context, reference: .word(2)))
+
+        #expect(second != common)
+        #expect(third != second)
+        // Un indice che non c'è più ricade sulla più comune, non su una notifica vuota.
+        #expect(inkPixels(try render(.context, reference: .word(9))) == common)
     }
 
     @Test func showsTheGlyphAndTheMeaning() throws {
@@ -35,7 +53,7 @@ struct GlanceRenderingTests {
             onReadings: waterKanji.onReadings,
             kunReadings: waterKanji.kunReadings,
             meanings: waterKanji.meanings,
-            commonWord: Kanji.Word(text: "水着", reading: "みずぎ", meanings: ["swimsuit"])
+            words: [Kanji.Word(text: "水着", reading: "みずぎ", meanings: ["swimsuit"])]
         )
 
         #expect(inkPixels(try render(.context)) != inkPixels(try render(.context, kanji: sameKanjiOtherWord)))

@@ -1,3 +1,4 @@
+import Foundation
 import KanjiDomain
 import Testing
 
@@ -6,6 +7,45 @@ import Testing
 @Suite("Mazzo nel bundle")
 struct BundledDeckRepositoryTests {
     private let repository = BundledDeckRepository()
+
+    /// Fino a tre parole per kanji, tutte diverse e tutte col kanji dentro: sono
+    /// quelle che la forma col contesto farà girare sul quadrante.
+    @Test func everyKanjiHasUpToThreeDistinctWordsThatContainIt() throws {
+        let catalog = try repository.loadCatalog()
+        let all = try repository.loadDeck(grades: Set(catalog.levels.map(\.grade)))
+
+        for kanji in all.kanji {
+            #expect(kanji.words.count <= 3, "\(kanji.character): \(kanji.words.count) parole")
+            #expect(kanji.words.allSatisfy { $0.text.contains(kanji.character) }, "\(kanji.character)")
+            #expect(Set(kanji.words.map(\.text)).count == kanji.words.count, "\(kanji.character): doppioni")
+        }
+        // Quasi tutti ne hanno tre: è lì che sta la profondità.
+        #expect(all.kanji.count { $0.words.count == 3 } > 2000)
+    }
+
+    /// Lo schema 3 porta la lista; lo schema 2, di prima, una parola sola. Tutti e due
+    /// si leggono, così un bundle o una fixture non rigenerati non restano senza parola.
+    @Test func readsBothTheNewAndTheOldWordSchema() throws {
+        let v3 = #"""
+            {"kanji":[{"c":"水","cp":"06c34","strokes":["M0,0"],"on":[],"kun":[],"meanings":{"en":["water"]},
+            "words":[{"w":"水曜日","r":"すいようび","g":["Wednesday"]},{"w":"水着","r":"みずぎ","g":["bathing suit"]}]}]}
+            """#
+        let v2 = #"""
+            {"kanji":[{"c":"水","cp":"06c34","strokes":["M0,0"],"on":[],"kun":[],"meanings":{"en":["water"]},
+            "word":{"w":"水曜日","r":"すいようび","g":["Wednesday"]}}]}
+            """#
+        let none = #"""
+            {"kanji":[{"c":"且","cp":"04e14","strokes":["M0,0"],"on":[],"kun":[],"meanings":{"en":["also"]}}]}
+            """#
+
+        let decode = { (json: String) throws -> Kanji in
+            try #require(try JSONDecoder().decode(LevelFile.self, from: Data(json.utf8)).kanji.first).toDomain()
+        }
+        #expect(try decode(v3).words.map(\.text) == ["水曜日", "水着"])
+        #expect(try decode(v2).words.map(\.text) == ["水曜日"])
+        #expect(try decode(v2).commonWord?.reading == "すいようび")
+        #expect(try decode(none).words.isEmpty)
+    }
 
     @Test func catalogListsTheWholeJoyoByGrade() throws {
         let catalog = try repository.loadCatalog()

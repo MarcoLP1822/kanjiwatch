@@ -41,16 +41,20 @@ func testDeck(count: Int, withWord: Bool = true, grade: (Int) -> Int = { _ in 1 
                 onReadings: [],
                 kunReadings: [],
                 meanings: ["kanji \(index)"],
-                commonWord: withWord
-                    ? Kanji.Word(
-                        text: "\(Character(UnicodeScalar(0x4E00 + index)!))語", reading: "ご",
-                        meanings: ["parola \(index)"])
-                    : nil,
+                words: withWord ? testWords(index) : [],
                 grade: grade(index),
                 frequencyRank: index + 1
             )
         }
     )
+}
+
+/// Tre parole finte per il kanji `index`: 一語, 一言, 一文 e così via.
+func testWords(_ index: Int) -> [Kanji.Word] {
+    let character = Character(UnicodeScalar(0x4E00 + index)!)
+    return ["語", "言", "文"].enumerated().map { position, suffix in
+        Kanji.Word(text: "\(character)\(suffix)", reading: "ご", meanings: ["word \(index).\(position)"])
+    }
 }
 
 func testCodepoint(_ index: Int) -> String {

@@ -107,6 +107,37 @@ struct AmbientLoopTests {
         #expect(premium.count { $0.codepoint == asking } >= free.count { $0.codepoint == asking })
     }
 
+    /// La notifica delle 16 mostra la seconda parola di un kanji: arriva, l'app la
+    /// ritrova nella sessione, lo storico conta quel contesto, e la coda rifatta dà
+    /// al prossimo contesto dello stesso kanji la terza parola.
+    @Test func aWordShownOnTheWristMovesTheRotationForward() async throws {
+        let kanji = deck.kanji[0]
+        state.value = ReminderState(
+            scheduled: [
+                ScheduledReminder(
+                    fireDate: date("2026-05-10 16:00"), codepoint: kanji.codepoint, content: .context,
+                    reference: .word(1))
+            ]
+        )
+        var exposure = AmbientState.empty
+        for (day, content) in [ExposureContent.introduce, .recall, .context].enumerated() {
+            exposure.record(
+                .presented, codepoint: kanji.codepoint, content: content,
+                at: date("2026-05-07 09:00") + Double(day) * .day)
+        }
+        ambient.value = exposure
+        var clock = date("2026-05-10 16:05")
+
+        _ = try #require(loop({ clock }).current())
+        #expect(state.value.session.reference == .word(1))
+        #expect(ambient.value.records[kanji.codepoint]?.contextPresentationCount == 2)
+
+        clock = date("2026-05-10 16:06")
+        await reschedule({ clock })
+        let nextContext = state.value.scheduled.first { $0.codepoint == kanji.codepoint && $0.content == .context }
+        #expect(try #require(nextContext).reference == .word(2))
+    }
+
     /// Spegnere un grado non cancella la storia dei suoi kanji, e riaccenderlo la
     /// ritrova: i record vivono per codepoint, non per mazzo caricato.
     @Test func turningAGradeOffAndOnAgainKeepsItsHistory() async throws {

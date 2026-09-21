@@ -3,8 +3,8 @@
 build_kanji_data.py
 
 Estrae KanjiVG (tracciati degli stroke) + KANJIDIC2 (letture e significati)
-+ JMdict (parola più comune per kanji, opzionale) e produce un singolo
-kanji.json pronto per essere messo nel bundle dell'app.
++ JMdict (fino a tre parole d'esempio per kanji, opzionale) e produce i mazzi
+pronti per essere messi nel bundle dell'app.
 
 Sorgenti da scaricare a mano (una volta), in Scripts/raw/ (ignorata da git):
   KanjiVG   https://github.com/KanjiVG/kanjivg/releases
@@ -327,6 +327,10 @@ JAPANESE_WORD_RE = re.compile(r"^[぀-ゟ一-鿿]+$")
 # Oltre i 3 caratteri non è una parola da ripasso ma una frase ("手当たり次第",
 # "いい加減にしろ"), e sul quadrante non ci sta comunque.
 MAX_WORD_LENGTH = 3
+# Quante parole d'esempio per kanji. Tre bastano a dare profondità per mesi — sui
+# 2.136 jōyō fanno più di seimila vocaboli — senza gonfiare quello che il Watch deve
+# decodificare a ogni avvio.
+MAX_WORDS = 3
 # Correzioni a mano. Nessuna formula azzecca tutti e 300 i kanji: dopo un certo
 # punto è gusto, non algoritmo, e il gusto si scrive in un file rivedibile.
 OVERRIDES_PATH = Path(__file__).with_name("word_overrides.json")
@@ -371,6 +375,27 @@ def word_record(entry: ET.Element, keb: str) -> dict | None:
     return {"w": keb, "r": reading, "g": glosses[:3]}
 
 
+def pick_words(ch: str, ranked: list[tuple[tuple, dict]]) -> list[dict]:
+    """
+    Le parole da tenere, fra quelle già in ordine. La prima si sceglie come sempre,
+    anche se è il kanji da solo o una parola lunga: meglio quella che niente. Le altre
+    sono varietà, e la varietà vale solo se è un composto vero che ci sta sul
+    quadrante — a meno che non l'abbia scelta una persona in word_overrides.json.
+    """
+    chosen: list[dict] = []
+    for key, word in ranked:
+        is_override = key[0] == 0
+        fits = word["w"] != ch and len(word["w"]) <= MAX_WORD_LENGTH
+        # Due parole che vogliono dire la stessa cosa (大きい e 大きな, "big") sono
+        # uno slot sprecato: la seconda non aggiunge niente a quello che si impara.
+        repeats = any(word["g"][0] == other["g"][0] for other in chosen)
+        if not chosen or is_override or (fits and not repeats):
+            chosen.append(word)
+        if len(chosen) == MAX_WORDS:
+            break
+    return chosen
+
+
 def load_jpdb_ranks(src: Path, chars: set[str]) -> dict[str, int]:
     """
     Dizionario di frequenza Yomitan "rank-based" (JPDB): {parola: posizione}, dove 1
@@ -395,18 +420,30 @@ def load_jpdb_ranks(src: Path, chars: set[str]) -> dict[str, int]:
 
 
 def load_jmdict_words(
-    src: Path, chars: set[str], ranks: dict[str, int], overrides: dict[str, str] | None = None
-) -> dict[str, dict]:
+    src: Path,
+    chars: set[str],
+    ranks: dict[str, int],
+    overrides: dict[str, str | list[str]] | None = None,
+) -> dict[str, list[dict]]:
     """
-    Per ogni kanji di `chars`, la parola più comune che lo contiene.
-    L'ordine lo dà `ranks` (JPDB), che misura l'uso reale della lingua; il rank nfXX
-    di JMdict misura solo i giornali e da solo, per 日, sceglierebbe 日米.
+    Per ogni kanji di `chars`, fino a MAX_WORDS parole che lo contengono, dalla più
+    comune. L'ordine lo dà `ranks` (JPDB), che misura l'uso reale della lingua; il
+    rank nfXX di JMdict misura solo i giornali e da solo, per 日, sceglierebbe 日米.
     Restano indietro il kanji da solo — ripeterebbe il kun'yomi — e le frasi troppo
-    lunghe per il quadrante. `overrides` ({kanji: grafia}) scavalca tutto.
+    lunghe per il quadrante.
+
+    `overrides` ({kanji: grafia} o {kanji: [grafie]}) mette davanti le parole scelte
+    a mano, nell'ordine dato, purché passino gli stessi filtri: una grafia che JMdict
+    non conosce, o che si scrive in kana, non entra nemmeno se l'ha scelta una
+    persona. Gli slot rimasti li riempiono i candidati automatici.
     Qui niente strip_doctype: le entity della DTD (&n; ecc.) le espande expat.
     """
-    overrides = overrides or {}
-    best: dict[str, tuple[tuple, dict]] = {}
+    wanted = {
+        ch: [value] if isinstance(value, str) else list(value)
+        for ch, value in (overrides or {}).items()
+    }
+    # {kanji: {grafia: (chiave, parola)}}
+    candidates: dict[str, dict[str, tuple[tuple, dict]]] = {}
     with gzip.open(src) as fh:
         for _, entry in ET.iterparse(fh, events=("end",)):
             if entry.tag != "entry":
@@ -430,18 +467,25 @@ def load_jmdict_words(
                 rank = ranks.get(keb, 10**6 + nf)
                 too_long = len(keb) > MAX_WORD_LENGTH
                 for ch in hits:
-                    if overrides.get(ch) == keb:
-                        # La tupla vuota è più piccola di qualsiasi punteggio, ma la
-                        # stessa grafia può comparire in più entrate (国民 è こくみん
-                        # in una e くにたみ in un'altra): vale la prima, non l'ultima.
-                        if best.get(ch, (None,))[0] != ():
-                            best[ch] = ((), word)
-                        continue
-                    key = (keb == ch, too_long, rank, len(keb), keb)
-                    if ch not in best or key < best[ch][0]:
-                        best[ch] = (key, word)
+                    chosen = wanted.get(ch, [])
+                    # Le scelte a mano prima di tutto, nel loro ordine; poi la regola.
+                    key = (
+                        (0, chosen.index(keb))
+                        if keb in chosen
+                        else (1, keb == ch, too_long, rank, len(keb), keb)
+                    )
+                    slot = candidates.setdefault(ch, {})
+                    # Una grafia sola per kanji: la stessa parola con due letture
+                    # sarebbe due volte la stessa cosa sul quadrante. Vince la chiave
+                    # migliore e, a parità, la prima entrata: 国民 compare in due
+                    # (こくみん e くにたみ, arcaica), e deve restare こくみん.
+                    if keb not in slot or key < slot[keb][0]:
+                        slot[keb] = (key, word)
             entry.clear()
-    return {ch: word for ch, (_, word) in best.items()}
+    return {
+        ch: pick_words(ch, sorted(slot.values(), key=lambda kv: kv[0]))
+        for ch, slot in candidates.items()
+    }
 
 
 # ---------------------------------------------------------------- filtri
@@ -581,9 +625,17 @@ def main() -> int:
         overrides = json.loads(OVERRIDES_PATH.read_text(encoding="utf-8")) if OVERRIDES_PATH.exists() else {}
         words = load_jmdict_words(args.jmdict, chars, ranks, overrides)
         for r in records:
-            r["word"] = words.get(r["c"])
-        applied = sum(1 for c, w in overrides.items() if words.get(c, {}).get("w") == w)
-        print(f"      {len(words)} parole trovate, {applied}/{len(overrides)} correzioni a mano")
+            r["words"] = words.get(r["c"], [])
+        applied = sum(
+            1
+            for c, w in overrides.items()
+            if [x["w"] for x in words.get(c, [])][: len([w] if isinstance(w, str) else w)]
+            == ([w] if isinstance(w, str) else w)
+        )
+        print(
+            f"      {sum(len(v) for v in words.values())} parole per {len(words)} kanji, "
+            f"{applied}/{len(overrides)} correzioni a mano"
+        )
     else:
         print("[4/5] JMdict    <- saltato (--jmdict non passato)")
 
@@ -604,7 +656,8 @@ def main() -> int:
         levels.append({"grade": grade, "count": len(level_records), "kb": size})
 
     catalog = {
-        "version": 2,
+        # 3: `words` al posto di `word`, fino a tre parole d'esempio per kanji.
+        "version": 3,
         "viewBox": VIEWBOX,
         "count": len(records),
         # L'attribuzione viaggia dentro il catalogo: l'app la mostra in Impostazioni ›
@@ -619,7 +672,8 @@ def main() -> int:
 
     print()
     print(f"  kanji prodotti : {len(records)}")
-    print(f"  con parola     : {sum(1 for r in records if r.get('word'))}")
+    print(f"  con parole     : {sum(1 for r in records if r.get('words'))}")
+    print(f"  parole in tutto: {sum(len(r.get('words') or []) for r in records)}")
     for level in levels:
         print(f"      grado {level['grade']}: {level['count']:4d} kanji, {level['kb']:4d} KB")
     print(f"  senza tracciati: {missing_paths} (scartati)")

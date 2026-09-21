@@ -11,16 +11,22 @@ public enum ReminderPayload {
 
     private static let codepointKey = "cp"
     private static let contentKey = "ec"
+    private static let wordKey = "wi"
 
     public static func userInfo(for destination: ReminderDestination) -> [String: String] {
-        [codepointKey: destination.codepoint, contentKey: destination.content.rawValue]
+        var info = [codepointKey: destination.codepoint, contentKey: destination.content.rawValue]
+        if case .word(let index) = destination.reference {
+            info[wordKey] = String(index)
+        }
+        return info
     }
 
     public static func destination(from userInfo: [AnyHashable: Any]) -> ReminderDestination? {
         guard let codepoint = userInfo[codepointKey] as? String else { return nil }
         // Notifiche già in coda quando l'app si aggiorna: senza forma, sono "kanji e
-        // significato", che è come si comportavano prima.
+        // significato", e senza parola scelta si usa la più comune — com'era prima.
         let content = (userInfo[contentKey] as? String).flatMap(ExposureContent.init(rawValue:)) ?? .introduce
-        return ReminderDestination(codepoint: codepoint, content: content)
+        let reference = (userInfo[wordKey] as? String).flatMap(Int.init).map(ExposureReference.word) ?? .none
+        return ReminderDestination(codepoint: codepoint, content: content, reference: reference)
     }
 }

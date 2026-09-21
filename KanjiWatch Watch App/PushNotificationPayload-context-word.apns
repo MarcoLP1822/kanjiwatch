@@ -1,0 +1,13 @@
+{
+  "Simulator Target Bundle": "com.marcolp.KanjiWatch.watchkitapp",
+  "aps": {
+    "alert": {
+      "title": "水着",
+      "body": "みずぎ · bathing suit"
+    },
+    "category": "KANJI_REVIEW"
+  },
+  "cp": "06c34",
+  "ec": "context",
+  "wi": "1"
+}

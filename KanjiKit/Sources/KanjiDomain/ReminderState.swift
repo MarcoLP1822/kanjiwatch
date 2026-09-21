@@ -49,12 +49,22 @@ public struct StudySession: Equatable, Sendable, Codable {
     /// In che forma è arrivato: la stessa della notifica che l'ha portato. Il
     /// quadrante la rilegge da qui, così i due non si contraddicono.
     public var content: ExposureContent
+    /// E con quale parola: le letture mostrano quella della notifica che ti ha
+    /// portato qui, non la più comune.
+    public var reference: ExposureReference
 
-    public init(codepoint: String?, isDone: Bool, since: Date?, content: ExposureContent = .introduce) {
+    public init(
+        codepoint: String?,
+        isDone: Bool,
+        since: Date?,
+        content: ExposureContent = .introduce,
+        reference: ExposureReference = .none
+    ) {
         self.codepoint = codepoint
         self.isDone = isDone
         self.since = since
         self.content = content
+        self.reference = reference
     }
 
     public init(from decoder: any Decoder) throws {
@@ -64,6 +74,7 @@ public struct StudySession: Equatable, Sendable, Codable {
         since = try container.decodeIfPresent(Date.self, forKey: .since)
         // Sessioni salvate prima della micro-sequenza: erano tutte "kanji e significato".
         content = (try? container.decodeIfPresent(ExposureContent.self, forKey: .content)) ?? .introduce
+        reference = (try? container.decodeIfPresent(ExposureReference.self, forKey: .reference)) ?? .none
     }
 
     public static let none = StudySession(codepoint: nil, isDone: false, since: nil)

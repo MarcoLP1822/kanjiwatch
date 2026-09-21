@@ -8,11 +8,20 @@ public struct ScheduledReminder: Equatable, Sendable, Codable {
     /// complication ricalcolasse per conto suo, il polso racconterebbe due cose
     /// diverse nello stesso momento.
     public let content: ExposureContent
+    /// Quale parola, deciso anche questo dal piano e mai ricalcolato: la notifica
+    /// delle 16 che mostra 水道 deve aprire un'app che mostra 水道, non 水曜日.
+    public let reference: ExposureReference
 
-    public init(fireDate: Date, codepoint: String, content: ExposureContent = .introduce) {
+    public init(
+        fireDate: Date,
+        codepoint: String,
+        content: ExposureContent = .introduce,
+        reference: ExposureReference = .none
+    ) {
         self.fireDate = fireDate
         self.codepoint = codepoint
         self.content = content
+        self.reference = reference
     }
 
     public init(from decoder: any Decoder) throws {
@@ -21,6 +30,8 @@ public struct ScheduledReminder: Equatable, Sendable, Codable {
         codepoint = try container.decode(String.self, forKey: .codepoint)
         // Code programmate prima della micro-sequenza: erano tutte "kanji e significato".
         content = (try? container.decodeIfPresent(ExposureContent.self, forKey: .content)) ?? .introduce
+        // E prima della profondità di vocabolario: la parola era sempre la più comune.
+        reference = (try? container.decodeIfPresent(ExposureReference.self, forKey: .reference)) ?? .none
     }
 }
 
@@ -65,7 +76,10 @@ public enum ReminderPlanner {
             mode: mode,
             calendar: calendar
         )
-        .map { ScheduledReminder(fireDate: $0.fireDate, codepoint: $0.codepoint, content: $0.content) }
+        .map {
+            ScheduledReminder(
+                fireDate: $0.fireDate, codepoint: $0.codepoint, content: $0.content, reference: $0.reference)
+        }
     }
 
     private static func fireDates(

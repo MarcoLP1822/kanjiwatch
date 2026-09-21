@@ -8,15 +8,17 @@ import Foundation
 public struct ReminderDestination: Equatable, Sendable, Codable {
     public let codepoint: String
     public let content: ExposureContent
+    public let reference: ExposureReference
 
-    public init(codepoint: String, content: ExposureContent = .introduce) {
+    public init(codepoint: String, content: ExposureContent = .introduce, reference: ExposureReference = .none) {
         self.codepoint = codepoint
         self.content = content
+        self.reference = reference
     }
 }
 
 extension ScheduledReminder {
     public var destination: ReminderDestination {
-        ReminderDestination(codepoint: codepoint, content: content)
+        ReminderDestination(codepoint: codepoint, content: content, reference: reference)
     }
 }

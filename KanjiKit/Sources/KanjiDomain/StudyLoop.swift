@@ -56,7 +56,12 @@ extension ReminderState {
             latest.fireDate > (session.since ?? .distantPast)
         {
             session = StudySession(
-                codepoint: latest.codepoint, isDone: false, since: latest.fireDate, content: latest.content)
+                codepoint: latest.codepoint,
+                isDone: false,
+                since: latest.fireDate,
+                content: latest.content,
+                reference: latest.reference
+            )
         }
         return delivered
     }
@@ -98,7 +103,8 @@ extension ReminderState {
 
         let codepoint = next.codepoint
         today.add(1, on: now, calendar: calendar)
-        session = StudySession(codepoint: codepoint, isDone: false, since: now, content: next.content)
+        session = StudySession(
+            codepoint: codepoint, isDone: false, since: now, content: next.content, reference: next.reference)
         // Al minuto, come i trigger delle notifiche: con i secondi l'app crederebbe
         // arrivata alle 10:12:37 una notifica che il sistema consegna alle 10:12:00.
         anchor = calendar.dateInterval(of: .minute, for: now)?.start ?? now
@@ -116,7 +122,12 @@ extension ReminderState {
     /// l'hai guardato al polso. L'arrivo l'ha già contato `recordDeliveries`.
     public mutating func open(_ destination: ReminderDestination, now: Date) {
         session = StudySession(
-            codepoint: destination.codepoint, isDone: false, since: now, content: destination.content)
+            codepoint: destination.codepoint,
+            isDone: false,
+            since: now,
+            content: destination.content,
+            reference: destination.reference
+        )
     }
 }
 
@@ -129,6 +140,9 @@ public struct StudyLoop {
         /// carattere si ripete.
         public let startedAt: Date?
         public let isDone: Bool
+        /// Quale delle parole del kanji mostrano le letture: quella della notifica
+        /// che ha aperto il giro.
+        public let reference: ExposureReference
         /// La prossima notifica in coda. Nil se non ne arriverà nessuna.
         public let nextArrival: Date?
         public let dailyLimitReached: Bool
@@ -228,7 +242,7 @@ public struct StudyLoop {
                     mode: mode(),
                     calendar: calendar
                 )
-                .map { ReminderDestination(codepoint: $0.codepoint, content: $0.content) }
+                .map { ReminderDestination(codepoint: $0.codepoint, content: $0.content, reference: $0.reference) }
             },
             calendar: calendar
         )
@@ -255,6 +269,7 @@ public struct StudyLoop {
             current: kanji,
             startedAt: value.session.since,
             isDone: value.session.isDone,
+            reference: value.session.reference,
             nextArrival: value.scheduled.map(\.fireDate).min(),
             dailyLimitReached: value.today.count(on: moment, calendar: calendar) >= settings.load().dailyLimit
         )

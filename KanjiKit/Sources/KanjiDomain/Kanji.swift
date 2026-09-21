@@ -17,8 +17,9 @@ public struct Kanji: Identifiable, Hashable, Sendable {
     public let onReadings: [String]
     public let kunReadings: [String]
     public let meanings: [String]
-    /// La parola più comune che contiene questo kanji, se JMdict ne ha una.
-    public let commonWord: Word?
+    /// Fino a tre parole che contengono questo kanji, dalla più comune. Vuoto se
+    /// JMdict non ne ha nessuna che valga come esempio.
+    public let words: [Word]
     /// Anno scolastico giapponese (1-6 kyōiku, 8 jōyō, oltre: jinmeiyō).
     public let grade: Int?
     /// Rango di frequenza nei giornali: 1 è il più comune.
@@ -35,7 +36,7 @@ public struct Kanji: Identifiable, Hashable, Sendable {
         onReadings: [String],
         kunReadings: [String],
         meanings: [String],
-        commonWord: Word? = nil,
+        words: [Word] = [],
         grade: Int? = nil,
         frequencyRank: Int? = nil
     ) {
@@ -46,13 +47,27 @@ public struct Kanji: Identifiable, Hashable, Sendable {
         self.onReadings = onReadings
         self.kunReadings = kunReadings
         self.meanings = meanings
-        self.commonWord = commonWord
+        self.words = words
         self.grade = grade
         self.frequencyRank = frequencyRank
     }
 }
 
 extension Kanji {
+    /// La parola più comune: quella che si mostra quando nessuno ne ha scelta
+    /// un'altra.
+    public var commonWord: Word? { words.first }
+
+    /// La parola di quell'esposizione. Un indice che non c'è più — il mazzo è stato
+    /// rigenerato con meno parole dopo che la notifica era stata programmata — torna
+    /// alla più comune invece di lasciare la notifica senza parola.
+    public func word(for reference: ExposureReference) -> Word? {
+        if case .word(let index) = reference, words.indices.contains(index) {
+            return words[index]
+        }
+        return commonWord
+    }
+
     /// Come si chiude un tratto a pennello. Lo decide la calligrafia, non la forma del
     /// tracciato: dedurlo dal disegno sbaglia un tratto su tre.
     public enum StrokeEnd: Sendable, Hashable {

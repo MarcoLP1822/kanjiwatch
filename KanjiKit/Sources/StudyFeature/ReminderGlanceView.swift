@@ -10,20 +10,29 @@ public struct ReminderGlanceView: View {
     private let kanji: Kanji?
     private let glyph: StrokeGlyph?
     private let content: ExposureContent
+    /// La parola scelta dal piano per questo momento, già risolta.
+    private let word: Kanji.Word?
     private let theme: DSTheme
 
     /// Il tema arriva come parametro: la notifica la mostra il sistema, fuori dalla
     /// gerarchia di view dell'app, e l'ambiente dell'app qui non arriva.
-    public init(kanji: Kanji?, viewBox: Double, content: ExposureContent = .introduce, theme: DSTheme = .aiZome) {
+    public init(
+        kanji: Kanji?,
+        viewBox: Double,
+        content: ExposureContent = .introduce,
+        reference: ExposureReference = .none,
+        theme: DSTheme = .aiZome
+    ) {
         self.kanji = kanji
         self.glyph = kanji.flatMap { try? StrokeGlyph(kanji: $0, viewBox: viewBox) }
-        self.content = content.resolved(hasWord: kanji?.commonWord != nil)
+        self.word = kanji?.word(for: reference)
+        self.content = content.resolved(hasWord: word != nil)
         self.theme = theme
     }
 
     public var body: some View {
         VStack(spacing: DS.Spacing.s) {
-            if let word = kanji?.commonWord, content == .context {
+            if let word, content == .context {
                 context(word)
             } else {
                 character

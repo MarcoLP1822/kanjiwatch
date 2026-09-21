@@ -18,12 +18,21 @@ public struct AmbientSelection: Equatable, Sendable {
     /// *Come* mostrarlo: a che punto è la micro-sequenza di quel kanji. Due domande
     /// diverse, e tenerle separate è l'unico modo perché restino leggibili.
     public let content: ExposureContent
+    /// *Con cosa*: quale delle sue parole, quando la forma è quella del contesto.
+    public let reference: ExposureReference
 
-    public init(fireDate: Date, codepoint: String, kind: Kind, content: ExposureContent = .introduce) {
+    public init(
+        fireDate: Date,
+        codepoint: String,
+        kind: Kind,
+        content: ExposureContent = .introduce,
+        reference: ExposureReference = .none
+    ) {
         self.fireDate = fireDate
         self.codepoint = codepoint
         self.kind = kind
         self.content = content
+        self.reference = reference
     }
 }
 
@@ -95,14 +104,25 @@ public enum AmbientEngine {
             // Col ritmo personale, un kanji che sembra chiedere aiuto si porta dietro
             // un appiglio più spesso. Senza, il giro è quello di tutti.
             let record = projected.records[choice.codepoint]
+            let words = deck[choice.codepoint]?.words ?? []
             let content = ExposureContent.forSightings(
                 record?.presentationCount ?? 0,
                 support: mode == .adaptive ? record?.supportLevel(at: fireDate) ?? .low : .low,
-                hasWord: deck[choice.codepoint]?.commonWord != nil
+                hasWord: !words.isEmpty
             )
+            // Anche la parola si sceglie prima: la comparsa simulata conta questo
+            // contesto, e il prossimo prenderà la parola dopo.
+            let reference = ExposureReference.next(
+                for: content, words: words, contextsSoFar: record?.contextPresentationCount ?? 0)
             selections.append(
                 AmbientSelection(
-                    fireDate: fireDate, codepoint: choice.codepoint, kind: choice.kind, content: content))
+                    fireDate: fireDate,
+                    codepoint: choice.codepoint,
+                    kind: choice.kind,
+                    content: content,
+                    reference: reference
+                )
+            )
             if choice.kind == .new { introduced[day] = already + 1 }
             projected.record(.presented, codepoint: choice.codepoint, content: content, at: fireDate)
             recent.append(choice.codepoint)

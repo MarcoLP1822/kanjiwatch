@@ -21,7 +21,11 @@ let waterKanji = Kanji(
     onReadings: ["スイ"],
     kunReadings: ["みず"],
     meanings: ["water"],
-    commonWord: Kanji.Word(text: "水曜日", reading: "すいようび", meanings: ["Wednesday"]),
+    words: [
+        Kanji.Word(text: "水曜日", reading: "すいようび", meanings: ["Wednesday"]),
+        Kanji.Word(text: "水着", reading: "みずぎ", meanings: ["bathing suit"]),
+        Kanji.Word(text: "水面", reading: "すいめん", meanings: ["water's surface"]),
+    ],
     grade: 1,
     frequencyRank: 300
 )

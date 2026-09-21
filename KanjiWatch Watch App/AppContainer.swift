@@ -186,6 +186,7 @@ final class AppContainer {
                 now: Date(),
                 current: study.kanji,
                 currentContent: state.session.content,
+                currentReference: state.session.reference,
                 upcoming: state.scheduled,
                 deck: deck
             )

@@ -65,7 +65,7 @@ struct ComplicationTimelineTests {
             onReadings: [],
             kunReadings: [],
             meanings: ["water"],
-            commonWord: Kanji.Word(text: "水曜日", reading: "すいようび", meanings: ["Wednesday"])
+            words: [Kanji.Word(text: "水曜日", reading: "すいようび", meanings: ["Wednesday"])]
         )
         let deck = KanjiDeck(viewBox: 109, attribution: "", kanji: [withWord])
 

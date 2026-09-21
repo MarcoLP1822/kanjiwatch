@@ -124,6 +124,9 @@ public struct StudyView: View {
             ReadingsContent(
                 kanji: model.kanji,
                 glyph: model.glyph,
+                // La parola della notifica che ti ha portato qui, non sempre la più
+                // comune: se al polso hai visto 水道, qui ritrovi 水道.
+                word: model.kanji.word(for: model.snapshot.reference),
                 dailyLimitReached: model.snapshot.dailyLimitReached,
                 onDone: model.done,
                 onNext: model.next
@@ -154,6 +157,7 @@ public struct StudyView: View {
 struct ReadingsContent: View {
     let kanji: Kanji
     let glyph: StrokeGlyph?
+    var word: Kanji.Word?
     let dailyLimitReached: Bool
     let onDone: () -> Void
     let onNext: () -> Void
@@ -173,7 +177,7 @@ struct ReadingsContent: View {
             ReadingRow(label: "on", readings: kanji.onReadings)
             ReadingRow(label: "kun", readings: kanji.kunReadings)
 
-            if let word = kanji.commonWord {
+            if let word = word ?? kanji.commonWord {
                 WordCard(
                     word: word.text,
                     highlighting: kanji.character,

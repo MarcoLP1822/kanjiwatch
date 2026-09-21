@@ -42,6 +42,10 @@ struct LevelFile: Decodable {
         let on: [String]
         let kun: [String]
         let meanings: [String: [String]]
+        /// Schema 3: fino a tre parole d'esempio.
+        let words: [Word]?
+        /// Schema 2: una parola sola. Si legge ancora, per le fixture e per un bundle
+        /// che non è stato rigenerato.
         let word: Word?
         let grade: Int?
         let freq: Int?
@@ -61,7 +65,9 @@ struct LevelFile: Decodable {
                 onReadings: on,
                 kunReadings: kun,
                 meanings: meanings[LevelFile.meaningLanguage] ?? [],
-                commonWord: word.map { Kanji.Word(text: $0.w, reading: $0.r, meanings: $0.g) },
+                words: (words ?? word.map { [$0] } ?? []).map {
+                    Kanji.Word(text: $0.w, reading: $0.r, meanings: $0.g)
+                },
                 grade: grade,
                 frequencyRank: freq
             )

@@ -62,3 +62,23 @@ extension ExposureContent {
         self == .context && !hasWord ? .introduce : self
     }
 }
+
+/// *Quale* materiale mostrare, accanto a *come* (`ExposureContent`).
+///
+/// Due decisioni diverse: la forma dice che è il momento della parola, il riferimento
+/// dice quale delle parole di quel kanji. Tenute insieme in un campo solo, la prima
+/// volta che servirà una frase d'esempio andrebbero separate a forza.
+public enum ExposureReference: Equatable, Hashable, Sendable, Codable {
+    /// Niente di specifico: il kanji da solo, o la parola più comune.
+    case none
+    /// Una delle parole del kanji, per posizione.
+    case word(Int)
+
+    /// La parola che tocca: girano una per volta che il kanji compare dentro una
+    /// parola. Nessun caso — altrimenti notifica, quadrante e app potrebbero
+    /// pescarne tre diverse per lo stesso momento.
+    public static func next(for content: ExposureContent, words: [Kanji.Word], contextsSoFar: Int) -> Self {
+        guard content == .context, !words.isEmpty else { return .none }
+        return .word(contextsSoFar % words.count)
+    }
+}

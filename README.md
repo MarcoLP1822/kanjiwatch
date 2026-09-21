@@ -9,7 +9,8 @@ Avanti, che passa subito al prossimo.
 Quale kanji ti arriva lo decide un motore che guarda cosa ti è già passato davanti:
 qualcosa di nuovo, qualcosa da rivedere, qualcosa che conosci di vista. E decide anche
 come: la prima volta col significato, poi il kanji da solo — mezzo secondo per
-ricordartelo — e più avanti dentro una parola vera. Nessun voto e nessun «lo so / non
+ricordartelo — e più avanti dentro una parola vera, ogni volta una diversa: 水曜日, poi
+水着, poi 水面. Nessun voto e nessun «lo so / non
 lo so»: bastano i segnali che lasci aprendo l'app. Con l'abbonamento fa un passo in
 più — i kanji che vai ad aprire quando li vedi da soli tornano un po' prima e con
 qualcosa a cui aggrapparsi, senza che tu abbia configurato niente.

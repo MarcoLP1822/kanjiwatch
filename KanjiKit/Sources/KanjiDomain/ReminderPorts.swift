@@ -28,9 +28,11 @@ public struct PlannedNotification: Equatable, Sendable {
     public let codepoint: String
     public let character: String
     public let meaning: String
+    /// La parola già risolta: quella che il piano ha scelto per questo momento.
     public let word: Kanji.Word?
     /// In che forma mostrarlo. Decisa dal piano, non ricalcolata da chi consegna.
     public let content: ExposureContent
+    public let reference: ExposureReference
 
     public init(
         fireDate: Date,
@@ -38,7 +40,8 @@ public struct PlannedNotification: Equatable, Sendable {
         character: String,
         meaning: String = "",
         word: Kanji.Word? = nil,
-        content: ExposureContent = .introduce
+        content: ExposureContent = .introduce,
+        reference: ExposureReference = .none
     ) {
         self.fireDate = fireDate
         self.codepoint = codepoint
@@ -46,21 +49,23 @@ public struct PlannedNotification: Equatable, Sendable {
         self.meaning = meaning
         self.word = word
         self.content = content.resolved(hasWord: word != nil)
+        self.reference = reference
     }
 
-    public init(fireDate: Date, kanji: Kanji, content: ExposureContent) {
+    public init(fireDate: Date, kanji: Kanji, content: ExposureContent, reference: ExposureReference = .none) {
         self.init(
             fireDate: fireDate,
             codepoint: kanji.codepoint,
             character: kanji.character,
             meaning: kanji.shortMeaning,
-            word: kanji.commonWord,
-            content: content
+            word: kanji.word(for: reference),
+            content: content,
+            reference: reference
         )
     }
 
     public var destination: ReminderDestination {
-        ReminderDestination(codepoint: codepoint, content: content)
+        ReminderDestination(codepoint: codepoint, content: content, reference: reference)
     }
 }
 
