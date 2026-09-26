@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		AA000000000000000000A102 /* KanjiWatch Watch App.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = AA000000000000000000A001 /* KanjiWatch Watch App.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		7C1663AF305D99DA00B5EE3D /* ComplicationFeature in Frameworks */ = {isa = PBXBuildFile; productRef = AA0000000000000000001008 /* ComplicationFeature */; };
 		7C1663B0305D99DA00B5EE3D /* KanjiData in Frameworks */ = {isa = PBXBuildFile; productRef = AA0000000000000000001009 /* KanjiData */; };
 		7C1663B1305D99DA00B5EE3D /* KanjiDomain in Frameworks */ = {isa = PBXBuildFile; productRef = AA000000000000000000100A /* KanjiDomain */; };
@@ -21,6 +22,13 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
+		AA000000000000000000D104 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = AA000000000000000000FF01 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = AA000000000000000000E001;
+			remoteInfo = "KanjiWatch Watch App";
+		};
 		AA000000000000000000D102 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = AA000000000000000000FF01 /* Project object */;
@@ -31,6 +39,17 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
+		AA000000000000000000C024 /* Embed Watch Content */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "$(CONTENTS_FOLDER_PATH)/Watch";
+			dstSubfolderSpec = 16;
+			files = (
+				AA000000000000000000A102 /* KanjiWatch Watch App.app in Embed Watch Content */,
+			);
+			name = "Embed Watch Content";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		AA000000000000000000C004 /* Embed Foundation Extensions */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
@@ -45,6 +64,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		AA000000000000000000A003 /* KanjiWatch.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = KanjiWatch.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		AA000000000000000000A001 /* KanjiWatch Watch App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "KanjiWatch Watch App.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		AA000000000000000000A002 /* KanjiWatch Complications.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = "KanjiWatch Complications.appex"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -105,6 +125,7 @@
 			isa = PBXGroup;
 			children = (
 				AA000000000000000000A001 /* KanjiWatch Watch App.app */,
+				AA000000000000000000A003 /* KanjiWatch.app */,
 				AA000000000000000000A002 /* KanjiWatch Complications.appex */,
 			);
 			name = Products;
@@ -113,6 +134,23 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		AA000000000000000000E003 /* KanjiWatch */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = AA000000000000000000F004 /* Build configuration list for PBXNativeTarget "KanjiWatch" */;
+			buildPhases = (
+				AA000000000000000000C023 /* Resources */,
+				AA000000000000000000C024 /* Embed Watch Content */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				AA000000000000000000D103 /* PBXTargetDependency */,
+			);
+			name = KanjiWatch;
+			productName = KanjiWatch;
+			productReference = AA000000000000000000A003 /* KanjiWatch.app */;
+			productType = "com.apple.product-type.application.watchapp2-container";
+		};
 		AA000000000000000000E001 /* KanjiWatch Watch App */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = AA000000000000000000F002 /* Build configuration list for PBXNativeTarget "KanjiWatch Watch App" */;
@@ -179,6 +217,9 @@
 				LastSwiftUpdateCheck = 2650;
 				LastUpgradeCheck = 2650;
 				TargetAttributes = {
+					AA000000000000000000E003 = {
+						CreatedOnToolsVersion = 26.5;
+					};
 					AA000000000000000000E001 = {
 						CreatedOnToolsVersion = 26.5;
 					};
@@ -205,6 +246,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
+				AA000000000000000000E003 /* KanjiWatch */,
 				AA000000000000000000E001 /* KanjiWatch Watch App */,
 				AA000000000000000000E002 /* KanjiWatch Complications */,
 			);
@@ -212,6 +254,13 @@
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		AA000000000000000000C023 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		AA000000000000000000C003 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -246,6 +295,11 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
+		AA000000000000000000D103 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = AA000000000000000000E001 /* KanjiWatch Watch App */;
+			targetProxy = AA000000000000000000D104 /* PBXContainerItemProxy */;
+		};
 		AA000000000000000000D101 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = AA000000000000000000E002 /* KanjiWatch Complications */;
@@ -254,6 +308,42 @@
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
+		AA000000000000000000F401 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = BBZU37T9NT;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "Kanji Watch";
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.marcolp.KanjiWatch;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		AA000000000000000000F402 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = BBZU37T9NT;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "Kanji Watch";
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.marcolp.KanjiWatch;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
 		AA000000000000000000F101 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -324,11 +414,12 @@
 				INFOPLIST_KEY_CFBundleDisplayName = "Kanji Watch";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
 				INFOPLIST_KEY_WKApplication = YES;
+				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.marcolp.KanjiWatch;
 				INFOPLIST_KEY_WKWatchOnly = YES;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.marcolp.KanjiWatch.watchkitapp;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SKIP_INSTALL = NO;
+				SKIP_INSTALL = YES;
 				SUPPORTED_PLATFORMS = "watchos watchsimulator";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				TARGETED_DEVICE_FAMILY = 4;
@@ -349,11 +440,12 @@
 				INFOPLIST_KEY_CFBundleDisplayName = "Kanji Watch";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
 				INFOPLIST_KEY_WKApplication = YES;
+				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.marcolp.KanjiWatch;
 				INFOPLIST_KEY_WKWatchOnly = YES;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.marcolp.KanjiWatch.watchkitapp;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SKIP_INSTALL = NO;
+				SKIP_INSTALL = YES;
 				SUPPORTED_PLATFORMS = "watchos watchsimulator";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				TARGETED_DEVICE_FAMILY = 4;
@@ -415,6 +507,15 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		AA000000000000000000F004 /* Build configuration list for PBXNativeTarget "KanjiWatch" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AA000000000000000000F401 /* Debug */,
+				AA000000000000000000F402 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		AA000000000000000000F001 /* Build configuration list for PBXProject "KanjiWatch" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
