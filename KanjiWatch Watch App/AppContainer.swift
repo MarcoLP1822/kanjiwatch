@@ -96,18 +96,14 @@ final class AppContainer {
         self.loadedGrades = grades
     }
 
-    /// Senza chiave RevenueCat l'SDK non va nemmeno configurato: l'app gira gratuita.
-    /// Nelle build di sviluppo il negozio è simulato, così paywall e Premium si provano
-    /// sul simulatore.
+    /// Senza chiave RevenueCat l'SDK non va nemmeno configurato: il negozio è quello di
+    /// prova, così paywall e Premium si provano sul simulatore e su TestFlight senza
+    /// addebiti.
     private static func makeSubscriptionGateway() -> any SubscriptionGateway {
         guard AppConfiguration.revenueCatAPIKey.isEmpty else {
             return RevenueCatSubscriptionGateway(apiKey: AppConfiguration.revenueCatAPIKey)
         }
-        #if DEBUG
         return SimulatedSubscriptionGateway()
-        #else
-        return UnavailableSubscriptionGateway()
-        #endif
     }
 
     /// All'avvio e a ogni ritorno in primo piano. È il ciclo che si autoalimenta:

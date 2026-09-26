@@ -5,8 +5,9 @@ import Foundation
 enum AppConfiguration {
     /// Chiave pubblica dell'app su RevenueCat (Project settings › API keys, quella
     /// che comincia con "appl_"): è pensata per stare nel binario. Finché è vuota
-    /// l'app gira gratuita e il paywall dice che i piani non si possono caricare.
-    #warning("Incolla la chiave pubblica RevenueCat per provare gli acquisti")
+    /// l'app usa il negozio di prova, che dà il Premium a chiunque senza addebiti:
+    /// va bene per TestFlight, non per l'App Store.
+    #warning("Incolla la chiave pubblica RevenueCat prima di pubblicare: senza, il Premium è gratis")
     static let revenueCatAPIKey = ""
 
     /// Le condizioni d'uso standard di Apple, valide finché non ne scrivi di tue.

@@ -839,13 +839,14 @@ Cosa manca, tutto fuori dal codice:
    settimanale, mensile e annuale collegati a quei prodotti.
 4. La chiave pubblica in `AppConfiguration.revenueCatAPIKey` e l'indirizzo della
    privacy policy in `AppConfiguration.privacyPolicyURL`. Finché mancano, due
-   `#warning` lo ricordano a ogni build e l'app gira gratuita.
+   `#warning` lo ricordano a ogni build e l'app usa il negozio di prova.
 
-Nelle build di sviluppo senza chiave il negozio è simulato
-(`SimulatedSubscriptionGateway`): gli stessi tre piani e prezzi, acquisto e ripristino
-che riescono sempre, stato ricordato tra un avvio e l'altro. Serve a provare paywall e
-Premium sul simulatore; per tornare gratuiti si cancella e si reinstalla l'app. Nelle
-build di rilascio non esiste.
+Senza chiave il negozio è di prova (`SimulatedSubscriptionGateway`), anche nelle
+build di TestFlight: gli stessi tre piani e prezzi, acquisto e ripristino che riescono
+sempre senza addebiti, stato ricordato tra un avvio e l'altro. Serve a provare paywall
+e Premium sul simulatore e al polso; per tornare gratuiti si cancella e si reinstalla
+l'app. Dà il Premium a chiunque, quindi una build senza chiave non va pubblicata: per
+pubblicare la chiave serve comunque, e con lei il negozio vero prende il suo posto.
 
 **Sulla F13.** È il cambio di direzione del prodotto, e quasi tutto sta nel dominio:
 l'interfaccia non guadagna una schermata. Kanji Watch non deve sembrare un'app di

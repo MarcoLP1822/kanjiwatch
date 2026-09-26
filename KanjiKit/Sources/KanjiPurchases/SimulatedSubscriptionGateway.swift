@@ -1,13 +1,12 @@
-#if DEBUG
 import Foundation
 import KanjiDomain
 
-/// Il negozio delle build di sviluppo quando manca la chiave RevenueCat: gli stessi
-/// tre piani coi prezzi decisi, acquisto e ripristino che riescono sempre, e lo stato
+/// Il negozio di prova, finché manca la chiave RevenueCat: gli stessi tre piani coi
+/// prezzi decisi, acquisto e ripristino che riescono sempre senza addebiti, e lo stato
 /// ricordato tra un avvio e l'altro.
 ///
-/// Serve a provare paywall e Premium sul simulatore. Nelle build di rilascio non
-/// esiste: lì, senza chiave, resta `UnavailableSubscriptionGateway`.
+/// Serve a provare paywall e Premium sul simulatore e su TestFlight. Per pubblicare la
+/// chiave ci vuole comunque, e con lei il negozio vero prende il suo posto.
 public struct SimulatedSubscriptionGateway: SubscriptionGateway {
     private static let statusKey = "debug.simulatedSubscription"
     private let defaults: UserDefaults
@@ -53,4 +52,3 @@ public struct SimulatedSubscriptionGateway: SubscriptionGateway {
         )
     }
 }
-#endif
