@@ -4,7 +4,7 @@ App watchOS indipendente per il ripasso **passivo** dei kanji. A intervalli arri
 notifica con il kanji grande, che si legge alzando il polso senza aprire niente.
 Toccandola si apre l'app: un tocco mostra l'ordine dei tratti animato, un altro le
 letture, il significato e una parola d'esempio. Poi Fatto, che chiude il giro, o
-Avanti, che passa subito al prossimo.
+Un altro adesso, che passa subito al prossimo senza aspettare la notifica.
 
 Quale kanji ti arriva lo decide un motore che guarda cosa ti è già passato davanti:
 qualcosa di nuovo, qualcosa da rivedere, qualcosa che conosci di vista. E decide anche

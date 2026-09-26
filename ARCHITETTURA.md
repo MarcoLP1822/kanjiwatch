@@ -588,23 +588,31 @@ letture mezzo secondo dopo la fine del disegno, e toccare le letture riportava a
 tratti — chi toccava lo schermo per scorrere si ritrovava indietro.
 
 - **Letture.** I tocchi non fanno niente: si esce solo con i due bottoni. DONE è pieno
-  (indaco), il gesto normale; NEXT è solo contornato. Raggiunto il numero del giorno,
-  al posto di NEXT c'è "Per oggi è tutto".
+  (indaco), il gesto normale; NEXT è solo contornato e si chiama "Un altro adesso".
+  Prima si chiamava "Avanti", e dopo DONE sembrava il modo di proseguire: chi aveva
+  finito non sapeva se premerlo. Raggiunto il numero del giorno, al posto di NEXT c'è
+  "Per oggi è tutto".
 - **DONE** chiude il giro: la schermata d'attesa mostra il kanji appena fatto in
-  piccolo, "Prossimo kanji alle HH:MM" e NEXT per non aspettare. All'ora della
-  notifica il suo kanji compare da solo, senza lasciare a schermo un orario passato.
+  piccolo, poi "Per ora è tutto" (o "Per oggi è tutto") e "Prossimo kanji alle HH:MM".
+  La prima cosa da dire è che hai finito e puoi abbassare il polso; NEXT sta in fondo,
+  per chi non vuole aspettare. All'ora della notifica il suo kanji compare da solo,
+  senza lasciare a schermo un orario passato.
 - **NEXT** mette subito in gioco il kanji della prossima notifica e rifà la coda da
   adesso (§6). Conta nel numero del giorno.
 - **Il kanji in gioco** è salvato: riaprendo l'app lo ritrovi, anche chiuso con DONE.
   Una notifica arrivata nel frattempo prende il suo posto; toccarla lo riapre da capo.
   Se una notifica arriva *mentre* studi, DONE non chiude lei (non l'hai vista) e NEXT
   la mostra invece di anticiparne un'altra.
-- `.onTapGesture` sul glifo, **non** `Button`: su watchOS `Button` impone lo stile di
-  sistema e si mangia l'area utile. I due bottoni delle letture sono invece bottoni
-  veri, con lo stile del design system (`.dsPrimary`, `.dsSecondary`).
+- Il glifo è un `Button` con lo stile `.dsTapArea`: la semantica del bottone per
+  VoiceOver, senza lo sfondo di sistema che su watchOS si mangerebbe l'area utile. I
+  due bottoni delle letture hanno lo stile del design system (`.dsPrimary`,
+  `.dsSecondary`).
 - `.digitalCrownRotation` legata al progresso dei tratti: scorrerli a mano con la corona
   è la cosa che rende l'app *tua* e non un esercizio da tutorial. Girarla interrompe
   l'animazione e vale come aver guardato i tratti: il tocco dopo porta alle letture.
+- Una schermata nuova entra in dissolvenza, la vecchia sparisce di colpo. In una
+  dissolvenza incrociata le due convivono per un attimo e watchOS toglie la corona
+  anche alla nuova: le letture non scorrevano finché non toccavi lo schermo.
 - Niente swipe per cambiare kanji: con NEXT sarebbero due modi per la stessa cosa, e
   un gesto verticale sopra una `ScrollView` è un gesto rotto.
 

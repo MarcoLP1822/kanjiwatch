@@ -21,13 +21,19 @@ public struct StudyView: View {
             Rectangle().fill(.dsBackground).ignoresSafeArea()
             DSTopWash()
 
-            if model.snapshot.isDone {
-                waiting
-            } else if model.state.phase == .readings {
-                readings
-            } else {
-                glyph
+            Group {
+                if model.snapshot.isDone {
+                    waiting
+                } else if model.state.phase == .readings {
+                    readings
+                } else {
+                    glyph
+                }
             }
+            // Sfuma solo la schermata che entra: quella che esce sparisce subito. In una
+            // dissolvenza incrociata le due convivono per un attimo, e watchOS toglieva
+            // la corona anche alla nuova: le letture non scorrevano finché non toccavi.
+            .transition(.asymmetric(insertion: .opacity, removal: .identity))
         }
         // Con "Riduci movimento" i cambi di passo avvengono senza movimento. Le dissolvenze
         // restano: non spostano niente sullo schermo.
@@ -193,15 +199,23 @@ struct ReadingsContent: View {
                 }
                 .buttonStyle(.dsPrimary)
 
-                NextAction(dailyLimitReached: dailyLimitReached, action: onNext)
+                if dailyLimitReached {
+                    Text("That's all for today", bundle: .module)
+                        .font(.dsLabel)
+                        .foregroundStyle(.dsInkSecondary)
+                        .frame(maxWidth: .infinity)
+                } else {
+                    OneMoreButton(action: onNext)
+                }
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
 
-/// Dopo DONE: il kanji appena fatto in piccolo, quando arriva il prossimo e, se la
-/// giornata lo permette, NEXT per non aspettare.
+/// Dopo DONE: il kanji appena fatto in piccolo, poi che per ora è tutto e quando arriva
+/// il prossimo. Prima di tutto va detto che hai finito e puoi abbassare il polso; NEXT,
+/// se la giornata lo permette, sta in fondo per chi non vuole aspettare.
 struct WaitingContent: View {
     let kanji: Kanji
     let glyph: StrokeGlyph?
@@ -221,14 +235,27 @@ struct WaitingContent: View {
                     .foregroundStyle(.dsInkSecondary)
             }
 
-            arrival
-                .font(.dsBody)
-                .foregroundStyle(.dsInk)
-                .multilineTextAlignment(.center)
+            VStack(spacing: DS.Spacing.s) {
+                headline
+                    .font(.dsTitle)
+                    .foregroundStyle(.dsInk)
+                arrival
+                    .font(.dsBody)
+                    .foregroundStyle(.dsInkSecondary)
+            }
+            .multilineTextAlignment(.center)
 
-            NextAction(dailyLimitReached: dailyLimitReached, action: onNext)
+            if !dailyLimitReached {
+                OneMoreButton(action: onNext)
+            }
         }
         .frame(maxWidth: .infinity)
+    }
+
+    private var headline: Text {
+        dailyLimitReached
+            ? Text("That's all for today", bundle: .module)
+            : Text("That's all for now", bundle: .module)
     }
 
     /// L'ora basta: la prossima notifica arriva al più tardi domani, all'inizio della
@@ -244,22 +271,15 @@ struct WaitingContent: View {
     }
 }
 
-/// NEXT, o il motivo per cui non c'è.
-private struct NextAction: View {
-    let dailyLimitReached: Bool
+/// NEXT: un altro kanji subito, senza aspettare la notifica. Si chiamava "Avanti", e
+/// dopo DONE sembrava il modo di proseguire: chi aveva finito non sapeva se premerlo.
+private struct OneMoreButton: View {
     let action: () -> Void
 
     var body: some View {
-        if dailyLimitReached {
-            Text("That's all for today", bundle: .module)
-                .font(.dsLabel)
-                .foregroundStyle(.dsInkSecondary)
-                .frame(maxWidth: .infinity)
-        } else {
-            Button(action: action) {
-                Text("Next", bundle: .module)
-            }
-            .buttonStyle(.dsSecondary)
+        Button(action: action) {
+            Text("One more now", bundle: .module)
         }
+        .buttonStyle(.dsSecondary)
     }
 }

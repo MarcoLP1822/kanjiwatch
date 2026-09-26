@@ -23,17 +23,6 @@
         }
       }
     },
-    "Next" : {
-      "comment" : "Bottone secondario: un altro kanji subito, senza aspettare.",
-      "localizations" : {
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Avanti"
-          }
-        }
-      }
-    },
     "Next kanji at %@" : {
       "comment" : "Schermata d'attesa, oggi. %@ è l'ora.",
       "localizations" : {
@@ -67,6 +56,17 @@
         }
       }
     },
+    "One more now" : {
+      "comment" : "Bottone secondario: un altro kanji subito, senza aspettare la notifica.",
+      "localizations" : {
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un altro adesso"
+          }
+        }
+      }
+    },
     "Tap for readings" : {
       "comment" : "Suggerimento sotto i tratti disegnati e hint VoiceOver.",
       "localizations" : {
@@ -89,8 +89,19 @@
         }
       }
     },
+    "That's all for now" : {
+      "comment" : "Titolo della schermata d'attesa: il giro è chiuso, si può abbassare il polso.",
+      "localizations" : {
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Per ora è tutto"
+          }
+        }
+      }
+    },
     "That's all for today" : {
-      "comment" : "Al posto di Avanti, raggiunto il numero di kanji del giorno.",
+      "comment" : "Raggiunto il numero di kanji del giorno: titolo dell'attesa, e sotto Fatto al posto di «Un altro adesso».",
       "localizations" : {
         "it" : {
           "stringUnit" : {
