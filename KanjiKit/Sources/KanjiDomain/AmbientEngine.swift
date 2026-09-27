@@ -60,6 +60,12 @@ public enum AmbientEngine {
     /// nuovi e venticinque incontri con quelli di prima.
     public static let defaultNewPerDay = 5
 
+    /// Quanti kanji possono essere indietro di più di un giorno prima che il motore
+    /// smetta di introdurne di nuovi. Con dieci contatti al giorno e tre nuovi, dopo
+    /// una settimana i ripassi non bastavano più: al trentesimo giorno 64 kanji su 91
+    /// erano in ritardo, e i vecchi scivolavano via mentre ne arrivavano altri.
+    static let maxBacklog = 5
+
     /// `dayProgress`: i contatti che una giornata ha già avuto, notifiche e NEXT. Il
     /// ritmo si legge da lì e non dalla posizione nella coda: la coda si rifà a ogni
     /// apertura dell'app, e ripartendo ogni volta dal primo passo — un rinforzo — chi
@@ -97,9 +103,13 @@ public enum AmbientEngine {
                 ?? projected.records.values.count { calendar.isDate($0.firstSeenAt, inSameDayAs: fireDate) }
             introduced[day] = already
 
+            // Un posto da kanji nuovo diventa un ripasso finché quelli già visti non
+            // sono di nuovo in pari: niente arretrato da mostrare, solo meno roba nuova.
+            let wanted = rhythm[step % rhythm.count]
+            let behind = wanted == .new && backlog(projected, at: fireDate, mode: mode) > maxBacklog
             guard
                 let choice = choose(
-                    rhythm[step % rhythm.count],
+                    behind ? .learning : wanted,
                     deck: deck,
                     state: projected,
                     at: fireDate,
@@ -248,6 +258,12 @@ public enum AmbientEngine {
                 .min { order($0, at: date, mode: mode) < order($1, at: date, mode: mode) }?
                 .0.codepoint
         }
+    }
+
+    /// I kanji già visti indietro di più di un giorno.
+    static func backlog(_ state: AmbientState, at date: Date, mode: AmbientMode) -> Int {
+        let limit = date.addingTimeInterval(-86_400)
+        return state.records.values.count { $0.effectiveDueAt(mode: mode, at: date) < limit }
     }
 
     /// Prima i dovuti, dal più in ritardo; poi gli altri, da quello visto da più tempo.

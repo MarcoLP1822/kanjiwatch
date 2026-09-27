@@ -352,10 +352,18 @@ all'inizio della fascia.
 
 ### Il caso "la ignoro per due giorni"
 
-Se non apri mai l'app, la coda si esaurisce e l'app smette silenziosamente di esistere.
-Mitigazione senza background task: delle 64 notifiche, le ultime 4 non seguono
-l'intervallo ma sono distanziate a **12h, 24h, 48h, 96h**. Anche dopo giorni di silenzio
-resta un promemoria di recupero che rimette in moto il ciclo.
+Il Watch tiene in coda al massimo 64 notifiche, e all'inizio la coda si rifaceva solo
+aprendo l'app. Chi guardava le notifiche senza mai aprirla restava senza: con dieci al
+giorno dopo sei giorni, con trenta dopo due. L'ha trovato la simulazione di dieci
+giorni, non l'uso.
+
+Ora l'app chiede a watchOS un **risveglio in background** ogni quattro ore
+(`scheduleBackgroundRefresh`): rifà la coda e il quadrante, e chiede il prossimo. Il
+momento esatto lo decide watchOS secondo il budget dell'app, che è più generoso se la
+complication è sul quadrante; con una coda che dura almeno due giorni, anche un ritardo
+va bene. Resta la rete di sicurezza di prima: delle 64 notifiche le ultime 4 non seguono
+l'intervallo, sono a **12h, 24h, 48h, 96h**, così anche dopo giorni di silenzio arriva un
+promemoria di recupero.
 
 ### Fasce di silenzio — nell'MVP, non nella fase 5
 
@@ -425,6 +433,16 @@ NEXT, non sulla posizione nella coda. La coda si rifà a ogni apertura dell'app,
 all'inizio ripartiva ogni volta dal primo passo, che è un rinforzo: al polso, chi apriva
 l'app dopo ogni notifica ha visto per un giorno intero solo 日, 一 e 人, con dieci kanji
 nuovi concessi.
+
+**Niente kanji nuovi finché i vecchi sono indietro.** Se più di cinque kanji già visti
+sono in ritardo di oltre un giorno, il posto da kanji nuovo diventa un ripasso. Senza,
+con dieci contatti al giorno — tre nuovi, sette ripassi — dopo una settimana i ripassi
+non bastavano più: nella simulazione di trenta giorni, al trentesimo 64 kanji su 91
+erano in ritardo e alcuni non tornavano da dieci giorni. Con la regola i kanji in
+ritardo restano sotto la decina e i familiari passano da 3 a 14; in cambio in un mese
+se ne vedono 49 invece di 91. È il passo sostenibile con dieci contatti: chi vuole
+andare più veloce alza la frequenza, e con 20-30 contatti al giorno i nuovi arrivano
+pieni. L'arretrato non si mostra mai: c'è solo meno roba nuova.
 
 **Chi vince.** Fra i già visti, prima quelli dovuti, dal più in ritardo su `nextDueAt`.
 Per chi sta imparando però non è una scadenza da aspettare: se nessuno è dovuto — il

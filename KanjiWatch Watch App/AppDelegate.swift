@@ -10,6 +10,36 @@ import WatchKit
 final class AppDelegate: NSObject, WKApplicationDelegate, UNUserNotificationCenterDelegate {
     func applicationDidFinishLaunching() {
         UNUserNotificationCenter.current().delegate = self
+        scheduleRefresh()
+    }
+
+    func applicationDidEnterBackground() {
+        scheduleRefresh()
+    }
+
+    /// Il risveglio in background: rifà la coda e il quadrante anche per chi l'app non
+    /// la apre mai, poi chiede il prossimo.
+    func handle(_ backgroundTasks: Set<WKRefreshBackgroundTask>) {
+        for task in backgroundTasks {
+            guard let refresh = task as? WKApplicationRefreshBackgroundTask else {
+                task.setTaskCompletedWithSnapshot(false)
+                continue
+            }
+            Task {
+                await AppContainer.shared.refreshInBackground()
+                scheduleRefresh()
+                refresh.setTaskCompletedWithSnapshot(false)
+            }
+        }
+    }
+
+    /// Ogni quattro ore, se watchOS lo concede: il momento lo decide lui, secondo il
+    /// budget dell'app. La coda dura almeno due giorni, quindi anche un ritardo va bene.
+    private func scheduleRefresh() {
+        WKApplication.shared().scheduleBackgroundRefresh(
+            withPreferredDate: .now.addingTimeInterval(4 * 3600),
+            userInfo: nil
+        ) { _ in }
     }
 
     func userNotificationCenter(

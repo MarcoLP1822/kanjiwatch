@@ -113,6 +113,22 @@ struct AmbientEngineTests {
         #expect(next.map(\.codepoint) == [seenLongAgo])
     }
 
+    /// Con troppi kanji indietro di più di un giorno, il posto da kanji nuovo diventa
+    /// un ripasso: prima si torna in pari, poi si va avanti. Senza, con dieci contatti
+    /// al giorno, al trentesimo giorno 64 kanji su 91 erano in ritardo.
+    @Test func aBacklogTurnsNewSlotsIntoReviews() {
+        var state = AmbientState.empty
+        // Venti kanji visti una volta tre giorni fa, e mai più: tutti in ritardo.
+        for index in 0..<20 {
+            state.record(.presented, codepoint: testCodepoint(index), at: date("2026-05-07 09:00") + Double(index) * 60)
+        }
+        #expect(AmbientEngine.backlog(state, at: date("2026-05-10 08:00"), mode: .standard) == 20)
+
+        let selections = plan(hours(10), state: state)
+        #expect(selections.count == 10)
+        #expect(selections.allSatisfy { $0.kind != .new })
+    }
+
     /// Un piano fatto a metà giornata non riapre il budget: i nuovi di stamattina
     /// sono già nello storico.
     @Test func aNewPlanAtNoonKeepsThisMorningsBudget() {

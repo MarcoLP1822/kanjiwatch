@@ -123,6 +123,14 @@ final class AppContainer {
         reschedule()
     }
 
+    /// Da watchOS, in background, quando lo concede. Chi guardava solo le notifiche e
+    /// non apriva mai l'app restava senza: il Watch ne tiene in coda al massimo 64, e la
+    /// coda si rifaceva solo aprendo l'app — con dieci al giorno finiva dopo sei giorni,
+    /// con trenta dopo due.
+    func refreshInBackground() async {
+        await rescheduleAndPublish()
+    }
+
     /// Dal bottone "Non me lo ricordavo": l'app resta chiusa. Il motore lo segna e la
     /// coda si rifà, così col ritmo personale quel kanji torna prima. Si aspetta la
     /// fine: in background il sistema dà tempo finché questa chiamata non ritorna.
