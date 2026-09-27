@@ -179,6 +179,7 @@ struct StudyLoopTests {
         state: InMemoryStore<ReminderState>,
         ambient: InMemoryStore<AmbientState> = InMemoryStore(.empty),
         dailyLimit: Int = 10,
+        nextPastLimit: Bool = false,
         at time: String
     ) -> StudyLoop {
         var settings = ReminderSettings.default
@@ -188,6 +189,7 @@ struct StudyLoopTests {
             settings: InMemoryStore(settings),
             state: state,
             ambient: ambient,
+            nextPastLimit: { nextPastLimit },
             now: { date(time) },
             calendar: calendar
         )
@@ -223,6 +225,25 @@ struct StudyLoopTests {
         let refused = try #require(
             loop(state: store, dailyLimit: 2, at: "2026-05-10 09:15").next(after: second.current.codepoint))
         #expect(refused == second)
+    }
+
+    /// Col Premium il limite ferma le notifiche, non te: NEXT dà un altro kanji anche
+    /// a giornata finita, e la schermata non dice mai che è tutto.
+    @Test func withPremiumNextGoesPastTheLimit() throws {
+        let store = InMemoryStore(ReminderState.empty)
+        let first = try #require(
+            loop(state: store, dailyLimit: 2, nextPastLimit: true, at: "2026-05-10 09:12").current())
+        let second = try #require(
+            loop(state: store, dailyLimit: 2, nextPastLimit: true, at: "2026-05-10 09:14")
+                .next(after: first.current.codepoint))
+        let third = try #require(
+            loop(state: store, dailyLimit: 2, nextPastLimit: true, at: "2026-05-10 09:15")
+                .next(after: second.current.codepoint))
+
+        #expect(third.current != second.current)
+        #expect(!third.dailyLimitReached)
+        // Conta lo stesso: le notifiche di oggi restano ferme.
+        #expect(store.value.today.count(on: date("2026-05-10 09:15"), calendar: calendar) == 3)
     }
 
     // MARK: - I segnali che finiscono nello storico

@@ -242,6 +242,13 @@ struct WaitingContent: View {
                 arrival
                     .font(.dsBody)
                     .foregroundStyle(.dsInkSecondary)
+                if dailyLimitReached {
+                    // Solo senza Premium: col Premium NEXT va oltre il limite, e qui
+                    // resta il bottone.
+                    Text("With Premium you can keep going whenever you like: find it in Settings.", bundle: .module)
+                        .font(.dsLabel)
+                        .foregroundStyle(.dsInkSecondary)
+                }
             }
             .multilineTextAlignment(.center)
 

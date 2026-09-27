@@ -217,7 +217,8 @@ final class AppContainer {
             settings: effectiveSettings,
             state: stateStore,
             ambient: ambientStore,
-            mode: { [weak self] in self?.ambientMode ?? .standard }
+            mode: { [weak self] in self?.ambientMode ?? .standard },
+            nextPastLimit: { [weak self] in self?.subscription == .premium }
         )
     }
 

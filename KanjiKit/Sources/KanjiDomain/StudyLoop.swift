@@ -145,6 +145,7 @@ public struct StudyLoop {
         public let reference: ExposureReference
         /// La prossima notifica in coda. Nil se non ne arriverà nessuna.
         public let nextArrival: Date?
+        /// Il giorno è finito e NEXT non va oltre: succede solo senza Premium.
         public let dailyLimitReached: Bool
     }
 
@@ -155,6 +156,10 @@ public struct StudyLoop {
     /// Una funzione e non un valore: l'abbonamento può cambiare mentre l'app è
     /// aperta, e il loro loop vive quanto la schermata.
     private let mode: () -> AmbientMode
+    /// Col Premium il limite del giorno ferma le notifiche ma non NEXT: chi vuole un
+    /// altro kanji lo chiede e lo ha. Senza, ferma anche NEXT: è il tetto della
+    /// versione gratuita. Una funzione per lo stesso motivo di `mode`.
+    private let nextPastLimit: () -> Bool
     private let now: () -> Date
     private let calendar: Calendar
 
@@ -164,6 +169,7 @@ public struct StudyLoop {
         state: any ValueStore<ReminderState>,
         ambient: any ValueStore<AmbientState>,
         mode: @escaping () -> AmbientMode = { .standard },
+        nextPastLimit: @escaping () -> Bool = { false },
         now: @escaping () -> Date = Date.init,
         calendar: Calendar = .current
     ) {
@@ -172,6 +178,7 @@ public struct StudyLoop {
         self.state = state
         self.ambient = ambient
         self.mode = mode
+        self.nextPastLimit = nextPastLimit
         self.now = now
         self.calendar = calendar
     }
@@ -187,7 +194,9 @@ public struct StudyLoop {
 
     public func next(after onScreen: String) -> Snapshot? {
         update { value, exposure, moment in
-            advance(&value, &exposure, after: onScreen, at: moment, dailyLimit: settings.load().dailyLimit)
+            advance(
+                &value, &exposure, after: onScreen, at: moment,
+                dailyLimit: nextPastLimit() ? nil : settings.load().dailyLimit)
         }
     }
 
@@ -279,7 +288,8 @@ public struct StudyLoop {
             isDone: value.session.isDone,
             reference: value.session.reference,
             nextArrival: value.scheduled.map(\.fireDate).min(),
-            dailyLimitReached: value.today.count(on: moment, calendar: calendar) >= settings.load().dailyLimit
+            dailyLimitReached: !nextPastLimit()
+                && value.today.count(on: moment, calendar: calendar) >= settings.load().dailyLimit
         )
     }
 }

@@ -301,7 +301,10 @@ mescolato — e per questo l'impostazione si chiamava «kanji nuovi al giorno».
 alzare il primo aumenta gli incontri, non la roba da imparare.
 
 Contano le notifiche arrivate e i NEXT; raggiunto il numero, le notifiche di quel
-giorno si fermano e riprendono il giorno dopo. Il conteggio è per giorno di
+giorno si fermano e riprendono il giorno dopo. Senza Premium si ferma anche NEXT: è il
+tetto della versione gratuita, e la schermata d'attesa dice dove trovare il Premium.
+Col Premium NEXT va oltre, perché il limite ferma le notifiche, non te. Quei NEXT
+contano lo stesso, e il tetto ai kanji nuovi vale sempre: oltre, arrivano ripassi. Il conteggio è per giorno di
 calendario e sta nello stato salvato: prima di rifare la coda si contano le notifiche
 già arrivate, altrimenti il tetto non saprebbe quante ne sono passate.
 
@@ -626,12 +629,13 @@ tratti — chi toccava lo schermo per scorrere si ritrovava indietro.
 - **Letture.** I tocchi non fanno niente: si esce solo con i due bottoni. DONE è pieno
   (indaco), il gesto normale; NEXT è solo contornato e si chiama "Un altro adesso".
   Prima si chiamava "Avanti", e dopo DONE sembrava il modo di proseguire: chi aveva
-  finito non sapeva se premerlo. Raggiunto il numero del giorno, al posto di NEXT c'è
-  "Per oggi è tutto".
+  finito non sapeva se premerlo. Senza Premium, raggiunto il numero del giorno, al posto
+  di NEXT c'è "Per oggi è tutto"; col Premium NEXT resta.
 - **DONE** chiude il giro: la schermata d'attesa mostra il kanji appena fatto in
-  piccolo, poi "Per ora è tutto" (o "Per oggi è tutto") e "Prossimo kanji alle HH:MM".
-  La prima cosa da dire è che hai finito e puoi abbassare il polso; NEXT sta in fondo,
-  per chi non vuole aspettare. All'ora della notifica il suo kanji compare da solo,
+  piccolo, poi "Per ora è tutto" e "Prossimo kanji alle HH:MM". La prima cosa da dire
+  è che hai finito e puoi abbassare il polso; NEXT sta in fondo, per chi non vuole
+  aspettare. A giornata finita senza Premium il titolo è "Per oggi è tutto", NEXT non
+  c'è e una riga dice che col Premium si va avanti quando si vuole. All'ora della notifica il suo kanji compare da solo,
   senza lasciare a schermo un orario passato.
 - **NEXT** mette subito in gioco il kanji della prossima notifica e rifà la coda da
   adesso (§6). Conta nel numero del giorno.

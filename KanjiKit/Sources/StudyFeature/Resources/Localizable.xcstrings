@@ -110,6 +110,17 @@
           }
         }
       }
+    },
+    "With Premium you can keep going whenever you like: find it in Settings." : {
+      "comment" : "Attesa a giornata finita, solo senza Premium: col Premium «Un altro adesso» va oltre il limite.",
+      "localizations" : {
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Col Premium vai avanti quando vuoi: lo trovi in Impostazioni."
+          }
+        }
+      }
     }
   },
   "version" : "1.0"

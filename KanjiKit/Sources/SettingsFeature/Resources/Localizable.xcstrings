@@ -212,6 +212,17 @@
         }
       }
     },
+    "Reminders include reviews and kanji asked for with One more now. New kanji are the ones you've never seen.": {
+      "comment": "Nota sotto i promemoria: spiega cosa conta nel numero del giorno.",
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I promemoria contano anche i ripassi e i kanji chiesti con «Un altro adesso»; i kanji nuovi sono quelli mai visti prima."
+          }
+        }
+      }
+    },
     "Reminders per day": {
       "comment": "Quanti promemoria al massimo in una giornata: ripassi e Avanti compresi, non solo kanji nuovi.",
       "localizations": {
@@ -219,17 +230,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Promemoria al giorno"
-          }
-        }
-      }
-    },
-    "Reviews and kanji opened with Next count too. Once the number is reached, reminders stop until tomorrow.": {
-      "comment": "Nota sotto i promemoria: spiega cosa conta nel numero del giorno.",
-      "localizations": {
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "I promemoria contano anche i ripassi e quelli aperti con Avanti; i kanji nuovi sono quelli mai visti prima."
           }
         }
       }

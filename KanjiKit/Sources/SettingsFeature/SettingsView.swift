@@ -112,7 +112,7 @@ public struct SettingsView<Premium: View>: View {
                 Text("Reminders", bundle: .module)
             } footer: {
                 Text(
-                    "Reviews and kanji opened with Next count too. Once the number is reached, reminders stop until tomorrow.",
+                    "Reminders include reviews and kanji asked for with One more now. New kanji are the ones you've never seen.",
                     bundle: .module)
             }
 
