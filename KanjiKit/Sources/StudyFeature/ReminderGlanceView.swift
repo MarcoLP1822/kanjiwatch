@@ -2,6 +2,10 @@ import DesignSystem
 import KanjiDomain
 import SwiftUI
 
+#if os(watchOS)
+import WatchKit
+#endif
+
 /// Il contenuto della notifica, in una delle tre forme della micro-sequenza.
 ///
 /// Niente letture del kanji, di proposito. Se la notifica te le dà subito non provi
@@ -13,6 +17,11 @@ public struct ReminderGlanceView: View {
     /// La parola scelta dal piano per questo momento, già risolta.
     private let word: Kanji.Word?
     private let theme: DSTheme
+    /// Nel richiamo il significato arriva dopo una pausa: prima provi a ricordarlo, poi
+    /// controlli. Senza la risposta lo sforzo di ricordare insegnava poco, e per averla
+    /// bisognava aprire l'app e toccare fino alle letture.
+    @State private var meaningRevealed = false
+    private static let recallPause: Duration = .seconds(3)
 
     /// Il tema arriva come parametro: la notifica la mostra il sistema, fuori dalla
     /// gerarchia di view dell'app, e l'ambiente dell'app qui non arriva.
@@ -36,22 +45,46 @@ public struct ReminderGlanceView: View {
                 context(word)
             } else {
                 character
-                if let kanji, content == .introduce {
+                if let kanji {
+                    // Nel richiamo il posto c'è già, vuoto: quando il significato
+                    // arriva il kanji non si sposta.
                     Text(verbatim: kanji.shortMeaning)
                         .font(.dsLabel)
                         .foregroundStyle(.dsInkSecondary)
                         .multilineTextAlignment(.center)
+                        .opacity(content == .introduce || meaningRevealed ? 1 : 0)
                 }
             }
         }
         .padding(DS.Spacing.m)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .frame(height: Self.height)
         .background(.dsBackground)
         .dsTheme(theme)
+        .task {
+            guard content == .recall else { return }
+            try? await Task.sleep(for: Self.recallPause)
+            guard !Task.isCancelled else { return }
+            withAnimation(DS.Motion.phase) { meaningRevealed = true }
+        }
     }
 
-    /// Il kanji e basta. Nella forma `recall` è tutto quello che c'è: mezzo secondo
-    /// per pensarci, e scrivere "ricordi?" sarebbe rumore su uno schermo così.
+    /// La long look scorre, quindi in altezza non ha limiti: il kanji prendeva tutta la
+    /// larghezza e il significato finiva sotto il bordo, dove al polso nessuno lo vede.
+    /// Alta quanto lo schermo meno la fascia in cima, il kanji prende lo spazio che il
+    /// testo gli lascia. Nei test non serve: lì la schermata ha già la sua misura.
+    private static var height: CGFloat? {
+        #if os(watchOS)
+        // ponytail: la fascia di sistema (icona e "Adesso") misurata sul simulatore, fra
+        // 55 e 67 punti dal 40 al 46 mm. Se watchOS la allarga, il testo torna sotto.
+        WKInterfaceDevice.current().screenBounds.height - 80
+        #else
+        nil
+        #endif
+    }
+
+    /// Il kanji. Nella forma `recall` all'inizio è tutto quello che c'è: qualche
+    /// secondo per pensarci, e scrivere "ricordi?" sarebbe rumore su uno schermo così.
     @ViewBuilder
     private var character: some View {
         if let glyph {

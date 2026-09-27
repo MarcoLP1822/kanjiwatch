@@ -414,7 +414,7 @@ familiare) e **come** mostrarlo.
 | Forma | Cosa si vede | Perché |
 |---|---|---|
 | `introduce` | il kanji e il significato | 議 da solo non insegna niente: la prima volta si insegna |
-| `recall` | solo il kanji | mezzo secondo per pensarci. Il simbolo è già la domanda: scriverla sarebbe rumore |
+| `recall` | il kanji, e dopo tre secondi il significato | il tempo per pensarci, poi la risposta. Il simbolo è già la domanda: scriverla sarebbe rumore |
 | `context` | 水曜日 / すいようび / Wednesday, col kanji acceso | smette di essere un carattere e diventa lingua |
 
 La forma si ricava da quante volte il kanji è già comparso — prima volta, seconda,
@@ -423,6 +423,19 @@ parte**: un secondo contatore accanto a `presentationCount` sarebbe un secondo
 contatore da tenere allineato, cioè il modo per finire a chiedere «ricordi?» a chi quel
 kanji non l'ha mai visto. Senza parola d'esempio (JMdict non ne ha per tutti) `context`
 ricade su `introduce`.
+
+Nel richiamo la risposta arriva dentro la notifica. All'inizio non c'era: provavi a
+ricordare, ma per sapere se avevi ragione dovevi aprire l'app e toccare fino alle
+letture, e uno sforzo di memoria senza risposta insegna poco. Il posto del significato
+c'è dall'inizio, vuoto, così quando compare il kanji non si sposta. Il ritardo lo fa
+la long look, che è una view viva: il quadrante e la lista delle notifiche restano
+come prima.
+
+La long look è alta quanto lo schermo meno la fascia di sistema in cima, e il kanji
+prende lo spazio che il testo gli lascia. La long look scorre, quindi in altezza non ha
+limiti: all'inizio il kanji prendeva tutta la larghezza e il significato finiva sotto il
+bordo, anche nella prima forma, dove al polso nessuno lo vedeva. Provato sul 40 e sul
+46 mm con un significato su due righe.
 
 Le tre forme non stanno nella stessa giornata di proposito: si applicano quando il
 kanji torna dovuto, quindi la sequenza si distende su giorni.
@@ -472,6 +485,12 @@ se lo sapevi o se non hai nemmeno alzato il polso.
 |---|---|
 | apri l'app su quel kanji | +0,30 |
 | arrivi fino a letture e parola | +0,25 |
+
+Da quando il significato compare dentro la notifica, aprire l'app dopo un richiamo
+vuol dire volere più del significato: la lettura, i tratti, la parola. Succede meno
+spesso, quindi il segnale arriva più di rado; resta però una richiesta vera. Da tenere
+d'occhio: se il ritmo personale smette di distinguersi da quello di base, il segnale
+va ripensato.
 
 Il punteggio sta fra 0 e 1, non si mostra mai, e **si dimezza ogni due settimane**: una
 fatica di marzo non deve perseguitare un kanji a maggio. Sotto 0,25 è `low`, sotto 0,60
