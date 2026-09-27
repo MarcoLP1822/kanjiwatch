@@ -150,7 +150,9 @@ public struct StudyView: View {
                 dailyLimitReached: model.snapshot.dailyLimitReached,
                 onNext: model.next
             )
-            .padding(DS.Spacing.m)
+            // Niente margine in alto: sotto la barra c'è già spazio, e così "Un altro
+            // adesso" sale senza rimpicciolire niente.
+            .padding([.horizontal, .bottom], DS.Spacing.m)
         }
         .task(id: model.snapshot.nextArrival) { await model.waitForNextArrival() }
     }
