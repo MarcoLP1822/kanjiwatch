@@ -245,6 +245,8 @@ public struct StudyLoop {
         dailyLimit: Int?
     ) {
         let arrived = value.session.codepoint
+        // Il ritmo del motore riprende da dove è arrivata la giornata, anche per NEXT.
+        let contactsToday = value.today.count(on: moment, calendar: calendar)
         let outcome = value.advance(
             after: onScreen,
             now: moment,
@@ -255,6 +257,7 @@ public struct StudyLoop {
                     deck: deck,
                     state: exposure,
                     after: onScreen,
+                    contactsToday: contactsToday,
                     newPerDay: settings.load().newKanjiPerDay,
                     mode: mode(),
                     calendar: calendar

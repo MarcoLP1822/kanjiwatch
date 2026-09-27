@@ -78,6 +78,25 @@ struct AmbientEngineTests {
         }
     }
 
+    /// La coda si rifà a ogni apertura dell'app. Il ritmo riparte da dove era arrivata
+    /// la giornata, non dal primo passo: prima, chi apriva l'app dopo ogni notifica
+    /// vedeva un giorno intero gli stessi due kanji, 日 e 一.
+    @Test func replanningAfterEveryContactStillBringsNewKanji() {
+        var state = AmbientState.empty
+        var current: String?
+        var seen: Set<String> = []
+        for (contact, moment) in hours(30, everyMinutes: 15).enumerated() {
+            let next = AmbientEngine.plan(
+                fireDates: [moment], deck: deck, state: state, currentCodepoint: current,
+                dayProgress: (moment, contact), newPerDay: 10, calendar: calendar
+            )[0]
+            state.record(.presented, codepoint: next.codepoint, content: next.content, at: moment)
+            seen.insert(next.codepoint)
+            current = next.codepoint
+        }
+        #expect(seen.count == 10)
+    }
+
     /// Un piano fatto a metà giornata non riapre il budget: i nuovi di stamattina
     /// sono già nello storico.
     @Test func aNewPlanAtNoonKeepsThisMorningsBudget() {

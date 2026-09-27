@@ -420,6 +420,12 @@ del giorno (cinque, tre senza abbonamento). Alzare la frequenza aumenta gli inco
 non la roba da imparare: con trenta contatti al giorno restano cinque kanji nuovi e
 venticinque ripassi.
 
+Il passo del ritmo si conta sui contatti che la giornata ha già avuto, notifiche e
+NEXT, non sulla posizione nella coda. La coda si rifà a ogni apertura dell'app, e
+all'inizio ripartiva ogni volta dal primo passo, che è un rinforzo: al polso, chi apriva
+l'app dopo ogni notifica ha visto per un giorno intero solo 日, 一 e 人, con dieci kanji
+nuovi concessi.
+
 **Chi vince.** Fra i già visti, quello più in ritardo su `nextDueAt` (che è una chiave
 d'ordinamento, non una scadenza: il primo giorno sono tutti in anticipo e il kanji delle
 8 torna alle 10). Fra i nuovi, la classe scolastica e poi la frequenza sui giornali.

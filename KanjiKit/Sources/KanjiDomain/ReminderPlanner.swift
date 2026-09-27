@@ -72,6 +72,7 @@ public enum ReminderPlanner {
             deck: deck,
             state: ambient,
             currentCodepoint: currentCodepoint,
+            dayProgress: (now, usedToday),
             newPerDay: settings.newKanjiPerDay,
             mode: mode,
             calendar: calendar

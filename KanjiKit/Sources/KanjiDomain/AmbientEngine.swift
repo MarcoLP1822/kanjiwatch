@@ -60,17 +60,26 @@ public enum AmbientEngine {
     /// nuovi e venticinque incontri con quelli di prima.
     public static let defaultNewPerDay = 5
 
+    /// `dayProgress`: i contatti che una giornata ha già avuto, notifiche e NEXT. Il
+    /// ritmo si legge da lì e non dalla posizione nella coda: la coda si rifà a ogni
+    /// apertura dell'app, e ripartendo ogni volta dal primo passo — un rinforzo — chi
+    /// apriva l'app dopo ogni notifica non vedeva mai un kanji nuovo, solo 日 e 一.
     public static func plan(
         fireDates: [Date],
         deck: KanjiDeck,
         state: AmbientState,
         currentCodepoint: String? = nil,
+        dayProgress: (day: Date, contacts: Int)? = nil,
         newPerDay: Int = defaultNewPerDay,
         mode: AmbientMode = .standard,
         calendar: Calendar = .current
     ) -> [AmbientSelection] {
         guard !deck.isEmpty else { return [] }
 
+        // Il passo del ritmo per ogni giorno: dove la giornata era arrivata, poi uno a
+        // contatto previsto. Ogni giorno nuovo riparte dal primo.
+        var steps: [Date: Int] = [:]
+        if let dayProgress { steps[calendar.startOfDay(for: dayProgress.day)] = dayProgress.contacts }
         var projected = state
         // Il kanji in gioco conta come "appena visto": la prima notifica della coda
         // non deve ripetere quello che hai davanti adesso.
@@ -78,8 +87,9 @@ public enum AmbientEngine {
         var introduced: [Date: Int] = [:]
         var selections: [AmbientSelection] = []
 
-        for (position, fireDate) in fireDates.enumerated() {
+        for fireDate in fireDates {
             let day = calendar.startOfDay(for: fireDate)
+            let step = steps[day, default: 0]
             // I kanji nuovi già introdotti quel giorno, anche da un piano precedente:
             // rischedulare a metà pomeriggio non riapre il budget della giornata.
             let already =
@@ -89,7 +99,7 @@ public enum AmbientEngine {
 
             guard
                 let choice = choose(
-                    rhythm[position % rhythm.count],
+                    rhythm[step % rhythm.count],
                     deck: deck,
                     state: projected,
                     at: fireDate,
@@ -124,6 +134,7 @@ public enum AmbientEngine {
                 )
             )
             if choice.kind == .new { introduced[day] = already + 1 }
+            steps[day] = step + 1
             projected.record(.presented, codepoint: choice.codepoint, content: content, at: fireDate)
             recent.append(choice.codepoint)
             if recent.count > 2 { recent.removeFirst() }
@@ -137,6 +148,7 @@ public enum AmbientEngine {
         deck: KanjiDeck,
         state: AmbientState,
         after onScreen: String? = nil,
+        contactsToday: Int = 0,
         newPerDay: Int = defaultNewPerDay,
         mode: AmbientMode = .standard,
         calendar: Calendar = .current
@@ -146,6 +158,7 @@ public enum AmbientEngine {
             deck: deck,
             state: state,
             currentCodepoint: onScreen,
+            dayProgress: (date, contactsToday),
             newPerDay: newPerDay,
             mode: mode,
             calendar: calendar
