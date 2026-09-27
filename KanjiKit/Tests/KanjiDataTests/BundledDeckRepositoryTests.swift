@@ -75,17 +75,16 @@ struct BundledDeckRepositoryTests {
         }
         #expect(all["04e00"]?.shortMeaning == "one")
         #expect(all["053c2"]?.shortMeaning == "participate")
-        // Fuori tutto ciò che è sessuale, anche solo ambiguo: 淫 non c'è, e 乳 dice
-        // "milk", non "milk, breasts".
-        #expect(all["06deb"] == nil)
+        // Niente di sessuale, nemmeno ambiguo: 淫 mostra il senso originario, "excess",
+        // e 乳 dice "milk", non "milk, breasts".
+        #expect(all["06deb"]?.shortMeaning == "excess")
         #expect(all["04e73"]?.shortMeaning == "milk")
     }
 
     @Test func catalogListsTheWholeJoyoByGrade() throws {
         let catalog = try repository.loadCatalog()
         #expect(catalog.levels.map(\.grade) == [1, 2, 3, 4, 5, 6, 8])
-        // I 2.136 jōyō meno 淫, "lascivia", tolto per scelta: vedi jev_decisions.json.
-        #expect(catalog.totalCount == 2135)
+        #expect(catalog.totalCount == 2136)
         #expect(catalog.viewBox == 109)
         // CC BY-SA: se l'attribuzione sparisce dal catalogo, l'app è fuori licenza.
         #expect(catalog.attribution.contains("KanjiVG"))
@@ -121,7 +120,7 @@ struct BundledDeckRepositoryTests {
     /// che con un kanji vuoto sul polso.
     @Test func everyKanjiIsUsableOnScreen() throws {
         let deck = try repository.loadDeck()
-        #expect(deck.kanji.count == 2135)
+        #expect(deck.kanji.count == 2136)
         for kanji in deck.kanji {
             #expect(!kanji.strokes.isEmpty, "\(kanji.character): nessun tratto")
             #expect(kanji.strokeEnds.count == kanji.strokeCount, "\(kanji.character): fini dei tratti")

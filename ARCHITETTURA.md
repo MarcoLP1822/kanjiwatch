@@ -16,8 +16,7 @@ Documento di design. Versione 3 — impianto a notifiche con una complication, n
 - il kanji è visibile **dentro la notifica**, senza aprire nulla
 - tap → app: animazione dell'ordine dei tratti, poi on'yomi / kun'yomi / significato
 - 100% offline, nessun account, nessun backend, nessun companion iOS
-- i jōyō in mazzi per grado scolastico, 2.135 su 2.136: fuori 淫, «lascivia» (F18); le
-  prime due classi sono gratis
+- tutti i 2.136 jōyō, in mazzi per grado scolastico; le prime due classi sono gratis
 
 **Fuori scope, esplicitamente:** progressi e gamification, iCloud, audio,
 riconoscimento della scrittura, statistiche, e i bottoni «lo so / non lo so» a ogni
@@ -165,12 +164,14 @@ segnalava anche 入れる, 触る, 硬い, 脱ぐ, il vocabolario di base, e fra
 parole si sono lette una per una: quelle da togliere stanno in `blocked`, e qui la
 riammissione a mano non vale. I kanji dal significato ambiguo mostrano un altro
 significato del dizionario (`shortOverrides`: 乳 "milk", 性 "nature, gender", 裸
-"uncovered"); 淫, «lascivia», un significato pulito non ce l'ha ed è fuori dal mazzo
-(`blockedKanji`). Attenzione alle famiglie: tolta una parola ne entra un'altra dello
+"uncovered"). 淫, «lascivia», un significato pulito nel dizionario non ce l'ha: mostra
+il suo senso originario, "excess", come in 淫雨, la pioggia eccessiva. Per un po' era
+fuori dal mazzo, e `blockedKanji` resta per un caso così; l'utente l'ha voluto dentro,
+perché i jōyō siano tutti. Attenzione alle famiglie: tolta una parola ne entra un'altra dello
 stesso kanji, e per 淫, 股 o 貞 la successiva era spesso peggio.
 
-Risultato: 2.135 kanji, 6.362 parole, 177 tolte e sostituite, 2105 kanji con tre
-parole, 1221 significati scelti da Jev o a mano.
+Risultato: 2.136 kanji, 6.364 parole, 176 tolte e sostituite, 2.105 kanji con tre
+parole, 1.222 significati scelti da Jev o a mano.
 
 Jev non entra nella build. `Scripts/jev_review.py` fa le domande e salva le risposte
 grezze in `Scripts/jev_decisions.json`, che sta nel repository; la build legge il file
@@ -198,7 +199,7 @@ questo `jlptOld` non viene nemmeno più esportato.
 {
   "version": 3,
   "viewBox": 109,
-  "count": 2135,
+  "count": 2136,
   "attribution": "This app includes data derived from: ...",
   "levels": [{ "grade": 1, "count": 80 }, { "grade": 2, "count": 160 }, "..."]
 }

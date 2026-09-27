@@ -17,8 +17,7 @@ l'abbonamento fa un passo in più — i kanji che non ti ricordavi, o che vai ad
 quando li vedi da soli, tornano un po' prima e con qualcosa a cui aggrapparsi, senza che
 tu abbia configurato niente.
 
-Oltre 2.100 jōyō, in mazzi per classe scolastica: tutti tranne 淫, "lascivia", escluso
-di proposito. Niente account, niente rete,
+Tutti i 2.136 jōyō, in mazzi per classe scolastica. Niente account, niente rete,
 niente arretrati da smaltire.
 
 Le decisioni di progetto, l'architettura e la roadmap stanno in

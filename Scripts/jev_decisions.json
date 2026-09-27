@@ -31,7 +31,6 @@
   "挿入",
   "放恣",
   "淫祠",
-  "淫雨",
   "玩ぶ",
   "玩弄",
   "痴態",
@@ -17346,9 +17345,7 @@
    "secondConfidence": 0.57
   }
  },
- "blockedKanji": [
-  "淫"
- ],
+ "blockedKanji": [],
  "shortOverrides": {
   "裸": [
    "uncovered"
@@ -17391,6 +17388,9 @@
   "睦": [
    "friendly",
    "harmonious"
+  ],
+  "淫": [
+   "excess"
   ]
  },
  "sexual": {
@@ -27687,8 +27687,8 @@
    "p": 0.04
   },
   "淫": {
-   "shown": "lewdness",
-   "p": 0.96
+   "shown": "excess",
+   "p": 0.82
   },
   "深": {
    "shown": "deep",
