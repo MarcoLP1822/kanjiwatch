@@ -29,7 +29,7 @@ final class AppContainer {
         let model = StudyViewModel(loop: makeStudyLoop())
         model.onAdvance = { [weak self] in self?.reschedule() }
         model.onReadingsFirstShown = { [weak self] in
-            Task { await self?.askForPermissionIfNeverAsked() }
+            Task { await self?.askForPermission() }
         }
         return model
     }()
@@ -227,9 +227,11 @@ final class AppContainer {
         )
     }
 
-    /// Solo la prima volta: se l'utente ha già detto di no, non si insiste.
-    private func askForPermissionIfNeverAsked() async {
-        guard await scheduler.authorizationStatus() == .notDetermined else { return }
+    /// La prima volta il sistema chiede. Dopo, la stessa richiesta aggiunge in silenzio
+    /// quello che manca: così il suono è arrivato a chi aveva già detto sì senza. Se
+    /// l'utente ha detto di no, non si insiste.
+    private func askForPermission() async {
+        guard await scheduler.authorizationStatus() != .denied else { return }
         _ = await scheduler.requestAuthorization()
         await rescheduleAndPublish()
     }

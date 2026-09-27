@@ -503,16 +503,23 @@ content.title = kanji.c                       // il kanji È il titolo
 content.body  = "Tocca per l'ordine dei tratti"
 content.userInfo = ["cp": kanji.cp]
 content.categoryIdentifier = "KANJI_REVIEW"
-content.sound = nil
+content.sound = .default
 ```
 
 Il kanji nel **titolo**, non nel body: sul Watch il titolo è ciò che leggi alzando il
-polso per mezzo secondo. Con `sound = nil` niente audio; il tocco aptico dipende dalle
-impostazioni di sistema dell'utente e non è controllabile dall'app.
+polso per mezzo secondo.
 
-Opzione "modalità discreta": `content.interruptionLevel = .passive` — la notifica non
-accende lo schermo e si accumula nella lista, da guardare quando ti va. Per un ripasso
-passivo è una scelta legittima, mettila in Impostazioni.
+Il suono ci vuole. Sul Watch una notifica senza suono non vibra e non accende lo
+schermo: finisce solo nella lista, col pallino rosso. La prima versione era così, per
+non disturbare, e al polso non te ne accorgevi. Con `.default` il Watch vibra e accende
+lo schermo; in modalità silenziosa resta la vibrazione. Il permesso chiede
+`[.alert, .sound]` e si richiede a ogni avvio, alla prima volta che arrivi alle letture.
+Chi l'aveva già dato senza suono lo riceve così, senza che il sistema chieda di nuovo:
+provato sul simulatore.
+
+Opzione "modalità discreta": `content.interruptionLevel = .passive`, senza suono. La
+notifica non accende lo schermo e si accumula nella lista, da guardare quando ti va. Per
+un ripasso passivo è una scelta legittima, e sta in Impostazioni.
 
 ---
 

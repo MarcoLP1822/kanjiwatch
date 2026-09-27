@@ -24,11 +24,12 @@ public struct UserNotificationScheduler: ReminderScheduling, NotificationAuthori
         }
     }
 
+    /// Anche il suono: sul Watch una notifica senza suono non vibra e non accende lo
+    /// schermo, finisce solo nella lista. Chi aveva già detto sì senza suono lo riceve
+    /// alla richiesta successiva, e il sistema non chiede niente.
     @discardableResult
     public func requestAuthorization() async -> Bool {
-        // Solo .alert: il suono è spento di proposito, il tocco aptico lo decide
-        // l'utente nelle impostazioni di sistema e non è controllabile da qui.
-        (try? await center.requestAuthorization(options: [.alert])) ?? false
+        (try? await center.requestAuthorization(options: [.alert, .sound])) ?? false
     }
 
     public func replacePending(with notifications: [PlannedNotification], isPassive: Bool) async {
@@ -77,9 +78,10 @@ public struct UserNotificationScheduler: ReminderScheduling, NotificationAuthori
         }
         content.userInfo = ReminderPayload.userInfo(for: notification.destination)
         content.categoryIdentifier = ReminderPayload.categoryIdentifier
-        content.sound = nil
-        // Modalità discreta: la notifica non accende lo schermo e si accumula
-        // nella lista, da guardare quando ti va.
+        // Col suono il Watch vibra e accende lo schermo; in modalità silenziosa resta
+        // la vibrazione. La modalità discreta invece non accende lo schermo e non
+        // suona: la notifica si accumula nella lista, da guardare quando ti va.
+        content.sound = isPassive ? nil : .default
         content.interruptionLevel = isPassive ? .passive : .active
         return content
     }
