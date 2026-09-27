@@ -23,24 +23,24 @@
         }
       }
     },
-    "Next kanji at %@" : {
+    "Next at %@" : {
       "comment" : "Schermata d'attesa, oggi. %@ è l'ora.",
       "localizations" : {
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Prossimo kanji alle %@"
+            "value" : "Prossimo alle %@"
           }
         }
       }
     },
-    "Next kanji tomorrow at %@" : {
+    "Next tomorrow at %@" : {
       "comment" : "Schermata d'attesa, domani. %@ è l'ora.",
       "localizations" : {
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Prossimo kanji domani alle %@"
+            "value" : "Prossimo domani alle %@"
           }
         }
       }

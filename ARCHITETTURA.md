@@ -669,7 +669,7 @@ tratti — chi toccava lo schermo per scorrere si ritrovava indietro.
   finito non sapeva se premerlo. Senza Premium, raggiunto il numero del giorno, al posto
   di NEXT c'è "Per oggi è tutto"; col Premium NEXT resta.
 - **DONE** chiude il giro: la schermata d'attesa mostra il kanji appena fatto in
-  piccolo, poi "Per ora è tutto" e "Prossimo kanji alle HH:MM". La prima cosa da dire
+  piccolo, poi "Per ora è tutto" e "Prossimo alle HH:MM". La prima cosa da dire
   è che hai finito e puoi abbassare il polso; NEXT sta in fondo, per chi non vuole
   aspettare. A giornata finita senza Premium il titolo è "Per oggi è tutto", NEXT non
   c'è e una riga dice che col Premium si va avanti quando si vuole. All'ora della notifica il suo kanji compare da solo,

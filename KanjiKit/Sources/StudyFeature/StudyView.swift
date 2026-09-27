@@ -224,15 +224,18 @@ struct WaitingContent: View {
     let onNext: () -> Void
 
     var body: some View {
-        VStack(spacing: DS.Spacing.l) {
-            VStack(spacing: DS.Spacing.s) {
+        VStack(spacing: DS.Spacing.m) {
+            // Kanji e significato su una riga, come in testa alle letture: in colonna
+            // mangiavano lo spazio, e "Un altro adesso" finiva sotto il bordo.
+            HStack(spacing: DS.Spacing.m) {
                 if let glyph {
                     KanjiGlyphView(glyph: glyph, progress: Double(glyph.strokeCount))
-                        .frame(width: 56, height: 56)
+                        .frame(width: 44, height: 44)
                 }
                 Text(verbatim: kanji.shortMeaning)
-                    .font(.dsLabel)
+                    .font(.dsBody)
                     .foregroundStyle(.dsInkSecondary)
+                    .lineLimit(2)
             }
 
             VStack(spacing: DS.Spacing.s) {
@@ -273,8 +276,8 @@ struct WaitingContent: View {
         }
         let time = nextArrival.formatted(date: .omitted, time: .shortened)
         return Calendar.current.isDateInToday(nextArrival)
-            ? Text("Next kanji at \(time)", bundle: .module)
-            : Text("Next kanji tomorrow at \(time)", bundle: .module)
+            ? Text("Next at \(time)", bundle: .module)
+            : Text("Next tomorrow at \(time)", bundle: .module)
     }
 }
 
