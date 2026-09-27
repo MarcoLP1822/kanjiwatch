@@ -1,3 +1,3 @@
 Kanji Watch is licensed to you under Apple's standard Licensed Application End User License Agreement (EULA).
 
-Kanji Watch Premium is an auto-renewable subscription, sold by Apple through the App Store. Payment is charged to your Apple Account when you confirm the purchase or, if the plan includes a free trial, when the trial ends. The subscription renews automatically for the same period and price unless you cancel it at least 24 hours before the end of the current period. You can manage or cancel it in your Apple Account settings.
+Kanji Watch Premium is an auto-renewable subscription, purchased through the App Store. Payment is charged to your Apple Account when you confirm the purchase or, if the plan includes a free trial, when the trial ends. The subscription renews automatically for the same period and price unless you cancel it at least 24 hours before the end of the current period. You can manage or cancel it in your Apple Account settings.
