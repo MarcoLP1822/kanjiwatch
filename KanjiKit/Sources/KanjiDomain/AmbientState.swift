@@ -85,7 +85,7 @@ public enum FamiliarityStage: Equatable, Hashable, Sendable, CaseIterable {
     case familiar
 }
 
-/// I tre segnali che raccogliamo. Nessuno costa un gesto in più all'utente.
+/// I segnali che raccogliamo. Uno solo chiede un gesto, ed è facoltativo.
 public enum ExposureEvent: Equatable, Sendable {
     /// Il kanji è comparso: notifica arrivata, primo kanji dell'app, o NEXT.
     case presented
@@ -93,6 +93,8 @@ public enum ExposureEvent: Equatable, Sendable {
     case opened
     /// Sei arrivato alle letture.
     case readingsViewed
+    /// Hai toccato "Non me lo ricordavo" nella notifica del kanji da solo.
+    case forgotten
 }
 
 /// Lo storico delle esposizioni: l'unica memoria che ha l'Ambient Engine.
@@ -145,6 +147,8 @@ public struct AmbientState: Equatable, Sendable, Codable {
         case .readingsViewed:
             exposure.readingsViewedCount += 1
             exposure.lastEngagedAt = date
+        case .forgotten:
+            exposure.lastEngagedAt = date
         }
         // Un kanji aperto è stato per forza mostrato, anche se la notifica che l'ha
         // portato è arrivata prima che esistesse questo storico.
@@ -167,7 +171,9 @@ public struct AmbientState: Equatable, Sendable, Codable {
                 ? KanjiExposure.firstSpacing
                 : KanjiExposure.spacing(for: exposure.stage(at: date))
             exposure.nextDueAt = date + spacing
-        case .opened:
+        case .opened, .forgotten:
+            // Il ritmo di base non cambia: di un kanji che chiede aiuto si occupa il
+            // ritmo personale, leggendo il supporto.
             break
         case .readingsViewed:
             // Chi è arrivato alle letture ha fatto il lavoro: può stare via di più.
@@ -234,11 +240,14 @@ extension KanjiExposure {
     static let supportHalfLife: TimeInterval = 14 * .day
 
     /// Aprire l'app su un kanji mostrato da solo pesa più che arrivare fino alle
-    /// letture: il primo tocco è già la richiesta, il resto è la conferma.
+    /// letture: il primo tocco è già la richiesta, il resto è la conferma. Dirlo col
+    /// bottone della notifica pesa più di tutti e due insieme: lì lo deduciamo, qui ce
+    /// lo dici tu. Da solo porta il kanji al supporto alto.
     static func supportWeight(for event: ExposureEvent) -> Double? {
         switch event {
         case .opened: 0.30
         case .readingsViewed: 0.25
+        case .forgotten: 0.60
         case .presented: nil
         }
     }

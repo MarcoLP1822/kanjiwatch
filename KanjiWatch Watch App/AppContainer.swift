@@ -123,6 +123,14 @@ final class AppContainer {
         reschedule()
     }
 
+    /// Dal bottone "Non me lo ricordavo": l'app resta chiusa. Il motore lo segna e la
+    /// coda si rifà, così col ritmo personale quel kanji torna prima. Si aspetta la
+    /// fine: in background il sistema dà tempo finché questa chiamata non ritorna.
+    func forgot(_ destination: ReminderDestination) async {
+        makeStudyLoop().forgot(destination)
+        await rescheduleAndPublish()
+    }
+
     func makePaywall() -> PaywallViewModel {
         PaywallViewModel(
             gateway: subscriptions,

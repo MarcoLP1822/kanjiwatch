@@ -18,7 +18,11 @@ final class AppDelegate: NSObject, WKApplicationDelegate, UNUserNotificationCent
     ) async {
         guard let destination = ReminderPayload.destination(from: response.notification.request.content.userInfo)
         else { return }
-        AppContainer.shared.open(destination)
+        if response.actionIdentifier == ReminderPayload.forgotActionIdentifier {
+            await AppContainer.shared.forgot(destination)
+        } else {
+            AppContainer.shared.open(destination)
+        }
     }
 
     func userNotificationCenter(

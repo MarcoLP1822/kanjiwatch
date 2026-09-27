@@ -11,10 +11,11 @@ qualcosa di nuovo, qualcosa da rivedere, qualcosa che conosci di vista. E decide
 come: la prima volta col significato, poi il kanji da solo — tre secondi per
 ricordartelo, poi il significato compare e controlli — e più avanti dentro una parola
 vera, ogni volta una diversa: 水曜日, poi
-水着, poi 水面. Nessun voto e nessun «lo so / non
-lo so»: bastano i segnali che lasci aprendo l'app. Con l'abbonamento fa un passo in
-più — i kanji che vai ad aprire quando li vedi da soli tornano un po' prima e con
-qualcosa a cui aggrapparsi, senza che tu abbia configurato niente.
+水着, poi 水面. Nessun voto: se il kanji da solo non te lo ricordavi puoi dirlo con un
+tocco, sotto la notifica, e per il resto bastano i segnali che lasci aprendo l'app. Con
+l'abbonamento fa un passo in più — i kanji che non ti ricordavi, o che vai ad aprire
+quando li vedi da soli, tornano un po' prima e con qualcosa a cui aggrapparsi, senza che
+tu abbia configurato niente.
 
 Tutti i 2.136 jōyō, in mazzi per classe scolastica. Niente account, niente rete,
 niente arretrati da smaltire.

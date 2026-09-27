@@ -46,6 +46,18 @@ struct SupportModelTests {
         #expect(exposure.supportLevel(at: date("2026-05-10 09:01")) == .medium)
     }
 
+    /// Il bottone della notifica è la richiesta detta a parole: da solo vale più di
+    /// aprire e leggere insieme, e porta il kanji al supporto alto.
+    @Test func sayingYouForgotIsTheClearestAsk() throws {
+        let exposure = try #require(afterRecall([.forgotten]).records[kanji])
+
+        #expect(exposure.supportScore == 0.60)
+        #expect(exposure.supportLevel(at: date("2026-05-10 09:01")) == .high)
+        // Il ritmo di base resta quello: di questo kanji si occupa il ritmo personale.
+        #expect(exposure.nextDueAt == afterRecall([]).records[kanji]?.nextDueAt)
+        #expect(exposure.presentationCount == 1)
+    }
+
     /// Aprire un kanji che aveva già il significato scritto sotto non chiede niente:
     /// è il comportamento normale di chi sta guardando.
     @Test func openingAnIntroduceOrAContextMeansNothing() {
