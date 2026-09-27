@@ -97,6 +97,22 @@ struct AmbientEngineTests {
         #expect(seen.count == 10)
     }
 
+    /// Se nessun rinforzo è ancora dovuto si gira, partendo da quello visto da più
+    /// tempo. Scegliere quello che scadrebbe prima premiava sempre lo stesso: col ritmo
+    /// personale, 日 usciva dieci volte su trenta il primo giorno.
+    @Test func whenNothingIsDueTheLeastRecentlySeenComesBack() {
+        var state = AmbientState.empty
+        let seenLongAgo = testCodepoint(0)
+        let seenJustNow = testCodepoint(1)
+        // Il primo, arrivato alle letture, scade domani; il secondo fra sei ore.
+        state.record(.presented, codepoint: seenLongAgo, at: date("2026-05-10 07:00"))
+        state.record(.readingsViewed, codepoint: seenLongAgo, at: date("2026-05-10 07:01"))
+        state.record(.presented, codepoint: seenJustNow, at: date("2026-05-10 08:00"))
+
+        let next = plan([date("2026-05-10 08:30")], state: state, newPerDay: 0)
+        #expect(next.map(\.codepoint) == [seenLongAgo])
+    }
+
     /// Un piano fatto a metà giornata non riapre il budget: i nuovi di stamattina
     /// sono già nello storico.
     @Test func aNewPlanAtNoonKeepsThisMorningsBudget() {

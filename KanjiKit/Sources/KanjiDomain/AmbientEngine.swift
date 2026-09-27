@@ -228,7 +228,10 @@ public enum AmbientEngine {
             let stages: Set<FamiliarityStage> = kind == .familiar ? [.familiar] : [.fresh, .reinforcing]
             // Vince chi è più in ritardo. Per chi sta imparando `nextDueAt` non è una
             // scadenza da aspettare: il primo giorno sono tutti in anticipo, e il kanji
-            // introdotto alle 8 torna lo stesso alle 10.
+            // introdotto alle 8 torna lo stesso alle 10. Se nessuno è ancora dovuto, si
+            // gira: prima quello visto da più tempo. Scegliere quello che scadrà prima
+            // premiava sempre lo stesso — col ritmo personale 日 usciva dieci volte su
+            // trenta, il primo giorno.
             //
             // Per i familiari invece è una condizione, ed è il motivo per cui esiste:
             // senza, finché ce n'è uno solo si prende tutti e due gli slot del ritmo e
@@ -242,17 +245,22 @@ public enum AmbientEngine {
                         && (kind == .learning || exposure.effectiveDueAt(mode: mode, at: date) <= date)
                         && !excluding.contains(kanji.codepoint)
                 }
-                .min {
-                    (
-                        $0.1.effectiveDueAt(mode: mode, at: date), $0.1.lastPresentedAt,
-                        $0.0.frequencyRank ?? .max, $0.0.codepoint
-                    )
-                        < (
-                            $1.1.effectiveDueAt(mode: mode, at: date), $1.1.lastPresentedAt,
-                            $1.0.frequencyRank ?? .max, $1.0.codepoint
-                        )
-                }?
+                .min { order($0, at: date, mode: mode) < order($1, at: date, mode: mode) }?
                 .0.codepoint
         }
+    }
+
+    /// Prima i dovuti, dal più in ritardo; poi gli altri, da quello visto da più tempo.
+    private static func order(
+        _ candidate: (Kanji, KanjiExposure),
+        at date: Date,
+        mode: AmbientMode
+    ) -> (Int, Date, Int, String) {
+        let (kanji, exposure) = candidate
+        let due = exposure.effectiveDueAt(mode: mode, at: date)
+        return (
+            due <= date ? 0 : 1, due <= date ? due : exposure.lastPresentedAt,
+            kanji.frequencyRank ?? .max, kanji.codepoint
+        )
     }
 }

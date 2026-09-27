@@ -426,9 +426,13 @@ all'inizio ripartiva ogni volta dal primo passo, che è un rinforzo: al polso, c
 l'app dopo ogni notifica ha visto per un giorno intero solo 日, 一 e 人, con dieci kanji
 nuovi concessi.
 
-**Chi vince.** Fra i già visti, quello più in ritardo su `nextDueAt` (che è una chiave
-d'ordinamento, non una scadenza: il primo giorno sono tutti in anticipo e il kanji delle
-8 torna alle 10). Fra i nuovi, la classe scolastica e poi la frequenza sui giornali.
+**Chi vince.** Fra i già visti, prima quelli dovuti, dal più in ritardo su `nextDueAt`.
+Per chi sta imparando però non è una scadenza da aspettare: se nessuno è dovuto — il
+primo giorno sono tutti in anticipo — si gira, da quello visto da più tempo, e il kanji
+delle 8 torna alle 10. All'inizio vinceva quello che sarebbe scaduto prima, e col ritmo
+personale era sempre lo stesso: simulando tre giornate d'uso vero, 日 usciva 10 volte su
+30 il primo giorno. Girando, dal secondo giorno i kanji diversi sono 19-28 e nessuno torna
+più di due volte. Fra i nuovi, la classe scolastica e poi la frequenza sui giornali.
 Mai lo stesso kanji due volte di fila.
 
 **Il punto delicato: prevedere senza contare.** watchOS tiene in coda fino a 64
