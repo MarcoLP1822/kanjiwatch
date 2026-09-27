@@ -6,17 +6,27 @@ import tempfile
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
-from build_kanji_data import MAX_WORDS, load_jmdict_words, stroke_end, word_record
+from build_kanji_data import (
+    MAX_WORDS,
+    blocked_words,
+    load_jmdict_words,
+    short_meanings,
+    stroke_end,
+    word_record,
+)
 
 SAMPLE = """<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE JMdict [
 <!ENTITY n "noun (common) (futsuumeishi)">
 <!ENTITY rK "rarely used kanji form">
 <!ENTITY arch "archaic">
+<!ENTITY vulg "vulgar expression or word">
 ]>
 <JMdict>
 <entry><k_ele><keb>水</keb><ke_pri>nf01</ke_pri><ke_pri>ichi1</ke_pri></k_ele>
   <r_ele><reb>みず</reb></r_ele><sense><pos>&n;</pos><gloss>water</gloss></sense></entry>
+<entry><k_ele><keb>水棒</keb><ke_pri>nf01</ke_pri><ke_pri>ichi1</ke_pri></k_ele>
+  <r_ele><reb>みずぼう</reb></r_ele><sense><misc>&vulg;</misc><gloss>crude word</gloss></sense></entry>
 <entry><k_ele><keb>水道工事</keb><ke_pri>nf01</ke_pri><ke_pri>ichi1</ke_pri></k_ele>
   <r_ele><reb>すいどうこうじ</reb></r_ele><sense><gloss>plumbing work</gloss></sense></entry>
 <entry><k_ele><keb>水泳</keb><ke_pri>nf07</ke_pri><ke_pri>ichi1</ke_pri></k_ele>
@@ -64,7 +74,7 @@ SAMPLE = """<?xml version="1.0" encoding="UTF-8"?>
 # Rank JPDB veri, presi dal dizionario: sono quelli che decidono. Per 木 sono
 # inventati, per avere un ordine che i marcatori di JMdict da soli non darebbero.
 RANKS = {
-    "水": 492, "水道": 13173, "水泳": 10980, "水道工事": 500,
+    "水": 492, "水棒": 1, "水道": 13173, "水泳": 10980, "水道工事": 500,
     "日本": 1228, "日米": 48538, "一日": 1425, "日々": 1443,
     "性別": 5384, "アルカリ性": 4000,
     "木": 300, "木造建築": 100, "樹木": 1500, "大木": 2000, "並木": 3000, "木曜日": 4000, "木材": 5000,
@@ -80,6 +90,7 @@ with tempfile.TemporaryDirectory() as tmp:
     no_jpdb = load_jmdict_words(path, {"木"}, {})
     again = load_jmdict_words(path, {"水", "日", "性", "火", "木"}, RANKS)
     tree = load_jmdict_words(path, {"木"}, RANKS, {"木": "木"})
+    without = load_jmdict_words(path, {"水"}, RANKS, blocked={"水泳"})
 
 
 def texts(found):
@@ -124,6 +135,24 @@ assert texts(no_jpdb["木"]) == ["木曜日", "木材", "並木"], no_jpdb["木"
 # Due parole con lo stesso significato sono uno slot sprecato: 樹木 e 木 vogliono dire
 # "tree", e con 木 già scelto a mano 樹木 non entra.
 assert texts(tree["木"]) == ["木", "大木", "並木"], tree["木"]
+
+# Una parola che JMdict marca volgare non entra, nemmeno col rank migliore di tutti:
+# il Watch la mostrerebbe al polso.
+assert "水棒" not in texts(words["水"]), words["水"]
+# Una parola tolta da Jev lascia il posto alla successiva: 水泳 via, 水道 in testa.
+assert texts(without["水"]) == ["水道"], without["水"]
+
+# Le soglie di Jev. Parole: da 0,5 in su fuori, salvo le riammesse a mano; quelle
+# tolte a mano restano fuori comunque.
+assert blocked_words({"words": {"a": 0.97, "b": 0.6, "c": 0.2}, "allowed": ["b"], "blocked": ["c"]}) == {"a", "c"}
+assert blocked_words({}) == set()
+# Significati: il secondo solo se è sicuro anche lui; senza sicurezza, niente scelta.
+one = {"primary": "one", "primaryConfidence": 1.0, "second": None, "secondConfidence": 0.9}
+assert short_meanings(one) == ["one"]
+assert short_meanings({**one, "second": "unit", "secondConfidence": 0.7}) == ["one", "unit"]
+assert short_meanings({**one, "second": "unit", "secondConfidence": 0.4}) == ["one"]
+assert short_meanings({**one, "primaryConfidence": 0.4}) is None
+assert short_meanings(None) is None
 
 # re_restr e stagk: lettura e senso devono essere quelli della grafia giusta
 entry = next(e for e in ET.fromstring(SAMPLE) if e.findtext("k_ele/keb") == "水道")

@@ -8,6 +8,10 @@ import Testing
 struct BundledDeckRepositoryTests {
     private let repository = BundledDeckRepository()
 
+    private func decode(_ json: String) throws -> Kanji {
+        try #require(try JSONDecoder().decode(LevelFile.self, from: Data(json.utf8)).kanji.first).toDomain()
+    }
+
     /// Fino a tre parole per kanji, tutte diverse e tutte col kanji dentro: sono
     /// quelle che la forma col contesto farà girare sul quadrante.
     @Test func everyKanjiHasUpToThreeDistinctWordsThatContainIt() throws {
@@ -38,13 +42,39 @@ struct BundledDeckRepositoryTests {
             {"kanji":[{"c":"且","cp":"04e14","strokes":["M0,0"],"on":[],"kun":[],"meanings":{"en":["also"]}}]}
             """#
 
-        let decode = { (json: String) throws -> Kanji in
-            try #require(try JSONDecoder().decode(LevelFile.self, from: Data(json.utf8)).kanji.first).toDomain()
-        }
         #expect(try decode(v3).words.map(\.text) == ["水曜日", "水着"])
         #expect(try decode(v2).words.map(\.text) == ["水曜日"])
         #expect(try decode(v2).commonWord?.reading == "すいようび")
         #expect(try decode(none).words.isEmpty)
+    }
+
+    /// Dove la build ha scelto i significati da mostrare, si mostrano quelli; altrove i
+    /// primi due del dizionario, come prima.
+    @Test func showsTheMeaningsChosenAtBuildTime() throws {
+        let chosen = #"""
+            {"kanji":[{"c":"一","cp":"04e00","strokes":["M0,0"],"on":[],"kun":[],
+            "meanings":{"en":["one","one radical (no.1)"]},"short":["one"]}]}
+            """#
+        let plain = #"""
+            {"kanji":[{"c":"日","cp":"065e5","strokes":["M0,0"],"on":[],"kun":[],"meanings":{"en":["day","sun","Japan"]}}]}
+            """#
+        #expect(try decode(chosen).shortMeaning == "one")
+        #expect(try decode(plain).shortMeaning == "day, sun")
+    }
+
+    /// Nel mazzo vero: le parole che Jev ha tolto non ci sono, e dove ha scelto il
+    /// significato si vede quello. Se la build smette di leggere jev_decisions.json,
+    /// questo lo dice.
+    @Test func theBundleCarriesJevsDecisions() throws {
+        let catalog = try repository.loadCatalog()
+        let all = try repository.loadDeck(grades: Set(catalog.levels.map(\.grade)))
+        let shown = Set(all.kanji.flatMap { $0.words.map(\.text) })
+
+        for word in ["精液", "陰茎", "性奴隷", "肉棒", "勃起", "淫乱", "口淫", "陰核"] {
+            #expect(!shown.contains(word), "\(word) è ancora nel mazzo")
+        }
+        #expect(all["04e00"]?.shortMeaning == "one")
+        #expect(all["053c2"]?.shortMeaning == "participate")
     }
 
     @Test func catalogListsTheWholeJoyoByGrade() throws {

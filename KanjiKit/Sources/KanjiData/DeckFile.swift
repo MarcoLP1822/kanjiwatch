@@ -42,6 +42,9 @@ struct LevelFile: Decodable {
         let on: [String]
         let kun: [String]
         let meanings: [String: [String]]
+        /// I significati da mostrare, scelti da Jev in build. Manca dove bastano i
+        /// primi due.
+        let short: [String]?
         /// Schema 3: fino a tre parole d'esempio.
         let words: [Word]?
         /// Schema 2: una parola sola. Si legge ancora, per le fixture e per un bundle
@@ -65,6 +68,7 @@ struct LevelFile: Decodable {
                 onReadings: on,
                 kunReadings: kun,
                 meanings: meanings[LevelFile.meaningLanguage] ?? [],
+                shortMeanings: short,
                 words: (words ?? word.map { [$0] } ?? []).map {
                     Kanji.Word(text: $0.w, reading: $0.r, meanings: $0.g)
                 },

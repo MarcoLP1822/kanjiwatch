@@ -108,7 +108,7 @@ Le sorgenti stanno in `Scripts/raw/`, ignorata da git: sono tutte riscaricabili.
 KanjiVG (zip di SVG)  ─┐
 KANJIDIC2 (xml.gz)     ├─→ build_kanji_data.py ─→ catalogo + un file per grado
 JMdict (gz)            │   + word_overrides.json
-JPDB (freq, Yomitan)  ─┘
+JPDB (freq, Yomitan)  ─┘   + jev_decisions.json  ←── jev_review.py ←── Jev (TypeSafe)
 ```
 
 - KanjiVG — https://github.com/KanjiVG/kanjivg/releases (`*-main.zip`), tracciati
@@ -143,6 +143,27 @@ scelta — senza questo 大 prendeva 大きい e 大きな, tutte e due "big", e
 e 食う. Una grafia sola per kanji. `word_overrides.json` accetta una grafia o una
 lista, e le scelte a mano stanno davanti nell'ordine dato, purché JMdict le conosca.
 Risultato: 6.365 parole, 2.106 kanji con tre, 2 senza nessuna (且, 𠮟).
+
+**Parole inadatte e significato da mostrare: Jev** (F18). JPDB viene da anime e
+light novel, e fra le parole più comuni ce ne sono di volgari: 肉棒, 精液, 性奴隷 potevano
+finire al polso come esempio. JMdict ne marca poche — `vulgar`, `X-rated`,
+`derogatory`, `sensitive`, ora scartate con gli altri marcatori: 肉棒 sì, 陰茎 e 性奴隷
+no. Il resto lo decide Jev (TypeSafe), un modello che non scrive ma giudica: per ogni
+parola scelta, la probabilità che sia inadatta al polso. Da 0,5 in su la parola esce e
+al suo posto entra la successiva; le liste `allowed` e `blocked` del file correggono a
+mano i casi dubbi. Per i significati sceglie, fra quelli di KANJIDIC, quello da
+mostrare — 一 "one" invece di "one, one radical (no.1)", 参 "participate" invece di
+"nonplussed" — e se serve un secondo: 日 resta "day, sun". La scelta vale solo da 0,6
+di confidenza in su, e l'app la trova nel campo `short`; dove manca, mostra i primi
+due come prima.
+
+Jev non entra nella build. `Scripts/jev_review.py` fa le domande e salva le risposte
+grezze in `Scripts/jev_decisions.json`, che sta nel repository; la build legge il file
+e applica le soglie, senza chiave e senza rete. Lo script rifà solo quello che manca, e
+quando toglie una parola giudica anche quella che entra al suo posto. Una domanda per
+richiesta: con quaranta parole nello stesso stato Jev confondeva gli indici e dava
+酪農家 ("dairy farmer") inadatta a 0,90; da sola, 0,02. La chiave sta in
+`~/.config/typesafe/api_key` o in `TYPESAFE_API_KEY`, mai nel repository.
 
 Il self-check della selezione: `python3 Scripts/test_build_kanji_data.py`.
 
@@ -844,6 +865,7 @@ Non è un parere legale.
 | **F15** | Ritmo personale | ✅ col Premium ogni kanji si fa il suo ritmo, senza che tu dica niente |
 | **F16** | Profondità di vocabolario | ✅ fino a tre parole per kanji, che girano un contesto dopo l'altro |
 | **F17** | Non me lo ricordavo | ✅ la risposta nel richiamo, e un bottone per dire che non la sapevi |
+| **F18** | Jev nei dati | ✅ fuori le parole volgari, e sotto il kanji il significato che serve |
 
 F2 è già un'app che usi a mano. F5 è il momento in cui diventa quello che avevi in
 mente. Non invertire: se parti dalle notifiche, debugghi lo scheduler prima di aver

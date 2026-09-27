@@ -17,6 +17,10 @@ public struct Kanji: Identifiable, Hashable, Sendable {
     public let onReadings: [String]
     public let kunReadings: [String]
     public let meanings: [String]
+    /// Uno o due significati da mostrare sotto il kanji, scelti in build fra quelli del
+    /// dizionario: 一 "one" invece di "one, one radical (no.1)". Nil dove i primi due
+    /// vanno già bene.
+    public let shortMeanings: [String]?
     /// Fino a tre parole che contengono questo kanji, dalla più comune. Vuoto se
     /// JMdict non ne ha nessuna che valga come esempio.
     public let words: [Word]
@@ -36,6 +40,7 @@ public struct Kanji: Identifiable, Hashable, Sendable {
         onReadings: [String],
         kunReadings: [String],
         meanings: [String],
+        shortMeanings: [String]? = nil,
         words: [Word] = [],
         grade: Int? = nil,
         frequencyRank: Int? = nil
@@ -47,6 +52,7 @@ public struct Kanji: Identifiable, Hashable, Sendable {
         self.onReadings = onReadings
         self.kunReadings = kunReadings
         self.meanings = meanings
+        self.shortMeanings = shortMeanings
         self.words = words
         self.grade = grade
         self.frequencyRank = frequencyRank

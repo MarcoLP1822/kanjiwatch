@@ -340,7 +340,52 @@ IRREGULAR_FORMS = ("rarely used", "irregular", "out-dated", "search-only")
 #   scrivendo non lo usa nessuno, per quanto in alto stia nei rank di JPDB;
 # - arcaici e obsoleti: 国民 ha due entrate, こくみん e くにたみ, e la seconda è
 #   marcata "archaic". Senza filtro entra quella.
-REJECTED_SENSES = ("kana alone", "archaic", "obsolete", "obscure", "rare term")
+# - volgari, vietate ai minori, offensive: il Watch le mostrerebbe al polso, in
+#   pubblico. JMdict però ne marca poche (肉棒 sì, 陰茎 e 性奴隷 no): il resto lo
+#   toglie Jev, vedi JEV_PATH.
+REJECTED_SENSES = (
+    "kana alone", "archaic", "obsolete", "obscure", "rare term",
+    "vulgar", "X-rated", "derogatory", "sensitive",
+)
+
+# Le decisioni di Jev (TypeSafe), salvate: la build le legge senza chiave e senza
+# rete. Le riempie Scripts/jev_review.py; qui c'è solo la politica, cioè le soglie.
+JEV_PATH = Path(__file__).with_name("jev_decisions.json")
+# Da questa probabilità in su una parola non si mostra al polso. Nella prima prova,
+# da 0,8 in su erano tutte volgari o sessuali; fra 0,5 e 0,8 c'era di tutto, e lì
+# decidono le liste a mano del file, "allowed" e "blocked".
+WORD_BLOCK_THRESHOLD = 0.5
+# Sotto questa confidenza la scelta del significato non si usa: nella prova gli
+# errori stavano tutti sotto 0,5.
+MEANING_CONFIDENCE = 0.6
+# Il secondo significato basta che Jev lo preferisca: aggiungerlo è innocuo, e con
+# 0,6 日 perdeva "sun" (0,58).
+SECOND_MEANING_CONFIDENCE = 0.5
+
+
+def blocked_words(decisions: dict) -> set[str]:
+    """Le parole da non mostrare: quelle che Jev dà per inadatte, meno quelle
+    riammesse a mano, più quelle tolte a mano."""
+    allowed = set(decisions.get("allowed", []))
+    judged = {
+        word for word, p in decisions.get("words", {}).items()
+        if p >= WORD_BLOCK_THRESHOLD and word not in allowed
+    }
+    return judged | set(decisions.get("blocked", []))
+
+
+def short_meanings(decision: dict | None) -> list[str] | None:
+    """
+    Uno o due significati da mostrare sotto il kanji, se Jev li ha scelti con
+    sicurezza: 一 "one" invece di "one, one radical (no.1)". None lascia all'app i
+    primi due del dizionario.
+    """
+    if not decision or decision["primaryConfidence"] < MEANING_CONFIDENCE:
+        return None
+    second = decision.get("second")
+    if second and decision["secondConfidence"] >= SECOND_MEANING_CONFIDENCE:
+        return [decision["primary"], second]
+    return [decision["primary"]]
 
 
 def word_record(entry: ET.Element, keb: str) -> dict | None:
@@ -424,13 +469,33 @@ def load_jmdict_words(
     chars: set[str],
     ranks: dict[str, int],
     overrides: dict[str, str | list[str]] | None = None,
+    blocked: set[str] = frozenset(),
 ) -> dict[str, list[dict]]:
     """
     Per ogni kanji di `chars`, fino a MAX_WORDS parole che lo contengono, dalla più
-    comune. L'ordine lo dà `ranks` (JPDB), che misura l'uso reale della lingua; il
-    rank nfXX di JMdict misura solo i giornali e da solo, per 日, sceglierebbe 日米.
-    Restano indietro il kanji da solo — ripeterebbe il kun'yomi — e le frasi troppo
-    lunghe per il quadrante.
+    comune, saltando quelle di `blocked`: al loro posto entra la successiva.
+    """
+    return {
+        ch: pick_words(ch, [c for c in ranked if c[1]["w"] not in blocked])
+        for ch, ranked in load_jmdict_candidates(src, chars, ranks, overrides).items()
+    }
+
+
+def load_jmdict_candidates(
+    src: Path,
+    chars: set[str],
+    ranks: dict[str, int],
+    overrides: dict[str, str | list[str]] | None = None,
+) -> dict[str, list[tuple[tuple, dict]]]:
+    """
+    Per ogni kanji di `chars`, tutte le parole che lo contengono, dalla più comune.
+    Separata dalla scelta perché jev_review.py deve poterla rifare senza rileggere
+    JMdict ogni volta che toglie una parola.
+
+    L'ordine lo dà `ranks` (JPDB), che misura l'uso reale della lingua; il rank nfXX
+    di JMdict misura solo i giornali e da solo, per 日, sceglierebbe 日米. Restano
+    indietro il kanji da solo — ripeterebbe il kun'yomi — e le frasi troppo lunghe per
+    il quadrante.
 
     `overrides` ({kanji: grafia} o {kanji: [grafie]}) mette davanti le parole scelte
     a mano, nell'ordine dato, purché passino gli stessi filtri: una grafia che JMdict
@@ -482,10 +547,7 @@ def load_jmdict_words(
                     if keb not in slot or key < slot[keb][0]:
                         slot[keb] = (key, word)
             entry.clear()
-    return {
-        ch: pick_words(ch, sorted(slot.values(), key=lambda kv: kv[0]))
-        for ch, slot in candidates.items()
-    }
+    return {ch: sorted(slot.values(), key=lambda kv: kv[0]) for ch, slot in candidates.items()}
 
 
 # ---------------------------------------------------------------- filtri
@@ -570,6 +632,8 @@ def main() -> int:
     dic = load_kanjidic(args.kanjidic, langs)
     print(f"      {len(dic)} caratteri con metadati")
 
+    decisions = json.loads(JEV_PATH.read_text(encoding="utf-8")) if JEV_PATH.exists() else {}
+
     print("[3/5] merge + filtri")
     records: list[dict] = []
     missing_paths = 0
@@ -607,6 +671,13 @@ def main() -> int:
             "freq": entry["freq"],
         })
 
+    # Solo dove la scelta di Jev cambia qualcosa: altrimenti l'app prende già i primi
+    # due, e un campo in più è tempo di decodifica sul Watch.
+    for r in records:
+        short = short_meanings(decisions.get("meanings", {}).get(r["c"]))
+        if short and short != r["meanings"].get("en", [])[:2]:
+            r["short"] = short
+
     records.sort(key=sort_key)
     if args.limit:
         records = records[: args.limit]
@@ -623,7 +694,8 @@ def main() -> int:
         if args.jpdb:
             print(f"      JPDB: {len(ranks)} parole con un rank")
         overrides = json.loads(OVERRIDES_PATH.read_text(encoding="utf-8")) if OVERRIDES_PATH.exists() else {}
-        words = load_jmdict_words(args.jmdict, chars, ranks, overrides)
+        blocked = blocked_words(decisions)
+        words = load_jmdict_words(args.jmdict, chars, ranks, overrides, blocked)
         for r in records:
             r["words"] = words.get(r["c"], [])
         applied = sum(
@@ -634,7 +706,7 @@ def main() -> int:
         )
         print(
             f"      {sum(len(v) for v in words.values())} parole per {len(words)} kanji, "
-            f"{applied}/{len(overrides)} correzioni a mano"
+            f"{applied}/{len(overrides)} correzioni a mano, {len(blocked)} parole tolte da Jev"
         )
     else:
         print("[4/5] JMdict    <- saltato (--jmdict non passato)")

@@ -3,7 +3,7 @@ import Foundation
 extension Kanji {
     /// I primi due significati: è quanto ci sta su un quadrante. Lo usano notifica,
     /// letture e complication, quindi sta scritto qui una volta sola.
-    public var shortMeaning: String { firstTwo(meanings) }
+    public var shortMeaning: String { shortMeanings?.joined(separator: ", ") ?? firstTwo(meanings) }
 }
 
 extension Kanji.Word {
