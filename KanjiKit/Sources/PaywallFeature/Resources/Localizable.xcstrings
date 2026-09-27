@@ -41,16 +41,6 @@
         }
       }
     },
-    "All 2,136 jōyō kanji": {
-      "localizations": {
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tutti i 2.136 jōyō"
-          }
-        }
-      }
-    },
     "Couldn't load the plans.": {
       "localizations": {
         "it": {
@@ -87,6 +77,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Mensile"
+          }
+        }
+      }
+    },
+    "Over 2,100 jōyō kanji": {
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Oltre 2.100 kanji jōyō"
           }
         }
       }

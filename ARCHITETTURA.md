@@ -16,7 +16,8 @@ Documento di design. Versione 3 — impianto a notifiche con una complication, n
 - il kanji è visibile **dentro la notifica**, senza aprire nulla
 - tap → app: animazione dell'ordine dei tratti, poi on'yomi / kun'yomi / significato
 - 100% offline, nessun account, nessun backend, nessun companion iOS
-- tutti i 2.136 jōyō, in mazzi per grado scolastico; le prime due classi sono gratis
+- i jōyō in mazzi per grado scolastico, 2.135 su 2.136: fuori 淫, «lascivia» (F18); le
+  prime due classi sono gratis
 
 **Fuori scope, esplicitamente:** progressi e gamification, iCloud, audio,
 riconoscimento della scrittura, statistiche, e i bottoni «lo so / non lo so» a ogni
@@ -157,6 +158,20 @@ mostrare — 一 "one" invece di "one, one radical (no.1)", 参 "participate" in
 di confidenza in su, e l'app la trova nel campo `short`; dove manca, mostra i primi
 due come prima.
 
+**Sul sesso la regola è più severa**, per scelta dell'utente: fuori tutto ciò che è
+sessuale, esplicito o anche solo ambiguo. C'è una seconda domanda solo su questo, per
+le parole e per il significato sotto il kanji. Da 0,6 in su decide Jev; più in basso
+segnalava anche 入れる, 触る, 硬い, 脱ぐ, il vocabolario di base, e fra 0,3 e 0,6 le
+parole si sono lette una per una: quelle da togliere stanno in `blocked`, e qui la
+riammissione a mano non vale. I kanji dal significato ambiguo mostrano un altro
+significato del dizionario (`shortOverrides`: 乳 "milk", 性 "nature, gender", 裸
+"uncovered"); 淫, «lascivia», un significato pulito non ce l'ha ed è fuori dal mazzo
+(`blockedKanji`). Attenzione alle famiglie: tolta una parola ne entra un'altra dello
+stesso kanji, e per 淫, 股 o 貞 la successiva era spesso peggio.
+
+Risultato: 2.135 kanji, 6.362 parole, 177 tolte e sostituite, 2105 kanji con tre
+parole, 1221 significati scelti da Jev o a mano.
+
 Jev non entra nella build. `Scripts/jev_review.py` fa le domande e salva le risposte
 grezze in `Scripts/jev_decisions.json`, che sta nel repository; la build legge il file
 e applica le soglie, senza chiave e senza rete. Lo script rifà solo quello che manca, e
@@ -183,7 +198,7 @@ questo `jlptOld` non viene nemmeno più esportato.
 {
   "version": 3,
   "viewBox": 109,
-  "count": 2136,
+  "count": 2135,
   "attribution": "This app includes data derived from: ...",
   "levels": [{ "grade": 1, "count": 80 }, { "grade": 2, "count": 160 }, "..."]
 }

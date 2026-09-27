@@ -355,6 +355,12 @@ JEV_PATH = Path(__file__).with_name("jev_decisions.json")
 # da 0,8 in su erano tutte volgari o sessuali; fra 0,5 e 0,8 c'era di tutto, e lì
 # decidono le liste a mano del file, "allowed" e "blocked".
 WORD_BLOCK_THRESHOLD = 0.5
+# Sul sesso la regola è più severa, per scelta dell'utente: fuori tutto quello che è
+# sessuale, esplicito o ambiguo, e le riammissioni a mano non valgono. Da 0,6 in su
+# lo decide Jev; sotto segnalava anche 入れる, 触る, 硬い, 脱ぐ, il vocabolario di base,
+# e fra 0,3 e 0,6 le parole si sono lette una per una: quelle da togliere stanno in
+# "blocked".
+SEXUAL_THRESHOLD = 0.6
 # Sotto questa confidenza la scelta del significato non si usa: nella prova gli
 # errori stavano tutti sotto 0,5.
 MEANING_CONFIDENCE = 0.6
@@ -365,13 +371,24 @@ SECOND_MEANING_CONFIDENCE = 0.5
 
 def blocked_words(decisions: dict) -> set[str]:
     """Le parole da non mostrare: quelle che Jev dà per inadatte, meno quelle
-    riammesse a mano, più quelle tolte a mano."""
+    riammesse a mano; quelle che dà per sessuali, sempre; più quelle tolte a mano."""
     allowed = set(decisions.get("allowed", []))
-    judged = {
+    unfit = {
         word for word, p in decisions.get("words", {}).items()
         if p >= WORD_BLOCK_THRESHOLD and word not in allowed
     }
-    return judged | set(decisions.get("blocked", []))
+    sexual = {word for word, p in decisions.get("sexual", {}).items() if p >= SEXUAL_THRESHOLD}
+    return unfit | sexual | set(decisions.get("blocked", []))
+
+
+def shown_meanings(decisions: dict, kanji: str, meanings: list[str]) -> list[str]:
+    """Quello che il Watch scrive sotto il kanji: la correzione a mano, se c'è; poi la
+    scelta di Jev; altrimenti i primi due del dizionario."""
+    return (
+        decisions.get("shortOverrides", {}).get(kanji)
+        or short_meanings(decisions.get("meanings", {}).get(kanji))
+        or meanings[:2]
+    )
 
 
 def short_meanings(decision: dict | None) -> list[str] | None:
@@ -639,7 +656,12 @@ def main() -> int:
     missing_paths = 0
     mismatches: list[str] = []
 
+    # Kanji tolti a mano, per chi li vede al polso: 淫 vuol dire "lascivia", qualunque
+    # parola gli si metta accanto.
+    blocked_kanji = set(decisions.get("blockedKanji", []))
     for literal, entry in dic.items():
+        if literal in blocked_kanji:
+            continue
         if explicit is not None and literal not in explicit:
             continue
         if explicit is None and not passes(entry, args):
@@ -674,8 +696,8 @@ def main() -> int:
     # Solo dove la scelta di Jev cambia qualcosa: altrimenti l'app prende già i primi
     # due, e un campo in più è tempo di decodifica sul Watch.
     for r in records:
-        short = short_meanings(decisions.get("meanings", {}).get(r["c"]))
-        if short and short != r["meanings"].get("en", [])[:2]:
+        short = shown_meanings(decisions, r["c"], r["meanings"].get("en", []))
+        if short != r["meanings"].get("en", [])[:2]:
             r["short"] = short
 
     records.sort(key=sort_key)

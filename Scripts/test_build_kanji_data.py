@@ -11,6 +11,7 @@ from build_kanji_data import (
     blocked_words,
     load_jmdict_words,
     short_meanings,
+    shown_meanings,
     stroke_end,
     word_record,
 )
@@ -146,6 +147,13 @@ assert texts(without["水"]) == ["水道"], without["水"]
 # tolte a mano restano fuori comunque.
 assert blocked_words({"words": {"a": 0.97, "b": 0.6, "c": 0.2}, "allowed": ["b"], "blocked": ["c"]}) == {"a", "c"}
 assert blocked_words({}) == set()
+# Sul sesso la riammissione a mano non vale: la regola è senza eccezioni.
+assert blocked_words({"sexual": {"x": 0.65, "y": 0.4}, "allowed": ["x"]}) == {"x"}
+# Sotto il kanji: prima la correzione a mano, poi Jev, poi i primi due del dizionario.
+chosen = {"meanings": {"一": {"primary": "one", "primaryConfidence": 1.0, "second": None, "secondConfidence": 0.9}}}
+assert shown_meanings(chosen, "一", ["one", "one radical (no.1)"]) == ["one"]
+assert shown_meanings({**chosen, "shortOverrides": {"一": ["unity"]}}, "一", ["one"]) == ["unity"]
+assert shown_meanings({}, "日", ["day", "sun", "Japan"]) == ["day", "sun"]
 # Significati: il secondo solo se è sicuro anche lui; senza sicurezza, niente scelta.
 one = {"primary": "one", "primaryConfidence": 1.0, "second": None, "secondConfidence": 0.9}
 assert short_meanings(one) == ["one"]
