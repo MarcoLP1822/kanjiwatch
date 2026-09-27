@@ -8,16 +8,25 @@ import SwiftUI
 /// Tiene l'essenziale e quello che Apple chiede sempre: durata, prezzo, rinnovo
 /// automatico, periodo di prova, ripristino degli acquisti, condizioni d'uso e
 /// privacy raggiungibili.
-public struct PaywallView: View {
+///
+/// Condizioni d'uso e privacy si aprono dentro l'app: sul Watch non c'è un browser, e
+/// un link al web restava muto — il tipo di link che fa respingere un paywall. Le
+/// pagine le passa chi compone l'app, così questo modulo non dipende dalle
+/// impostazioni.
+public struct PaywallView<Terms: View, Privacy: View>: View {
     private let model: PaywallViewModel
-    private let termsURL: URL
-    private let privacyURL: URL?
+    private let terms: () -> Terms
+    private let privacy: () -> Privacy
     @Environment(\.dismiss) private var dismiss
 
-    public init(model: PaywallViewModel, termsURL: URL, privacyURL: URL?) {
+    public init(
+        model: PaywallViewModel,
+        @ViewBuilder terms: @escaping () -> Terms,
+        @ViewBuilder privacy: @escaping () -> Privacy
+    ) {
         self.model = model
-        self.termsURL = termsURL
-        self.privacyURL = privacyURL
+        self.terms = terms
+        self.privacy = privacy
     }
 
     public var body: some View {
@@ -127,7 +136,7 @@ public struct PaywallView: View {
             }
             pricePerPeriod(offer)
             Text(
-                "Renews automatically until cancelled. Cancel anytime from your Apple account settings.",
+                "Payment is charged to your Apple Account. Renews automatically unless cancelled at least 24 hours before the end of the period. Manage or cancel it in your Apple Account settings.",
                 bundle: .module
             )
         }
@@ -158,11 +167,12 @@ public struct PaywallView: View {
 
     private var legal: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.xs) {
-            Link(destination: termsURL) { Text("Terms of Use", bundle: .module) }
-            if let privacyURL {
-                Link(destination: privacyURL) { Text("Privacy Policy", bundle: .module) }
-            }
+            NavigationLink(destination: terms) { Text("Terms of Use", bundle: .module) }
+            NavigationLink(destination: privacy) { Text("Privacy Policy", bundle: .module) }
         }
+        // Testo, come "Ripristina acquisti": col bottone di sistema pesavano più del
+        // piano da scegliere.
+        .buttonStyle(.plain)
         .font(.dsLabel)
         .foregroundStyle(.dsAccentText)
     }

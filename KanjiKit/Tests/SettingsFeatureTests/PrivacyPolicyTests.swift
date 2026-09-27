@@ -22,3 +22,23 @@ struct PrivacyPolicyTests {
         #expect(!PrivacyPolicy.text.isEmpty)
     }
 }
+
+/// Le condizioni d'uso che il paywall apre: App Store vuole la licenza e le regole
+/// del rinnovo raggiungibili dal punto in cui si compra.
+@Suite("Condizioni d'uso")
+struct TermsOfUseTests {
+    @Test(arguments: ["en", "it"])
+    func isBundledInEveryLanguage(language: String) throws {
+        let url = try #require(
+            Bundle.module.url(
+                forResource: "TermsOfUse", withExtension: "txt", subdirectory: nil, localization: language)
+        )
+        let text = try String(contentsOf: url, encoding: .utf8)
+        #expect(text.contains("EULA"))
+        #expect(text.contains("24"))
+    }
+
+    @Test func loadsInTheAppLanguage() {
+        #expect(!TermsOfUse.text.isEmpty)
+    }
+}

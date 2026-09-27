@@ -22,6 +22,17 @@
         }
       }
     },
+    "Also online at %@": {
+      "comment": "In fondo a un documento: l'indirizzo web, scritto perché sul Watch un link non si apre.",
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Anche online su %@"
+          }
+        }
+      }
+    },
     "Brush ink on mustard paper": {
       "comment": "Descrizione del tema Sumi-e senape.",
       "localizations": {
@@ -187,17 +198,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Privacy"
-          }
-        }
-      }
-    },
-    "Read online": {
-      "comment": "Link alla versione online di un documento.",
-      "localizations": {
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Leggi online"
           }
         }
       }

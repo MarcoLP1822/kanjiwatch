@@ -44,10 +44,10 @@ private struct PaywallScreen: View {
     @State private var model = AppContainer.shared.makePaywall()
 
     var body: some View {
-        PaywallView(
-            model: model,
-            termsURL: AppConfiguration.termsOfUseURL,
-            privacyURL: AppConfiguration.privacyPolicyURL
-        )
+        PaywallView(model: model) {
+            DocumentView(text: TermsOfUse.text, onlineURL: AppConfiguration.termsOfUseURL)
+        } privacy: {
+            DocumentView(text: PrivacyPolicy.text, onlineURL: AppConfiguration.privacyPolicyURL)
+        }
     }
 }

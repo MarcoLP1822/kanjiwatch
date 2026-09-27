@@ -1045,8 +1045,19 @@ raccolto, e l'unica API a motivo obbligato che usiamo — `UserDefaults`, con i 
 **Informativa sulla privacy.** La 5.1.1 la vuole in due posti: nei metadati su App Store
 Connect e dentro l'app. Nell'app sta in Impostazioni › Privacy, dal bundle
 (`PrivacyPolicy.txt`, italiano e inglese). Lo stesso testo va pubblicato a un indirizzo
-raggiungibile e messo in `AppConfiguration.privacyPolicyURL`: allora la schermata mostra
-anche "Leggi online". Finché l'indirizzo manca, un `#warning` lo ricorda a ogni build.
+raggiungibile e messo in `AppConfiguration.privacyPolicyURL`: allora la schermata ne
+mostra l'indirizzo, scritto. Finché l'indirizzo manca, un `#warning` lo ricorda a ogni build.
+
+**Paywall (3.1.1, 3.1.2).** Ripristino acquisti; prezzi e periodi presi dallo store,
+mai scritti a mano; sotto il piano, addebito sull'account Apple, rinnovo automatico,
+disdetta almeno 24 ore prima della fine del periodo e dove si gestisce; il paywall si
+chiude con la freccia indietro. Condizioni d'uso e privacy si aprono **dentro l'app**:
+sul Watch un `Link` al web non fa niente (provato sul simulatore), e un link muto è
+proprio quello che fa respingere un paywall. Le condizioni (`TermsOfUse.txt`, italiano e
+inglese) dicono che vale l'EULA standard di Apple e riassumono il rinnovo; l'indirizzo
+dell'EULA è scritto in fondo. Le pagine le compone `RootView`: il paywall non conosce le
+impostazioni. Sempre per lo stesso motivo nessun documento ha un link: l'indirizzo è
+testo, da aprire su un altro dispositivo.
 
 **VoiceOver.** Tutto ciò che si tocca è un `Button` vero, mai un `onTapGesture`: il glifo
 usa `DSTapAreaStyle` (semantica del bottone, nessuno sfondo di sistema) e annuncia kanji
@@ -1064,6 +1075,8 @@ prima. Le dissolvenze restano, non spostano niente.
 | Privacy manifest nei due bundle | ✅ |
 | Informativa dentro l'app, italiano e inglese | ✅ |
 | Indirizzo pubblico dell'informativa in `AppConfiguration` e su App Store Connect | ❌ serve un hosting |
+| Paywall: ripristino, prezzi dallo store, rinnovo e disdetta, condizioni e privacy nell'app | ✅ |
+| Link all'EULA standard di Apple nella descrizione su App Store Connect | ❌ alla consegna |
 | Indirizzo di assistenza su App Store Connect | ❌ da decidere |
 | Autorizzazioni EDRDG e KanjiVG per il DRM (§12) | ❌ mail pronte, non inviate |
 | Programma Sviluppatori, prodotti e RevenueCat (§13) | ❌ |
