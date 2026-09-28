@@ -367,6 +367,11 @@ MEANING_CONFIDENCE = 0.6
 # Il secondo significato basta che Jev lo preferisca: aggiungerlo è innocuo, e con
 # 0,6 日 perdeva "sun" (0,58).
 SECOND_MEANING_CONFIDENCE = 0.5
+# La prima parola d'esempio deve far vedere il significato del kanji: 今年 "this year"
+# per 年, non 少年 "boy", che pure è più comune. Jev guarda le candidate in ordine di
+# frequenza, fino a queste; se nessuna lo fa vedere, resta la più comune.
+CLEAR_CANDIDATES = 8
+CLEAR_THRESHOLD = 0.5
 
 
 def blocked_words(decisions: dict) -> set[str]:
@@ -378,7 +383,13 @@ def blocked_words(decisions: dict) -> set[str]:
         if p >= WORD_BLOCK_THRESHOLD and word not in allowed
     }
     sexual = {word for word, p in decisions.get("sexual", {}).items() if p >= SEXUAL_THRESHOLD}
-    return unfit | sexual | set(decisions.get("blocked", []))
+    # Il significato scelto per il polso è giudicato a parte: può venire da oltre le
+    # prime tre voci del dizionario, che sono quelle viste dal giudizio sulla parola.
+    shown = {
+        word for word, d in decisions.get("wordMeanings", {}).items()
+        if d.get("sexual", 0) >= SEXUAL_THRESHOLD
+    }
+    return unfit | sexual | shown | set(decisions.get("blocked", []))
 
 
 def shown_meanings(decisions: dict, kanji: str, meanings: list[str]) -> list[str]:
@@ -405,9 +416,44 @@ def short_meanings(decision: dict | None) -> list[str] | None:
     return [decision["primary"]]
 
 
-def word_record(entry: ET.Element, keb: str) -> dict | None:
+def shown_glosses(decisions: dict, word: dict) -> list[str]:
     """
-    Prima lettura e primo senso che valgono per questa grafia (re_restr / stagk).
+    Il significato della parola sul Watch: la correzione a mano, se c'è — 空く "to be
+    empty", non il senso di 開く che JMdict gli mette per primo —; poi quello d'uso
+    comune, se Jev l'ha scelto con sicurezza fra le voci del senso — 大丈夫 "OK", non
+    "safe, secure", le prime due del dizionario. Altrimenti le prime tre.
+    """
+    if manual := decisions.get("wordMeaningOverrides", {}).get(word["w"]):
+        return manual
+    chosen = short_meanings(decisions.get("wordMeanings", {}).get(word["w"]))
+    if chosen and all(g in word["g"] for g in chosen):
+        return chosen
+    return word["g"][:3]
+
+
+def clear_words(decisions: dict, shown: dict[str, str]) -> dict[str, set[str]]:
+    """
+    Per ogni kanji, le parole che secondo Jev ne fanno vedere il significato. Il
+    giudizio vale per il significato che il Watch scrive adesso (`shown`): se quello
+    cambia, non vale più.
+    """
+    clear: dict[str, set[str]] = {}
+    for key, judged in decisions.get("clear", {}).items():
+        ch, word = key.split("/", 1)
+        if judged["p"] >= CLEAR_THRESHOLD and judged["shown"] == shown.get(ch):
+            clear.setdefault(ch, set()).add(word)
+    return clear
+
+
+def fits(ch: str, word: dict) -> bool:
+    """Un composto vero che ci sta sul quadrante: né il kanji da solo né una frase."""
+    return word["w"] != ch and len(word["w"]) <= MAX_WORD_LENGTH
+
+
+def word_record(entry: ET.Element, keb: str, ranks: dict[tuple[str, str], int] | None = None) -> dict | None:
+    """
+    La lettura e il primo senso che valgono per questa grafia (re_restr, stagk,
+    stagr), con tutte le voci del senso: sceglie shown_glosses cosa mostrarne.
     None se la parola si scrive di norma in kana: vedi KANA_ONLY.
     """
     applicable = [
@@ -415,15 +461,22 @@ def word_record(entry: ET.Element, keb: str) -> dict | None:
         if r.find("re_nokanji") is None
         and (not r.findall("re_restr") or keb in [x.text for x in r.findall("re_restr")])
     ]
-    # Fra più letture vince quella coi tag di priorità: per 国民 la prima in ordine
-    # di documento è くにたみ, arcaica, mentre quella che si usa è こくみん.
-    reading = next(
-        (r.findtext("reb") for r in applicable if r.findall("re_pri")),
-        applicable[0].findtext("reb") if applicable else None,
+    # Fra più letture vince quella che JPDB dà più comune per questa grafia; senza
+    # rank, quella coi tag di priorità: per 国民 la prima in ordine di documento è
+    # くにたみ, arcaica, mentre quella che si usa è こくみん.
+    ranked = [r for r in applicable if (keb, r.findtext("reb")) in (ranks or {})]
+    reading = (
+        min(ranked, key=lambda r: ranks[(keb, r.findtext("reb"))]).findtext("reb")
+        if ranked
+        else next(
+            (r.findtext("reb") for r in applicable if r.findall("re_pri")),
+            applicable[0].findtext("reb") if applicable else None,
+        )
     )
     sense = next(
         (s for s in entry.findall("sense")
-         if not s.findall("stagk") or keb in [x.text for x in s.findall("stagk")]),
+         if (not s.findall("stagk") or keb in [x.text for x in s.findall("stagk")])
+         and (not s.findall("stagr") or reading in [x.text for x in s.findall("stagr")])),
         None,
     )
     if reading is None or sense is None:
@@ -431,69 +484,88 @@ def word_record(entry: ET.Element, keb: str) -> dict | None:
     misc = " ".join(m.text or "" for m in sense.findall("misc"))
     if any(marker in misc for marker in REJECTED_SENSES):
         return None
-    glosses = [g.text for g in sense.findall("gloss") if g.text]
+    glosses = list(dict.fromkeys(g.text for g in sense.findall("gloss") if g.text))
     if not glosses:
         return None
-    return {"w": keb, "r": reading, "g": glosses[:3]}
+    return {"w": keb, "r": reading, "g": glosses}
 
 
-def pick_words(ch: str, ranked: list[tuple[tuple, dict]]) -> list[dict]:
+def pick_words(ch: str, ranked: list[tuple[tuple, dict]], clear: set[str] = frozenset()) -> list[dict]:
     """
-    Le parole da tenere, fra quelle già in ordine. La prima si sceglie come sempre,
-    anche se è il kanji da solo o una parola lunga: meglio quella che niente. Le altre
-    sono varietà, e la varietà vale solo se è un composto vero che ci sta sul
-    quadrante — a meno che non l'abbia scelta una persona in word_overrides.json.
+    Le parole da tenere, fra quelle già in ordine. In testa la più comune fra quelle
+    che fanno vedere il significato del kanji (`clear`), se ce n'è una e nessuno ne ha
+    scelta un'altra a mano. La prima si prende comunque, anche se è il kanji da solo
+    o una parola lunga: meglio quella che niente. Le altre sono varietà, e la varietà
+    vale solo se è un composto vero che ci sta sul quadrante — a meno che non l'abbia
+    scelta una persona in word_overrides.json.
     """
+    if not any(key[0] == 0 for key, _ in ranked):
+        lead = next((c for c in ranked if c[1]["w"] in clear and fits(ch, c[1])), None)
+        if lead:
+            ranked = [lead] + [c for c in ranked if c is not lead]
     chosen: list[dict] = []
     for key, word in ranked:
         is_override = key[0] == 0
-        fits = word["w"] != ch and len(word["w"]) <= MAX_WORD_LENGTH
         # Due parole che vogliono dire la stessa cosa (大きい e 大きな, "big") sono
         # uno slot sprecato: la seconda non aggiunge niente a quello che si impara.
         repeats = any(word["g"][0] == other["g"][0] for other in chosen)
-        if not chosen or is_override or (fits and not repeats):
+        # Nemmeno una parola che comincia con un'altra: 一緒 e 一緒に, 田舎 e 田舎者.
+        # Solo all'inizio: 面白い contiene 白い, ma è un'altra parola.
+        nested = any(
+            len(o["w"]) > 1 and (word["w"].startswith(o["w"]) or o["w"].startswith(word["w"])) for o in chosen
+        )
+        if not chosen or is_override or (fits(ch, word) and not repeats and not nested):
             chosen.append(word)
         if len(chosen) == MAX_WORDS:
             break
     return chosen
 
 
-def load_jpdb_ranks(src: Path, chars: set[str]) -> dict[str, int]:
+def load_jpdb_ranks(src: Path, chars: set[str]) -> dict[tuple[str, str], int]:
     """
-    Dizionario di frequenza Yomitan "rank-based" (JPDB): {parola: posizione}, dove 1
-    è la parola più comune. Accetta la cartella del dizionario o un singolo
+    Dizionario di frequenza Yomitan "rank-based" (JPDB): {(grafia, lettura): posizione},
+    dove 1 è la parola più comune. Accetta la cartella del dizionario o un singolo
     term_meta_bank. Tiene solo le parole che contengono un kanji del mazzo, il resto
     è zavorra. Serve unicamente in build per ordinare i candidati: nel bundle
     finiscono le parole scelte, non la lista.
+
+    La lettura conta: il rank di 十分 è quello di じゅうぶん ("enough"), non di
+    じゅっぷん ("ten minutes"). E si saltano i rank marcati ㋕, che sono della parola
+    scritta in kana: 一寸 letto ちょっと è al 93° posto perché ちょっと si scrive così,
+    e preso quel rank 一 finiva a insegnare "one sun (approx. 3 cm)".
     """
     files = sorted(src.glob("term_meta_bank_*.json")) if src.is_dir() else [src]
-    ranks: dict[str, int] = {}
+    ranks: dict[tuple[str, str], int] = {}
     for path in files:
         for term, kind, payload in json.loads(path.read_text(encoding="utf-8")):
             if kind != "freq" or not chars.intersection(term):
                 continue
-            value = payload.get("value") if isinstance(payload, dict) else payload
-            if value is None and isinstance(payload, dict):
-                nested = payload.get("frequency")
-                value = nested.get("value") if isinstance(nested, dict) else nested
-            if isinstance(value, int) and value < ranks.get(term, 10**9):
-                ranks[term] = value
+            reading = payload.get("reading", term) if isinstance(payload, dict) else term
+            freq = payload.get("frequency", payload) if isinstance(payload, dict) else payload
+            value = freq.get("value") if isinstance(freq, dict) else freq
+            display = str(freq.get("displayValue", "")) if isinstance(freq, dict) else ""
+            if not isinstance(value, int) or display.endswith("㋕"):
+                continue
+            if value < ranks.get((term, reading), 10**9):
+                ranks[(term, reading)] = value
     return ranks
 
 
 def load_jmdict_words(
     src: Path,
     chars: set[str],
-    ranks: dict[str, int],
+    ranks: dict[tuple[str, str], int],
     overrides: dict[str, str | list[str]] | None = None,
     blocked: set[str] = frozenset(),
+    clear: dict[str, set[str]] | None = None,
 ) -> dict[str, list[dict]]:
     """
     Per ogni kanji di `chars`, fino a MAX_WORDS parole che lo contengono, dalla più
-    comune, saltando quelle di `blocked`: al loro posto entra la successiva.
+    comune, saltando quelle di `blocked`: al loro posto entra la successiva. `clear`
+    dice, per kanji, quali parole ne fanno vedere il significato: vedi pick_words.
     """
     return {
-        ch: pick_words(ch, [c for c in ranked if c[1]["w"] not in blocked])
+        ch: pick_words(ch, [c for c in ranked if c[1]["w"] not in blocked], (clear or {}).get(ch, set()))
         for ch, ranked in load_jmdict_candidates(src, chars, ranks, overrides).items()
     }
 
@@ -501,7 +573,7 @@ def load_jmdict_words(
 def load_jmdict_candidates(
     src: Path,
     chars: set[str],
-    ranks: dict[str, int],
+    ranks: dict[tuple[str, str], int],
     overrides: dict[str, str | list[str]] | None = None,
 ) -> dict[str, list[tuple[tuple, dict]]]:
     """
@@ -535,18 +607,22 @@ def load_jmdict_candidates(
                 pri = [p.text for p in k_ele.findall("ke_pri")]
                 inf = " ".join(i.text or "" for i in k_ele.findall("ke_inf"))
                 hits = chars.intersection(keb)
-                # Serve un segnale di comunanza: i tag di JMdict o un rank JPDB.
-                if not ((pri or keb in ranks) and hits and JAPANESE_WORD_RE.match(keb)):
+                if not (hits and JAPANESE_WORD_RE.match(keb)):
                     continue
                 if any(t in inf for t in IRREGULAR_FORMS):
                     continue
-                word = word_record(entry, keb)
+                word = word_record(entry, keb, ranks)
                 if word is None:
+                    continue
+                # Serve un segnale di comunanza: i tag di JMdict o un rank JPDB per
+                # questa lettura.
+                jpdb = ranks.get((keb, word["r"]))
+                if not (pri or jpdb):
                     continue
                 # Senza JPDB si ripiega sul rank dei giornali, dietro a tutte le
                 # parole che un rank vero ce l'hanno.
                 nf = min((int(p[2:]) for p in pri if p.startswith("nf")), default=99)
-                rank = ranks.get(keb, 10**6 + nf)
+                rank = jpdb if jpdb is not None else 10**6 + nf
                 too_long = len(keb) > MAX_WORD_LENGTH
                 for ch in hits:
                     chosen = wanted.get(ch, [])
@@ -717,9 +793,10 @@ def main() -> int:
             print(f"      JPDB: {len(ranks)} parole con un rank")
         overrides = json.loads(OVERRIDES_PATH.read_text(encoding="utf-8")) if OVERRIDES_PATH.exists() else {}
         blocked = blocked_words(decisions)
-        words = load_jmdict_words(args.jmdict, chars, ranks, overrides, blocked)
+        shown = {r["c"]: ", ".join(shown_meanings(decisions, r["c"], r["meanings"].get("en", []))) for r in records}
+        words = load_jmdict_words(args.jmdict, chars, ranks, overrides, blocked, clear_words(decisions, shown))
         for r in records:
-            r["words"] = words.get(r["c"], [])
+            r["words"] = [{**w, "g": shown_glosses(decisions, w)} for w in words.get(r["c"], [])]
         applied = sum(
             1
             for c, w in overrides.items()

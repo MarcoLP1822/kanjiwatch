@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 """
 jev_review.py
-Chiede a Jev (TypeSafe, https://docs.typesafe.ai) due cose che poi build_kanji_data.py
-legge da jev_decisions.json, senza chiave e senza rete:
+Chiede a Jev (TypeSafe, https://docs.typesafe.ai) quattro cose che poi
+build_kanji_data.py legge da jev_decisions.json, senza chiave e senza rete:
   - quali parole d'esempio non mostrare al polso: volgari, sessuali, offensive;
-  - quale significato mettere sotto il kanji: 一 "one", non "one, one radical (no.1)".
+  - quale significato mettere sotto il kanji: 一 "one", non "one, one radical (no.1)";
+  - quale parola fa vedere il significato del kanji, per metterla prima: 今年 per 年;
+  - quale significato di una parola è quello d'uso comune: 大丈夫 "all right".
 
 Jev non scrive niente: sceglie fra i significati del dizionario e dà una probabilità.
 Il file conserva le risposte grezze; le soglie le applica la build.
@@ -30,12 +32,17 @@ from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 from build_kanji_data import (
+    CLEAR_CANDIDATES,
+    CLEAR_THRESHOLD,
     JEV_PATH,
     OVERRIDES_PATH,
     blocked_words,
+    clear_words,
+    fits,
     load_jmdict_candidates,
     load_jpdb_ranks,
     pick_words,
+    short_meanings,
     shown_meanings,
 )
 
@@ -173,12 +180,75 @@ def judge_sexual_kanji(item: tuple[dict, str]) -> dict:
     return {"shown": shown, "p": round(answer["sexual"]["noul"], 2)}
 
 
+def judge_clear(item: tuple[str, str, dict]) -> dict:
+    """La parola fa vedere il significato del kanji? 今年 "this year" per 年 sì, 少年 no."""
+    ch, shown, word = item
+    state = {
+        "kanji": ch, "kanji_meaning": shown,
+        "word": word["w"], "reading": word["r"], "word_meaning": ", ".join(word["g"][:3]),
+    }
+    answer = ask(state, {"clear": {
+        "type": "noul",
+        "instructions": (
+            "A beginner has just learned that the kanji `kanji` means `kanji_meaning`. A watch now "
+            "shows them the word `word` (`word_meaning`) as the first example of that kanji. Does "
+            "the word's meaning plainly show what the kanji means, so that the example confirms it?"
+        ),
+        "criteria": {
+            "true": "The kanji's meaning is plainly part of the word's meaning",
+            "false": (
+                "The word's meaning hides the kanji's meaning, or shows it only through "
+                "etymology or a figure of speech"
+            ),
+        },
+    }})
+    return {"shown": shown, "p": round(answer["clear"]["noul"], 2)}
+
+
+def judge_word_meaning(word: dict) -> dict:
+    """
+    Il significato d'uso comune fra le voci del senso, come per i kanji; poi il testo
+    che ne esce passa dalla regola sul sesso, perché può venire da oltre le prime tre
+    voci — quelle che ha visto il giudizio sulla parola.
+    """
+    glosses = word["g"]
+    state = {"word": word["w"], "reading": word["r"], "dictionary_meanings": glosses}
+    primary = ask(state, {"meaning": {
+        "type": "choice",
+        "instructions": (
+            "A beginner learning Japanese sees the word `word` (read `reading`) on a watch, with a "
+            "short English meaning under it. Which of the dictionary meanings should be shown, so "
+            "that they learn what this word most commonly means in everyday modern Japanese: the "
+            "meaning a Japanese speaker most often intends when they say it?"
+        ),
+        "criteria": {g: f"Dictionary meaning: {g}" for g in glosses},
+    }})["meaning"]
+    rest = [g for g in glosses if g != primary["choice"]]
+    second = ask({**state, "chosen_meaning": primary["choice"], "other_dictionary_meanings": rest}, {"second": {
+        "type": "choice",
+        "instructions": (
+            "Under the word `word` a watch shows `chosen_meaning`. Should a second meaning be shown "
+            "next to it? Pick the other dictionary meaning that helps a beginner most, or none if "
+            "`chosen_meaning` alone is clear or the other meanings just repeat it."
+        ),
+        "criteria": {**{g: f"Also show: {g}" for g in rest}, "none": "Show only the chosen meaning"},
+    }})["second"]
+    decision = {
+        "primary": primary["choice"],
+        "primaryConfidence": round(primary["confidence"], 2),
+        "second": None if second["choice"] == "none" else second["choice"],
+        "secondConfidence": round(second["confidence"], 2),
+    }
+    shown = short_meanings(decision) or glosses[:3]
+    return {**decision, "sexual": judge_sexual({**word, "g": shown})}
+
+
 # ---------------------------------------------------------------- giro
 
 def save(decisions: dict) -> None:
     """In ordine alfabetico, per diff leggibili. Una copia: i dizionari di `decisions`
     restano quelli in cui `run` sta scrivendo."""
-    stores = ("words", "sexual", "meanings", "kanjiSexual")
+    stores = ("words", "sexual", "meanings", "kanjiSexual", "clear", "wordMeanings")
     ordered = {**decisions, **{key: dict(sorted(decisions[key].items())) for key in stores}}
     JEV_PATH.write_text(json.dumps(ordered, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
 
@@ -199,6 +269,7 @@ def main() -> int:
     for key, empty in (
         ("allowed", []), ("blocked", []), ("blockedKanji", []), ("shortOverrides", {}),
         ("words", {}), ("sexual", {}), ("meanings", {}), ("kanjiSexual", {}),
+        ("clear", {}), ("wordMeanings", {}),
     ):
         decisions.setdefault(key, empty)
 
@@ -214,18 +285,46 @@ def main() -> int:
     # ripete finché le parole scelte sono tutte già giudicate.
     while True:
         blocked = blocked_words(decisions)
+        shown = {k["c"]: ", ".join(shown_meanings(decisions, k["c"], k["meanings"]["en"])) for k in kanji}
+        # La prima parola: una candidata per kanji a ogni giro, in ordine di frequenza,
+        # finché una fa vedere il significato. Dove l'ha scelta una persona, niente.
+        clear_todo = []
+        for ch, ranked in candidates.items():
+            if any(key[0] == 0 for key, _ in ranked):
+                continue
+            usable = [w for _, w in ranked if w["w"] not in blocked and fits(ch, w)][:CLEAR_CANDIDATES]
+            for word in usable:
+                key = f"{ch}/{word['w']}"
+                judged = decisions["clear"].get(key)
+                if judged is None or judged["shown"] != shown[ch]:
+                    clear_todo.append((key, (ch, shown[ch], word)))
+                    break
+                if judged["p"] >= CLEAR_THRESHOLD:
+                    break
+        if clear_todo:
+            print(f"      prime parole da giudicare: {len(clear_todo)}")
+            run(clear_todo, judge_clear, decisions["clear"], "prime parole", decisions)
+            continue
+
+        clear = clear_words(decisions, shown)
         chosen = {
             w["w"]: w
             for ch, ranked in candidates.items()
-            for w in pick_words(ch, [c for c in ranked if c[1]["w"] not in blocked])
+            for w in pick_words(ch, [c for c in ranked if c[1]["w"] not in blocked], clear.get(ch, set()))
         }
         todo = [(text, word) for text, word in chosen.items() if text not in decisions["words"]]
         sexual = [(text, word) for text, word in chosen.items() if text not in decisions["sexual"]]
-        if not todo and not sexual:
+        # Con una o due voci si mostrano già tutte: niente da scegliere.
+        meanings = [
+            (text, word) for text, word in chosen.items()
+            if len(word["g"]) >= 3 and text not in decisions["wordMeanings"]
+        ]
+        if not todo and not sexual and not meanings:
             break
-        print(f"      parole da giudicare: {len(todo)}, e sul sesso: {len(sexual)}")
+        print(f"      parole da giudicare: {len(todo)}, sul sesso: {len(sexual)}, significati: {len(meanings)}")
         run(todo, judge_word, decisions["words"], "parole", decisions)
         run(sexual, judge_sexual, decisions["sexual"], "sesso", decisions)
+        run(meanings, judge_word_meaning, decisions["wordMeanings"], "significati delle parole", decisions)
 
     # Il significato sotto il kanji: si rigiudica quando cambia quello che si mostra.
     shown = {k["c"]: ", ".join(shown_meanings(decisions, k["c"], k["meanings"]["en"])) for k in kanji}
@@ -244,6 +343,11 @@ def main() -> int:
         for p, w in reversed(flagged):
             word = every.get(w, {})
             print(f"  {p:.2f} {w} {word.get('r', '')} — {', '.join(word.get('g', []))}")
+    flagged = sorted((d["sexual"], w) for w, d in decisions["wordMeanings"].items() if d["sexual"] >= 0.3)
+    print(f"\nSignificati delle parole forse sessuali ({len(flagged)}):")
+    for p, w in reversed(flagged):
+        d = decisions["wordMeanings"][w]
+        print(f"  {p:.2f} {w} — {', '.join(x for x in (d['primary'], d['second']) if x)}")
     flagged = sorted((v["p"], c, v["shown"]) for c, v in decisions["kanjiSexual"].items() if v["p"] >= 0.3)
     print(f"\nKanji col significato forse sessuale ({len(flagged)}): si decidono a mano.")
     for p, c, s in reversed(flagged):

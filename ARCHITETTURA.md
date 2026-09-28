@@ -134,9 +134,8 @@ corpus è di anime e light novel: le parole che JMdict marca `uk` (si scrivono i
 kana: 貴方, 勿論, 何所) e una dozzina di casi in `Scripts/word_overrides.json`
 (王国 → 外国, 野郎 → 野球). Senza JPDB lo script funziona lo stesso, con `nfXX`.
 
-**Fino a tre parole per kanji** (F16). La prima si sceglie come sempre, e resta
-identica a quella di prima della F16 per tutti i 2.136 kanji: è la verifica che la
-regola non è cambiata. Le altre due sono varietà, e la varietà vale solo se aggiunge
+**Fino a tre parole per kanji** (F16). La prima è quella che fa vedere il kanji (F19,
+qui sotto). Le altre due sono varietà, e la varietà vale solo se aggiunge
 qualcosa, quindi devono essere composti veri che stanno sul quadrante (non il kanji
 da solo, non oltre tre caratteri) e **non ripetere il significato** di una parola già
 scelta — senza questo 大 prendeva 大きい e 大きな, tutte e due "big", e 食 prendeva 食べる
@@ -180,6 +179,40 @@ quando toglie una parola giudica anche quella che entra al suo posto. Una domand
 richiesta: con quaranta parole nello stesso stato Jev confondeva gli indici e dava
 酪農家 ("dairy farmer") inadatta a 0,90; da sola, 0,02. La chiave sta in
 `~/.config/typesafe/api_key` o in `TYPESAFE_API_KEY`, mai nel repository.
+
+**Parole che insegnano il kanji** (F19). Dal primo mese al polso: 年 si presentava con
+少年 ("boy"), 大丈夫 voleva dire "safe, secure", 一 insegnava 一寸 "one sun (approx. 3
+cm)". Tre cause, tre correzioni:
+
+- *Il rank JPDB vale per grafia e lettura.* Si leggeva per sola grafia, e si prendeva
+  anche quello marcato ㋕, che è della parola scritta in kana: 一寸 letto ちょっと è al
+  93° posto, e con quel rank entrava 一寸 letto いっすん. Così anche 五十 "age fifty" e
+  お店 "merchant's home". Ora la lettura è quella che JPDB dà più comune per la
+  grafia, e il senso quello che vale per grafia e lettura (`stagk`, `stagr`).
+- *La prima parola fa vedere il significato del kanji.* JPDB viene da anime e light
+  novel, e la più comune spesso non c'entra: 少年 per 年, 背中 per 中, 様子 per 子. Jev
+  guarda le candidate in ordine di frequenza, fino a otto, e dice se la parola mostra
+  il significato che il Watch scrive sotto il kanji (`clear`, da 0,5); la prima che lo
+  fa va in testa, le altre restano per frequenza. Il 71% dei kanji ce l'aveva già al
+  primo posto; la prima parola cambia per 573 kanji su 2.136. Vale solo per il
+  significato mostrato: se quello cambia, il giudizio si rifà.
+- *Il significato della parola è quello d'uso comune.* Si mostravano le prime due voci
+  del primo senso di JMdict; ora, per le parole con almeno tre voci, Jev sceglie fra
+  tutte quelle del senso, come per i kanji e con le stesse soglie (`wordMeanings`):
+  大丈夫 "OK", 本音 "what one really thinks". Il testo che ne esce passa di nuovo dalla
+  regola sul sesso, perché può venire da oltre le prime tre voci. Dove JMdict sbaglia
+  il senso per una grafia — 空く "to open (e.g. doors)", che è di 開く — c'è la
+  correzione a mano (`wordMeaningOverrides`).
+
+In più una parola che comincia con un'altra già scelta non entra (一緒 e 一緒に, 田舎 e
+田舎者); all'inizio e basta, perché 面白い contiene 白い ma è un'altra parola. Ogni
+parola entrata passa dagli stessi giudizi della F18, e quelle fra 0,3 e 0,6 sul sesso
+si sono lette una per una: fuori 窃視, 胸板, 幼女, 魅惑, 睦言, 痴情 e, per famiglia,
+魅惑的 e 厭魅; fuori anche 殺害, come 殺人. Il nuovo prezzo è la frequenza: dove la
+parola più comune non mostra il kanji, in testa ne va una un po' meno comune.
+
+Risultato: 6.330 parole, 2.082 kanji con tre; 2.083 significati di parola scelti da
+Jev.
 
 Il self-check della selezione: `python3 Scripts/test_build_kanji_data.py`.
 
@@ -913,6 +946,7 @@ Non è un parere legale.
 | **F16** | Profondità di vocabolario | ✅ fino a tre parole per kanji, che girano un contesto dopo l'altro |
 | **F17** | Non me lo ricordavo | ✅ la risposta nel richiamo, e un bottone per dire che non la sapevi |
 | **F18** | Jev nei dati | ✅ fuori le parole volgari, e sotto il kanji il significato che serve |
+| **F19** | Parole che insegnano | ✅ la prima parola fa vedere il kanji, col significato d'uso comune |
 
 F2 è già un'app che usi a mano. F5 è il momento in cui diventa quello che avevi in
 mente. Non invertire: se parti dalle notifiche, debugghi lo scheduler prima di aver

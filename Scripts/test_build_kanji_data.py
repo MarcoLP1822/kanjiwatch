@@ -6,11 +6,16 @@ import tempfile
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
+import json
+
 from build_kanji_data import (
     MAX_WORDS,
     blocked_words,
+    clear_words,
     load_jmdict_words,
+    load_jpdb_ranks,
     short_meanings,
+    shown_glosses,
     shown_meanings,
     stroke_end,
     word_record,
@@ -22,6 +27,7 @@ SAMPLE = """<?xml version="1.0" encoding="UTF-8"?>
 <!ENTITY rK "rarely used kanji form">
 <!ENTITY arch "archaic">
 <!ENTITY vulg "vulgar expression or word">
+<!ENTITY uk "word usually written using kana alone">
 ]>
 <JMdict>
 <entry><k_ele><keb>水</keb><ke_pri>nf01</ke_pri><ke_pri>ichi1</ke_pri></k_ele>
@@ -69,16 +75,52 @@ SAMPLE = """<?xml version="1.0" encoding="UTF-8"?>
   <r_ele><reb>じゅもく</reb></r_ele><sense><gloss>tree</gloss></sense></entry>
 <entry><k_ele><keb>木造建築</keb><ke_pri>nf01</ke_pri><ke_pri>ichi1</ke_pri></k_ele>
   <r_ele><reb>もくぞうけんちく</reb></r_ele><sense><gloss>wooden building</gloss></sense></entry>
+<entry><k_ele><keb>一寸</keb></k_ele>
+  <r_ele><reb>ちょっと</reb></r_ele><sense><misc>&uk;</misc><gloss>a little</gloss></sense></entry>
+<entry><k_ele><keb>一寸</keb></k_ele>
+  <r_ele><reb>いっすん</reb></r_ele><sense><gloss>one sun (approx. 3 cm)</gloss></sense></entry>
+<entry><k_ele><keb>一緒</keb></k_ele>
+  <r_ele><reb>いっしょ</reb></r_ele><sense><gloss>(doing) together</gloss></sense></entry>
+<entry><k_ele><keb>一緒に</keb></k_ele>
+  <r_ele><reb>いっしょに</reb></r_ele><sense><gloss>together (with)</gloss></sense></entry>
+<entry><k_ele><keb>十分</keb></k_ele>
+  <r_ele><reb>じゅうぶん</reb></r_ele><sense><gloss>enough</gloss><gloss>sufficient</gloss></sense></entry>
+<entry><k_ele><keb>十分</keb></k_ele>
+  <r_ele><reb>じっぷん</reb></r_ele><r_ele><reb>じゅっぷん</reb></r_ele>
+  <sense><gloss>ten minutes</gloss></sense></entry>
+<entry><k_ele><keb>少年</keb></k_ele>
+  <r_ele><reb>しょうねん</reb></r_ele><sense><gloss>boy</gloss></sense></entry>
+<entry><k_ele><keb>今年</keb></k_ele>
+  <r_ele><reb>ことし</reb></r_ele><sense><gloss>this year</gloss></sense></entry>
+<entry><k_ele><keb>年齢</keb></k_ele>
+  <r_ele><reb>ねんれい</reb></r_ele><sense><gloss>age</gloss><gloss>years</gloss></sense></entry>
+<entry><k_ele><keb>白い</keb></k_ele>
+  <r_ele><reb>しろい</reb></r_ele><sense><gloss>white</gloss></sense></entry>
+<entry><k_ele><keb>面白い</keb></k_ele>
+  <r_ele><reb>おもしろい</reb></r_ele><sense><gloss>interesting</gloss></sense></entry>
+<entry><k_ele><keb>大丈夫</keb></k_ele>
+  <r_ele><reb>だいじょうぶ</reb></r_ele>
+  <sense><gloss>safe</gloss><gloss>secure</gloss><gloss>sound</gloss><gloss>all right</gloss><gloss>OK</gloss></sense></entry>
 </JMdict>
 """
 
 # Rank JPDB veri, presi dal dizionario: sono quelli che decidono. Per 木 sono
 # inventati, per avere un ordine che i marcatori di JMdict da soli non darebbero.
+# Valgono per grafia e lettura, come nel dizionario.
 RANKS = {
-    "水": 492, "水棒": 1, "水道": 13173, "水泳": 10980, "水道工事": 500,
-    "日本": 1228, "日米": 48538, "一日": 1425, "日々": 1443,
-    "性別": 5384, "アルカリ性": 4000,
-    "木": 300, "木造建築": 100, "樹木": 1500, "大木": 2000, "並木": 3000, "木曜日": 4000, "木材": 5000,
+    ("水", "みず"): 492, ("水棒", "みずぼう"): 1, ("水道", "すいどう"): 13173,
+    ("水泳", "すいえい"): 10980, ("水道工事", "すいどうこうじ"): 500,
+    ("日本", "にほん"): 1228, ("日米", "にちべい"): 48538, ("一日", "いちにち"): 1425, ("日々", "ひび"): 1443,
+    ("性別", "せいべつ"): 5384, ("アルカリ性", "アルカリせい"): 4000,
+    ("木", "き"): 300, ("木造建築", "もくぞうけんちく"): 100, ("樹木", "じゅもく"): 1500,
+    ("大木", "たいぼく"): 2000, ("並木", "なみき"): 3000, ("木曜日", "もくようび"): 4000,
+    ("木材", "もくざい"): 5000,
+    # 一寸 ha un rank solo come ちょっと, che JMdict dà per scritta in kana.
+    ("一寸", "ちょっと"): 93, ("一緒", "いっしょ"): 100, ("一緒に", "いっしょに"): 200,
+    ("十分", "じゅうぶん"): 672,
+    ("少年", "しょうねん"): 861, ("今年", "ことし"): 1770, ("年齢", "ねんれい"): 2000,
+    ("大丈夫", "だいじょうぶ"): 146,
+    ("白い", "しろい"): 300, ("面白い", "おもしろい"): 400,
 }
 
 with tempfile.TemporaryDirectory() as tmp:
@@ -92,6 +134,22 @@ with tempfile.TemporaryDirectory() as tmp:
     again = load_jmdict_words(path, {"水", "日", "性", "火", "木"}, RANKS)
     tree = load_jmdict_words(path, {"木"}, RANKS, {"木": "木"})
     without = load_jmdict_words(path, {"水"}, RANKS, blocked={"水泳"})
+    year = load_jmdict_words(path, {"年"}, RANKS)
+    clearly = load_jmdict_words(path, {"年"}, RANKS, clear={"年": {"今年"}})
+    ones = load_jmdict_words(path, {"一", "十"}, RANKS)
+    white = load_jmdict_words(path, {"白"}, RANKS)
+
+    # Il rank vale per grafia e lettura, e quello della parola scritta in kana (㋕)
+    # non vale per la grafia coi kanji.
+    bank = Path(tmp) / "term_meta_bank_1.json"
+    bank.write_text(json.dumps([
+        ["大丈夫", "freq", {"reading": "だいじょうぶ", "frequency": {"value": 146, "displayValue": "146"}}],
+        ["大丈夫", "freq", {"reading": "だいじょうぶ", "frequency": {"value": 5, "displayValue": "5㋕"}}],
+        ["十分", "freq", {"reading": "じゅうぶん", "frequency": {"value": 672, "displayValue": "672"}}],
+        ["十分", "freq", {"reading": "じっぷん", "frequency": {"value": 9000, "displayValue": "9000"}}],
+        ["の", "freq", {"value": 1, "displayValue": "1㋕"}],
+    ]), encoding="utf-8")
+    jpdb = load_jpdb_ranks(bank, {"大", "十"})
 
 
 def texts(found):
@@ -143,12 +201,46 @@ assert "水棒" not in texts(words["水"]), words["水"]
 # Una parola tolta da Jev lascia il posto alla successiva: 水泳 via, 水道 in testa.
 assert texts(without["水"]) == ["水道"], without["水"]
 
+# 一寸 non prende il rank di ちょっと: letto いっすん non è comune, e non entra. Fra
+# 一緒 e 一緒に, una dentro l'altra, resta la prima.
+assert texts(ones["一"]) == ["一緒", "一日"], ones["一"]
+# 十分 è una grafia sola con due entrate: vince la lettura che JPDB conosce.
+assert ones["十"][0]["r"] == "じゅうぶん", ones["十"]
+# Una dentro l'altra vale solo all'inizio: 面白い contiene 白い, ma è un'altra parola.
+assert texts(white["白"]) == ["白い", "面白い"], white["白"]
+assert jpdb == {("大丈夫", "だいじょうぶ"): 146, ("十分", "じゅうぶん"): 672, ("十分", "じっぷん"): 9000}, jpdb
+
+# In testa la parola che fa vedere il kanji, se Jev ne ha trovata una: 今年 "this
+# year" davanti a 少年 "boy", che pure è più comune. Senza giudizio, decide il rank.
+assert texts(year["年"]) == ["少年", "今年", "年齢"], year["年"]
+assert texts(clearly["年"]) == ["今年", "少年", "年齢"], clearly["年"]
+# Il giudizio vale per il significato che il Watch mostra adesso.
+judged = {"clear": {"年/今年": {"shown": "year", "p": 0.9}, "年/少年": {"shown": "year", "p": 0.1}}}
+assert clear_words(judged, {"年": "year"}) == {"年": {"今年"}}
+assert clear_words(judged, {"年": "year, counter for years"}) == {}
+
+# Il significato della parola: quello d'uso comune, se Jev è sicuro e se è fra le voci
+# del senso; altrimenti le prime tre.
+daijoubu = {"w": "大丈夫", "r": "だいじょうぶ", "g": ["safe", "secure", "sound", "all right", "OK"]}
+everyday = {"primary": "all right", "primaryConfidence": 0.8, "second": "OK", "secondConfidence": 0.6}
+assert shown_glosses({"wordMeanings": {"大丈夫": everyday}}, daijoubu) == ["all right", "OK"]
+assert shown_glosses({"wordMeanings": {"大丈夫": {**everyday, "primaryConfidence": 0.3}}}, daijoubu) == [
+    "safe", "secure", "sound"]
+assert shown_glosses({"wordMeanings": {"大丈夫": {**everyday, "primary": "fine"}}}, daijoubu) == [
+    "safe", "secure", "sound"]
+assert shown_glosses({}, daijoubu) == ["safe", "secure", "sound"]
+# La correzione a mano vince su tutto.
+assert shown_glosses({"wordMeaningOverrides": {"大丈夫": ["all right"]}, "wordMeanings": {"大丈夫": everyday}}, daijoubu) == [
+    "all right"]
+
 # Le soglie di Jev. Parole: da 0,5 in su fuori, salvo le riammesse a mano; quelle
 # tolte a mano restano fuori comunque.
 assert blocked_words({"words": {"a": 0.97, "b": 0.6, "c": 0.2}, "allowed": ["b"], "blocked": ["c"]}) == {"a", "c"}
 assert blocked_words({}) == set()
 # Sul sesso la riammissione a mano non vale: la regola è senza eccezioni.
 assert blocked_words({"sexual": {"x": 0.65, "y": 0.4}, "allowed": ["x"]}) == {"x"}
+# E vale anche per il significato scelto per il polso, giudicato a parte.
+assert blocked_words({"wordMeanings": {"x": {**everyday, "sexual": 0.7}, "y": {**everyday, "sexual": 0.1}}}) == {"x"}
 # Sotto il kanji: prima la correzione a mano, poi Jev, poi i primi due del dizionario.
 chosen = {"meanings": {"一": {"primary": "one", "primaryConfidence": 1.0, "second": None, "secondConfidence": 0.9}}}
 assert shown_meanings(chosen, "一", ["one", "one radical (no.1)"]) == ["one"]

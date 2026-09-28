@@ -81,6 +81,19 @@ struct BundledDeckRepositoryTests {
         #expect(all["04e73"]?.shortMeaning == "milk")
     }
 
+    /// Le parole d'esempio insegnano il kanji. Dal primo mese al polso: 本 diceva solo
+    /// "book", 年 si presentava con 少年 ("boy"), 大丈夫 voleva dire "safe, secure", e
+    /// 一 insegnava 一寸, "one sun (approx. 3 cm)", col rank di ちょっと.
+    @Test func exampleWordsTeachTheKanji() throws {
+        let deck = try repository.loadDeck(grades: KanjiLevel.freeGrades)
+        #expect(deck["0672c"]?.shortMeaning == "book, origin")
+        #expect(deck["05e74"]?.commonWord?.text == "今年")
+        #expect(deck["05927"]?.commonWord?.text == "大きい")
+        let daijoubu = try #require(deck["05927"]?.words.first { $0.text == "大丈夫" })
+        #expect(!daijoubu.meanings.contains("safe"))
+        #expect(deck["04e00"]?.words.contains { $0.text == "一寸" } == false)
+    }
+
     @Test func catalogListsTheWholeJoyoByGrade() throws {
         let catalog = try repository.loadCatalog()
         #expect(catalog.levels.map(\.grade) == [1, 2, 3, 4, 5, 6, 8])
