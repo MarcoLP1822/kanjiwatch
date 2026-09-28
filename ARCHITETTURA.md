@@ -328,10 +328,13 @@ l'Ambient Engine:
 
 - **`dailyLimit`, i promemoria al giorno** (default 10): quante volte l'app si fa
   viva, ripassi compresi. È quello che si sceglie dalle impostazioni.
-- **`newKanjiPerDay`, i volti nuovi al giorno** (5, 3 senza abbonamento): quanti kanji
+- **`newKanjiPerDay`, i volti nuovi al giorno** (3 senza abbonamento): quanti kanji
   mai visti può introdurre la giornata. Col Premium si sceglie anche questo, ma non
-  può superare i promemoria: otto volti nuovi con tre promemoria sarebbe una promessa
-  che la giornata non può mantenere.
+  oltre quelli che il ritmo porta con quei promemoria, tre ogni dieci
+  (`AmbientEngine.newKanjiReachable`): 1 con 5 promemoria, 3 con 10, 9 con 30. Di più
+  sarebbe una promessa che la giornata non può mantenere — con 30 promemoria e 10
+  nuovi ne arrivavano 9 — o, mantenuta, lascerebbe i ripassi senza posto. Chi aveva
+  salvato un numero più alto vede quello vero.
 
 Prima della F13 coincidevano — ogni notifica pescava un kanji diverso dal mazzo
 mescolato — e per questo l'impostazione si chiamava «kanji nuovi al giorno». Adesso
@@ -927,7 +930,8 @@ abbonamento, 2.136 sì.
 - **Gratis:** classi 1 e 2 (240 kanji), un promemoria all'ora dalle 8 alle 22, 10
   promemoria al giorno, tre kanji nuovi al giorno, modalità discreta, tema Ai-zome.
   **Premium:** tutti i gradi, intervallo, fascia oraria e promemoria al giorno liberi,
-  cinque kanji nuovi al giorno, e i temi sumi-e.
+  kanji nuovi al giorno fino a quanti il ritmo ne porta (9 con 30 promemoria), e i
+  temi sumi-e.
 - La regola sta in `AccessPolicy`, nel dominio. Scheduler e caricamento del mazzo
   leggono le impostazioni *effettive*; quelle scelte restano salvate intatte, così
   se l'abbonamento scade e poi si rinnova le scelte tornano da sole.

@@ -91,9 +91,8 @@ public struct SettingsView<Premium: View>: View {
                         Text("Reminders per day", bundle: .module)
                     }
                     Picker(selection: newKanjiBinding) {
-                        // Mai più volti nuovi di quante volte l'app si fa viva.
-                        ForEach(ReminderSettings.offeredNewKanjiPerDay.filter { $0 <= model.dailyLimit }, id: \.self) {
-                            count in
+                        // Mai più volti nuovi di quanti il ritmo ne porta.
+                        ForEach(model.offeredNewKanjiPerDay, id: \.self) { count in
                             Text(count, format: .number).tag(count)
                         }
                     } label: {

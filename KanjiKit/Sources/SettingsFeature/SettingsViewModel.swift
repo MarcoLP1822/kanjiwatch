@@ -15,12 +15,13 @@ public final class SettingsViewModel {
     public var isPassive: Bool { didSet { settingsChanged() } }
     public var dailyLimit: Int {
         didSet {
-            // I volti nuovi non possono superare le volte che l'app si fa viva:
-            // sarebbe una promessa che la giornata non può mantenere. Qui si può
-            // assegnare perché `newKanjiPerDay` non ha osservatori: con `@Observable`
-            // il `didSet` finisce dentro il setter, e assegnarsi da lì rientrerebbe
-            // all'infinito.
-            newKanjiPerDay = min(newKanjiPerDay, dailyLimit)
+            // I volti nuovi non possono superare quelli che il ritmo porta in quella
+            // giornata, tre ogni dieci contatti: sarebbe una promessa che la giornata
+            // non può mantenere. Con 30 promemoria e 10 nuovi ne arrivavano 9. Qui si
+            // può assegnare perché `newKanjiPerDay` non ha osservatori: con
+            // `@Observable` il `didSet` finisce dentro il setter, e assegnarsi da lì
+            // rientrerebbe all'infinito.
+            newKanjiPerDay = min(newKanjiPerDay, maxNewKanjiPerDay)
             settingsChanged()
         }
     }
@@ -70,7 +71,7 @@ public final class SettingsViewModel {
         endHour = current.activeHours.endHour
         isPassive = current.isPassive
         dailyLimit = current.dailyLimit
-        newKanjiPerDay = min(current.newKanjiPerDay, current.dailyLimit)
+        newKanjiPerDay = min(current.newKanjiPerDay, AmbientEngine.newKanjiReachable(inContacts: current.dailyLimit))
         grades = current.grades
         theme = current.theme
     }
@@ -83,8 +84,16 @@ public final class SettingsViewModel {
         AccessPolicy.effective(store.load(), for: subscription)
     }
 
+    /// Il massimo di volti nuovi con i promemoria scelti.
+    public var maxNewKanjiPerDay: Int { AmbientEngine.newKanjiReachable(inContacts: dailyLimit) }
+
+    /// Le scelte da offrire: quelle solite fino al massimo, e il massimo stesso.
+    public var offeredNewKanjiPerDay: [Int] {
+        ReminderSettings.offeredNewKanjiPerDay.filter { $0 < maxNewKanjiPerDay } + [maxNewKanjiPerDay]
+    }
+
     public func setNewKanjiPerDay(_ count: Int) {
-        let clamped = min(count, dailyLimit)
+        let clamped = min(count, maxNewKanjiPerDay)
         guard clamped != newKanjiPerDay else { return }
         newKanjiPerDay = clamped
         settingsChanged()

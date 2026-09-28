@@ -90,28 +90,41 @@ struct SettingsViewModelTests {
         let store = InMemoryStore(ReminderSettings.default)
         let model = makeModel(store: store)
 
-        model.dailyLimit = 20
+        model.dailyLimit = 30
         model.setNewKanjiPerDay(8)
 
-        #expect(store.value.dailyLimit == 20)
+        #expect(store.value.dailyLimit == 30)
         #expect(store.value.newKanjiPerDay == 8)
     }
 
-    /// Promettere otto volti nuovi con tre promemoria al giorno sarebbe una promessa
-    /// che la giornata non può mantenere.
-    @Test func newKanjiNeverExceedTheRemindersOfTheDay() {
+    /// Promettere più volti nuovi di quanti il ritmo ne porta sarebbe una promessa che
+    /// la giornata non può mantenere: tre ogni dieci contatti. Con 30 promemoria e 10
+    /// nuovi ne arrivavano 9.
+    @Test func newKanjiNeverExceedWhatTheDayBrings() {
         let store = InMemoryStore(ReminderSettings.default)
         let model = makeModel(store: store)
 
-        model.dailyLimit = 20
-        model.setNewKanjiPerDay(8)
-        model.dailyLimit = 3
+        model.dailyLimit = 30
+        model.setNewKanjiPerDay(10)
+        #expect(model.newKanjiPerDay == 9)
+        #expect(model.offeredNewKanjiPerDay == [1, 2, 3, 5, 8, 9])
 
+        model.dailyLimit = 10
         #expect(model.newKanjiPerDay == 3)
         #expect(store.value.newKanjiPerDay == 3)
+        #expect(model.offeredNewKanjiPerDay == [1, 2, 3])
 
+        model.dailyLimit = 3
         model.setNewKanjiPerDay(10)
-        #expect(model.newKanjiPerDay == 3)
+        #expect(model.newKanjiPerDay == 1)
+    }
+
+    /// Chi aveva salvato più volti nuovi di quanti il ritmo ne porta vede il numero vero.
+    @Test func aSavedPromiseTooBigShowsWhatTheDayBrings() {
+        var saved = ReminderSettings.default
+        saved.dailyLimit = 30
+        saved.newKanjiPerDay = 10
+        #expect(makeModel(store: InMemoryStore(saved)).newKanjiPerDay == 9)
     }
 
     /// Un'app di ripasso senza niente da ripassare è solo un'app rotta.

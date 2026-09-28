@@ -54,6 +54,13 @@ public enum AmbientEngine {
         .learning, .new, .learning, .familiar, .learning, .new, .learning, .familiar, .learning, .new,
     ]
 
+    /// Quanti kanji nuovi il ritmo porta in una giornata di `contacts` contatti: il
+    /// massimo che le impostazioni possono promettere. Con 10 promemoria sono 3, con
+    /// 30 sono 9: di più, e i rinforzi non basterebbero a non dimenticare.
+    public static func newKanjiReachable(inContacts contacts: Int) -> Int {
+        (0..<max(contacts, 0)).count { rhythm[$0 % rhythm.count] == .new }
+    }
+
     /// Il tetto ai kanji nuovi del giorno — da non confondere con `dailyLimit`, che
     /// è il tetto ai promemoria. Alzare la frequenza deve aumentare le esposizioni,
     /// non la roba da imparare: con trenta promemoria al giorno restano cinque volti
