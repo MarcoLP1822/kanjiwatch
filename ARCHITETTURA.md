@@ -1087,9 +1087,12 @@ raggiungibile e messo in `AppConfiguration.privacyPolicyURL`: allora la schermat
 mostra l'indirizzo, scritto. Finché l'indirizzo manca, un `#warning` lo ricorda a ogni build.
 
 **Paywall (3.1.1, 3.1.2).** Ripristino acquisti; prezzi e periodi presi dallo store,
-mai scritti a mano; sotto il piano, addebito sull'account Apple, rinnovo automatico,
-disdetta almeno 24 ore prima della fine del periodo e dove si gestisce; il paywall si
-chiude con la freccia indietro. Condizioni d'uso e privacy si aprono **dentro l'app**:
+mai scritti a mano, e mai un prezzo annuale fatto passare per settimanale. Sopra il
+bottone, il prezzo che verrà addebitato — «6,99 € a settimana» — è il testo di prezzo
+più grande della schermata, e la prova gratuita sta sotto, in piccolo: Apple respinge i
+paywall dove «gratis» pesa più del prezzo vero. Sotto il bottone, addebito sull'account
+Apple, rinnovo automatico, disdetta almeno 24 ore prima della fine del periodo e dove
+si gestisce; il paywall si chiude con la freccia indietro. Condizioni d'uso e privacy si aprono **dentro l'app**:
 sul Watch un `Link` al web non fa niente (provato sul simulatore), e un link muto è
 proprio quello che fa respingere un paywall. Le condizioni (`TermsOfUse.txt`, italiano e
 inglese) dicono che vale l'EULA standard di Apple e riassumono il rinnovo; l'indirizzo

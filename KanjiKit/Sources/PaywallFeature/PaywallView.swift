@@ -89,6 +89,10 @@ public struct PaywallView<Terms: View, Privacy: View>: View {
                 .buttonStyle(.dsTapArea)
             }
 
+            if let offer = model.selectedOffer {
+                billed(offer)
+            }
+
             Button {
                 Task { await model.purchaseSelected() }
             } label: {
@@ -111,8 +115,13 @@ public struct PaywallView<Terms: View, Privacy: View>: View {
                     .foregroundStyle(.dsWarning)
             }
 
-            if let offer = model.selectedOffer {
-                terms(for: offer)
+            if model.selectedOffer != nil {
+                Text(
+                    "Payment is charged to your Apple Account. Renews automatically unless cancelled at least 24 hours before the end of the period. Manage or cancel it in your Apple Account settings.",
+                    bundle: .module
+                )
+                .font(.dsLabel)
+                .foregroundStyle(.dsInkSecondary)
             }
 
             Button {
@@ -127,21 +136,20 @@ public struct PaywallView<Terms: View, Privacy: View>: View {
         }
     }
 
-    /// Le condizioni del piano selezionato, scritte per intero: prova, prezzo per
-    /// periodo, rinnovo automatico. Sono obbligatorie, e comunque giuste.
-    private func terms(for offer: SubscriptionOffer) -> some View {
+    /// Quanto verrà addebitato, e ogni quanto: è l'elemento di prezzo più in vista del
+    /// paywall, più grande della prova gratuita e del bottone che la offre. Apple lo
+    /// chiede (3.1.2) e respinge i paywall dove "gratis" pesa più del prezzo vero.
+    private func billed(_ offer: SubscriptionOffer) -> some View {
         VStack(alignment: .leading, spacing: DS.Spacing.xs) {
-            if let days = offer.trialDays {
-                Text("Free for \(days) days, then:", bundle: .module)
-            }
             pricePerPeriod(offer)
-            Text(
-                "Payment is charged to your Apple Account. Renews automatically unless cancelled at least 24 hours before the end of the period. Manage or cancel it in your Apple Account settings.",
-                bundle: .module
-            )
+                .font(.dsTitle)
+                .foregroundStyle(.dsInk)
+            if let days = offer.trialDays {
+                Text("after \(days) days free", bundle: .module)
+                    .font(.dsLabel)
+                    .foregroundStyle(.dsInkSecondary)
+            }
         }
-        .font(.dsLabel)
-        .foregroundStyle(.dsInkSecondary)
     }
 
     private func pricePerPeriod(_ offer: SubscriptionOffer) -> Text {

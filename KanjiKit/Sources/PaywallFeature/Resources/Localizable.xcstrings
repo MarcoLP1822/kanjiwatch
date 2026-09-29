@@ -61,16 +61,6 @@
         }
       }
     },
-    "Free for %lld days, then:": {
-      "localizations": {
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Gratis per %lld giorni, poi:"
-          }
-        }
-      }
-    },
     "Kanji Watch Premium": {
       "localizations": {
         "it": {
@@ -229,6 +219,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Ritmo e orari a tua scelta"
+          }
+        }
+      }
+    },
+    "after %lld days free": {
+      "comment": "Sotto il prezzo addebitato, quando il piano ha una prova gratuita.",
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "dopo %lld giorni gratis"
           }
         }
       }
