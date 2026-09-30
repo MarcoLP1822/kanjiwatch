@@ -12,19 +12,21 @@ struct BundledDeckRepositoryTests {
         try #require(try JSONDecoder().decode(LevelFile.self, from: Data(json.utf8)).kanji.first).toDomain()
     }
 
-    /// Fino a tre parole per kanji, tutte diverse e tutte col kanji dentro: sono
-    /// quelle che la forma col contesto farà girare sul quadrante.
-    @Test func everyKanjiHasUpToThreeDistinctWordsThatContainIt() throws {
+    /// Fino a cinque parole per kanji, tutte diverse e tutte col kanji dentro: sono
+    /// quelle che la forma col contesto farà girare sul quadrante, tre senza
+    /// abbonamento e cinque col Premium.
+    @Test func everyKanjiHasUpToFiveDistinctWordsThatContainIt() throws {
         let catalog = try repository.loadCatalog()
         let all = try repository.loadDeck(grades: Set(catalog.levels.map(\.grade)))
 
         for kanji in all.kanji {
-            #expect(kanji.words.count <= 3, "\(kanji.character): \(kanji.words.count) parole")
+            #expect(kanji.words.count <= 5, "\(kanji.character): \(kanji.words.count) parole")
             #expect(kanji.words.allSatisfy { $0.text.contains(kanji.character) }, "\(kanji.character)")
             #expect(Set(kanji.words.map(\.text)).count == kanji.words.count, "\(kanji.character): doppioni")
         }
-        // Quasi tutti ne hanno tre: è lì che sta la profondità.
-        #expect(all.kanji.count { $0.words.count == 3 } > 2000)
+        // Quasi tutti ne hanno cinque: è lì che sta la profondità.
+        #expect(all.kanji.count { $0.words.count == 5 } > 1900)
+        #expect(all.kanji.count { $0.words.count >= 3 } > 2050)
     }
 
     /// Lo schema 3 porta la lista; lo schema 2, di prima, una parola sola. Tutti e due

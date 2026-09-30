@@ -21,8 +21,9 @@ public struct Kanji: Identifiable, Hashable, Sendable {
     /// dizionario: 一 "one" invece di "one, one radical (no.1)". Nil dove i primi due
     /// vanno già bene.
     public let shortMeanings: [String]?
-    /// Fino a tre parole che contengono questo kanji, dalla più comune. Vuoto se
-    /// JMdict non ne ha nessuna che valga come esempio.
+    /// Fino a cinque parole che contengono questo kanji: la prima è quella che ne fa
+    /// vedere il significato, le altre dalla più comune. Vuoto se JMdict non ne ha
+    /// nessuna che valga come esempio.
     public let words: [Word]
     /// Anno scolastico giapponese (1-6 kyōiku, 8 jōyō, oltre: jinmeiyō).
     public let grade: Int?

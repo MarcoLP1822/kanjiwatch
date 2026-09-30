@@ -134,14 +134,17 @@ corpus è di anime e light novel: le parole che JMdict marca `uk` (si scrivono i
 kana: 貴方, 勿論, 何所) e una dozzina di casi in `Scripts/word_overrides.json`
 (王国 → 外国, 野郎 → 野球). Senza JPDB lo script funziona lo stesso, con `nfXX`.
 
-**Fino a tre parole per kanji** (F16). La prima è quella che fa vedere il kanji (F19,
-qui sotto). Le altre due sono varietà, e la varietà vale solo se aggiunge
+**Fino a cinque parole per kanji** (F16; cinque dal 30 settembre, su proposta
+dell'utente). Senza abbonamento l'app ne usa tre, col Premium tutte e cinque
+(`AccessPolicy.wordsPerKanji`, che taglia il mazzo al caricamento). La prima è quella
+che fa vedere il kanji (F19, qui sotto). Le altre sono varietà, e la varietà vale solo se aggiunge
 qualcosa, quindi devono essere composti veri che stanno sul quadrante (non il kanji
 da solo, non oltre tre caratteri) e **non ripetere il significato** di una parola già
 scelta — senza questo 大 prendeva 大きい e 大きな, tutte e due "big", e 食 prendeva 食べる
 e 食う. Una grafia sola per kanji. `word_overrides.json` accetta una grafia o una
 lista, e le scelte a mano stanno davanti nell'ordine dato, purché JMdict le conosca.
-Risultato: 6.365 parole, 2.106 kanji con tre, 2 senza nessuna (且, 𠮟).
+Risultato, con le cinque: 10.392 parole, 2.015 kanji con cinque, 2 senza nessuna
+(且, 𠮟). Il mazzo pesa il 10% in più: 2,9 MB in tutto.
 
 **Parole inadatte e significato da mostrare: Jev** (F18). JPDB viene da anime e
 light novel, e fra le parole più comuni ce ne sono di volgari: 肉棒, 精液, 性奴隷 potevano
@@ -209,7 +212,11 @@ In più una parola che comincia con un'altra già scelta non entra (一緒 e 一
 parola entrata passa dagli stessi giudizi della F18, e quelle fra 0,3 e 0,6 sul sesso
 si sono lette una per una: fuori 窃視, 胸板, 幼女, 魅惑, 睦言, 痴情 e, per famiglia,
 魅惑的 e 厭魅; fuori anche 殺害, come 殺人. Il nuovo prezzo è la frequenza: dove la
-parola più comune non mostra il kanji, in testa ne va una un po' meno comune.
+parola più comune non mostra il kanji, in testa ne va una un po' meno comune. Col
+passaggio a cinque parole ne sono entrate altre 4.000: lette una per una quelle dubbie,
+fuori altre 38 (下着, 鼠径部, 呻吟, 太もも, 純潔, 絞殺, 首塚, 介錯 e, per famiglia, 紅唇,
+鱈子唇, 絞首刑, 斬首刑…), e 斬る mostra «to slice, to cut» invece di «to kill (a
+human) using a blade».
 
 Risultato: 6.330 parole, 2.082 kanji con tre; 2.083 significati di parola scelti da
 Jev.
@@ -577,9 +584,9 @@ lun 09:00   水  water         lun 15:00   水          mar 10:00   水曜日
                                                                   すいようび
 ```
 
-**Quale parola, nel contesto** (F16). Ogni kanji ha fino a tre parole, e girano: la
-prima volta che compare dentro una parola è 水曜日, la seconda 水着, la terza 水面, poi
-di nuovo 水曜日. Lo decide `contextPresentationCount`, che conta solo le comparse in
+**Quale parola, nel contesto** (F16). Ogni kanji ha fino a cinque parole (tre senza
+abbonamento), e girano: la prima volta che compare dentro una parola è 水曜日, la
+seconda 水着, la terza 水面, e così via, poi di nuovo 水曜日. Lo decide `contextPresentationCount`, che conta solo le comparse in
 forma `context` e non tocca nient'altro — né la familiarità, né il ritmo, né il
 supporto. Il motore sceglie **prima** di segnare la comparsa simulata, come per la
 forma, e la scelta viaggia in `ExposureReference` accanto a `ExposureContent`: la forma
@@ -960,7 +967,7 @@ Non è un parere legale.
 | **F13** | Ambient Engine | ✅ lo storico decide cosa ti passa davanti: nuovo, rinforzo, familiare |
 | **F14** | Micro-sequenza | ✅ e decide anche come: il kanji, il richiamo, la parola |
 | **F15** | Ritmo personale | ✅ col Premium ogni kanji si fa il suo ritmo, senza che tu dica niente |
-| **F16** | Profondità di vocabolario | ✅ fino a tre parole per kanji, che girano un contesto dopo l'altro |
+| **F16** | Profondità di vocabolario | ✅ fino a cinque parole per kanji (tre gratis), che girano un contesto dopo l'altro |
 | **F17** | Il richiamo nella notifica | ✅ il significato dopo tre secondi (il bottone «Non me lo ricordavo», tolto il 30/9) |
 | **F18** | Jev nei dati | ✅ fuori le parole volgari, e sotto il kanji il significato che serve |
 | **F19** | Parole che insegnano | ✅ la prima parola fa vedere il kanji, col significato d'uso comune |

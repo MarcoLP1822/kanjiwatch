@@ -83,6 +83,13 @@ public enum AccessPolicy {
     /// peggiore di quello che stiamo vendendo — ma introduce più piano.
     public static let freeNewKanjiPerDay = 3
 
+    /// Quante parole d'esempio girano per ogni kanji. Il mazzo ne porta cinque: senza
+    /// abbonamento se ne usano tre, col Premium tutte — più vocabolario intorno a ogni
+    /// kanji è una delle cose che si pagano.
+    public static func wordsPerKanji(for status: SubscriptionStatus) -> Int {
+        status == .premium ? 5 : 3
+    }
+
     /// Le impostazioni che valgono davvero per questo utente.
     ///
     /// Quelle salvate non si toccano: se l'abbonamento scade e poi si rinnova, le

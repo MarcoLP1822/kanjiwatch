@@ -23,4 +23,21 @@ public struct KanjiDeck: Sendable {
 
     public var codepoints: [String] { kanji.map(\.codepoint) }
     public var isEmpty: Bool { kanji.isEmpty }
+
+    /// Lo stesso mazzo con al più `count` parole per kanji: le prime, che sono le
+    /// migliori. Serve alla versione gratuita, che ne usa tre delle cinque.
+    public func keepingWords(_ count: Int) -> KanjiDeck {
+        KanjiDeck(
+            viewBox: viewBox,
+            attribution: attribution,
+            kanji: kanji.map { k in
+                guard k.words.count > count else { return k }
+                return Kanji(
+                    character: k.character, codepoint: k.codepoint, strokes: k.strokes, strokeEnds: k.strokeEnds,
+                    onReadings: k.onReadings, kunReadings: k.kunReadings, meanings: k.meanings,
+                    shortMeanings: k.shortMeanings, words: Array(k.words.prefix(count)), grade: k.grade,
+                    frequencyRank: k.frequencyRank)
+            }
+        )
+    }
 }

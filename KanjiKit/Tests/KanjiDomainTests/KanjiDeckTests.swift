@@ -28,3 +28,22 @@ struct KanjiDeckTests {
         #expect(deck.kanji.count == 2)
     }
 }
+
+/// Il mazzo porta cinque parole per kanji: senza abbonamento se ne usano tre.
+@Suite("Parole per kanji")
+struct WordsPerKanjiTests {
+    @Test func freeUsesThreeAndPremiumAllFive() {
+        let words = (1...5).map { Kanji.Word(text: "語\($0)", reading: "ご", meanings: ["word \($0)"]) }
+        let kanji = Kanji(
+            character: "語", codepoint: "08a9e", strokes: ["M0,0"], onReadings: [], kunReadings: [], meanings: ["word"],
+            words: words)
+        let deck = KanjiDeck(viewBox: 109, attribution: "", kanji: [kanji])
+
+        let free = deck.keepingWords(AccessPolicy.wordsPerKanji(for: .free))
+        let premium = deck.keepingWords(AccessPolicy.wordsPerKanji(for: .premium))
+
+        #expect(free["08a9e"]?.words == Array(words.prefix(3)))
+        #expect(premium["08a9e"]?.words == words)
+        #expect(free["08a9e"]?.meanings == ["word"])
+    }
+}

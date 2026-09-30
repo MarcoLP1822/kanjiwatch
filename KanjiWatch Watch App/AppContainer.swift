@@ -66,6 +66,7 @@ final class AppContainer {
     private let subscriptions = AppContainer.makeSubscriptionGateway()
     private var subscription: SubscriptionStatus
     private var loadedGrades: Set<Int>
+    private var loadedWords: Int
     private var lastReschedule: Task<Void, Never>?
 
     private init() {
@@ -92,6 +93,7 @@ final class AppContainer {
                 grades = KanjiLevel.freeGrades
                 deck = try repository.loadDeck(grades: grades)
             }
+            deck = deck.keepingWords(AccessPolicy.wordsPerKanji(for: subscription))
         } catch {
             // I file del mazzo stanno nel bundle: se mancano è rotta la build, non
             // l'app dell'utente. KanjiDataTests lo verifica a ogni giro.
@@ -103,6 +105,7 @@ final class AppContainer {
         self.deck = deck
         self.subscription = subscription
         self.loadedGrades = grades
+        self.loadedWords = AccessPolicy.wordsPerKanji(for: subscription)
     }
 
     /// Senza chiave RevenueCat l'SDK non va nemmeno configurato: il negozio è quello di
@@ -196,13 +199,18 @@ final class AppContainer {
         await settingsDidChange()
     }
 
-    /// Se sono cambiati i gradi che valgono si ricarica solo quello che serve, poi
-    /// si rifà la coda: le notifiche già programmate potrebbero mostrare kanji spenti.
+    /// Se sono cambiati i gradi che valgono, o le parole per kanji, si ricarica solo
+    /// quello che serve, poi si rifà la coda: le notifiche già programmate potrebbero
+    /// mostrare kanji spenti.
     private func settingsDidChange() async {
         let wanted = effectiveSettings.load().grades
-        if wanted != loadedGrades, let reloaded = try? repository.loadDeck(grades: wanted), !reloaded.isEmpty {
-            deck = reloaded
+        let words = AccessPolicy.wordsPerKanji(for: subscription)
+        if wanted != loadedGrades || words != loadedWords,
+            let reloaded = try? repository.loadDeck(grades: wanted), !reloaded.isEmpty
+        {
+            deck = reloaded.keepingWords(words)
             loadedGrades = wanted
+            loadedWords = words
             study.replace(loop: makeStudyLoop())
         }
         await rescheduleAndPublish()

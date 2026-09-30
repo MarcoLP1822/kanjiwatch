@@ -327,10 +327,10 @@ JAPANESE_WORD_RE = re.compile(r"^[぀-ゟ一-鿿]+$")
 # Oltre i 3 caratteri non è una parola da ripasso ma una frase ("手当たり次第",
 # "いい加減にしろ"), e sul quadrante non ci sta comunque.
 MAX_WORD_LENGTH = 3
-# Quante parole d'esempio per kanji. Tre bastano a dare profondità per mesi — sui
-# 2.136 jōyō fanno più di seimila vocaboli — senza gonfiare quello che il Watch deve
-# decodificare a ogni avvio.
-MAX_WORDS = 3
+# Quante parole d'esempio per kanji. Senza abbonamento l'app ne usa tre, col Premium
+# tutte e cinque (AccessPolicy.wordsPerKanji): la varietà di vocabolario è una delle
+# cose che si pagano. Oltre, le candidate diventano rare e il Watch decodifica di più.
+MAX_WORDS = 5
 # Correzioni a mano. Nessuna formula azzecca tutti e 300 i kanji: dopo un certo
 # punto è gusto, non algoritmo, e il gusto si scrive in un file rivedibile.
 OVERRIDES_PATH = Path(__file__).with_name("word_overrides.json")

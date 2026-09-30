@@ -164,7 +164,7 @@ assert texts(words["水"]) == ["水泳", "水道"], words["水"]
 # 日々 esce per il segno di ripetizione, e tra 日本 (1228), 一日 (1425) e 日米 (48538)
 # decide l'uso reale della lingua, non il corpus dei giornali. Una parola con due
 # kanji del mazzo vale per tutti e due: 木曜日 (4000) passa davanti a 日米.
-assert texts(words["日"]) == ["日本", "一日", "木曜日"], words["日"]
+assert texts(words["日"]) == ["日本", "一日", "木曜日", "日米"], words["日"]
 # i prestiti in katakana non insegnano il kanji, anche col rank migliore
 assert texts(words["性"]) == ["性別"], words["性"]
 assert "火" not in words
@@ -172,11 +172,11 @@ assert "火" not in words
 # arcaica — non deve scavalcarla: è così che 国民 diventava くにたみ.
 assert corrected["水"][0] == {"w": "水泳", "r": "すいえい", "g": ["swimming"]}, corrected["水"]
 
-# Mai più di tre, nell'ordine dell'uso reale. 木造建築 ha il rank migliore di tutti
+# Mai più di MAX_WORDS, nell'ordine dell'uso reale. 木造建築 ha il rank migliore di tutti
 # ma è una frase, e 木 da solo è il kun'yomi: nessuno dei due vale come varietà.
 # 樹木 (1500) passa davanti, e resta: vuol dire "tree" come 木, ma 木 non è entrato.
 assert len(words["木"]) == MAX_WORDS
-assert texts(words["木"]) == ["樹木", "大木", "並木"], words["木"]
+assert texts(words["木"]) == ["樹木", "大木", "並木", "木曜日", "木材"], words["木"]
 # Stesso input, stesso risultato: niente dipende dall'ordine di un set.
 assert again == words
 # Una grafia sola per kanji: 木材 ha due entrate, e vince la lettura con la chiave
@@ -185,15 +185,15 @@ assert texts(ordered["木"]).count("木材") == 1
 assert next(w for w in ordered["木"] if w["w"] == "木材")["r"] == "もくざい"
 # Le scelte a mano stanno davanti, nell'ordine in cui sono scritte, e il resto lo
 # riempie la regola.
-assert texts(ordered["木"]) == ["木材", "並木", "樹木"], ordered["木"]
+assert texts(ordered["木"]) == ["木材", "並木", "樹木", "大木", "木曜日"], ordered["木"]
 # Una scelta a mano che JMdict non conosce si salta, senza portarsi via uno slot.
-assert texts(skipped["木"]) == ["木曜日", "樹木", "大木"], skipped["木"]
+assert texts(skipped["木"]) == ["木曜日", "樹木", "大木", "並木", "木材"], skipped["木"]
 # Senza JPDB decidono i marcatori dei giornali: nf02 prima di nf03, nf04, nf05.
-assert texts(no_jpdb["木"]) == ["木曜日", "木材", "並木"], no_jpdb["木"]
+assert texts(no_jpdb["木"]) == ["木曜日", "木材", "並木", "大木", "樹木"], no_jpdb["木"]
 
 # Due parole con lo stesso significato sono uno slot sprecato: 樹木 e 木 vogliono dire
 # "tree", e con 木 già scelto a mano 樹木 non entra.
-assert texts(tree["木"]) == ["木", "大木", "並木"], tree["木"]
+assert texts(tree["木"]) == ["木", "大木", "並木", "木曜日", "木材"], tree["木"]
 
 # Una parola che JMdict marca volgare non entra, nemmeno col rank migliore di tutti:
 # il Watch la mostrerebbe al polso.

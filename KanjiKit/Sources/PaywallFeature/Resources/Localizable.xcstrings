@@ -61,6 +61,17 @@
         }
       }
     },
+    "Five words for every kanji": {
+      "comment": "Vantaggio del Premium: cinque parole d'esempio per kanji invece di tre.",
+      "localizations": {
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cinque parole per ogni kanji"
+          }
+        }
+      }
+    },
     "Kanji Watch Premium": {
       "localizations": {
         "it": {
