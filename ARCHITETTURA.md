@@ -427,7 +427,9 @@ che al pilastro non tocca niente:
 - **«Programmali ogni 60 min»** li rimette in coda come *recuperi* (`ReminderState.replays`),
   uno per intervallo, solo dentro la fascia di oggi; quelli che non ci stanno li riporta
   comunque il motore. Stanno a parte perché il piano rifà `scheduled` da zero a ogni
-  occasione.
+  occasione. Fuori fascia — a sera tardi — il bottone lascia il posto a «Oggi è tardi per
+  programmarli: torneranno da soli»: il Watch non suona di notte, e sparire senza dirlo
+  sembrava un difetto (l'utente l'ha provato alle 23:30).
 
 Né l'uno né l'altro contano nel tetto del giorno: sono kanji che la giornata aveva già
 avuto. Un recupero che arriva segna la comparsa, come ogni notifica, e prende il posto

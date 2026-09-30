@@ -305,6 +305,19 @@ struct WaitingContent: View {
                     }
                 }
                 .buttonStyle(.dsSecondary)
+            } else {
+                // Fuori dalla fascia oraria non si rimanda niente: il Watch non suona di
+                // notte. Detto, invece di far sparire il bottone senza spiegazioni.
+                Group {
+                    if missed.count == 1 {
+                        Text("Too late to schedule it today: it'll come back on its own.", bundle: .module)
+                    } else {
+                        Text("Too late to schedule them today: they'll come back on their own.", bundle: .module)
+                    }
+                }
+                    .font(.dsLabel)
+                    .foregroundStyle(.dsInkSecondary)
+                    .multilineTextAlignment(.center)
             }
         }
     }

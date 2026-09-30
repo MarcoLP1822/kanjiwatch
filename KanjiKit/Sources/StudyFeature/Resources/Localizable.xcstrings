@@ -144,6 +144,28 @@
         }
       }
     },
+    "Too late to schedule it today: it'll come back on its own." : {
+      "comment" : "Sotto «Ora», quando nella fascia oraria di oggi non c'è più posto per rimandare i kanji saltati. Un kanji solo.",
+      "localizations" : {
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Oggi è tardi per programmarlo: tornerà da solo."
+          }
+        }
+      }
+    },
+    "Too late to schedule them today: they'll come back on their own." : {
+      "comment" : "Sotto «Ora», quando nella fascia oraria di oggi non c'è più posto per rimandare i kanji saltati.",
+      "localizations" : {
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Oggi è tardi per programmarli: torneranno da soli."
+          }
+        }
+      }
+    },
     "With Premium you can keep going whenever you like: find it in Settings." : {
       "comment" : "Attesa a giornata finita, solo senza Premium: col Premium «Un altro adesso» va oltre il limite.",
       "localizations" : {
