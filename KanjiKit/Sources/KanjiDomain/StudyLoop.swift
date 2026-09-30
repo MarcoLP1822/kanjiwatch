@@ -226,14 +226,6 @@ public struct StudyLoop {
         ambient.save(exposure)
     }
 
-    /// "Non me lo ricordavo", dalla notifica. L'app non si apre e la sessione resta
-    /// com'è: il motore segna solo che quel kanji chiede un appiglio.
-    public func forgot(_ destination: ReminderDestination) {
-        var exposure = ambient.load()
-        exposure.record(.forgotten, codepoint: destination.codepoint, content: destination.content, at: now())
-        ambient.save(exposure)
-    }
-
     /// Mette in gioco il prossimo kanji e ne segna l'esposizione — ma solo se è
     /// davvero un contatto nuovo: quello arrivato con una notifica l'ha già contato
     /// `catchUp`, all'ora in cui è arrivato.

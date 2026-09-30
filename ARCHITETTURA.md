@@ -20,7 +20,7 @@ Documento di design. Versione 3 — impianto a notifiche con una complication, n
 
 **Fuori scope, esplicitamente:** progressi e gamification, iCloud, audio,
 riconoscimento della scrittura, statistiche, e i bottoni «lo so / non lo so» a ogni
-notifica: ne resta uno solo, facoltativo, sul kanji da solo (F17). Tre
+notifica. Tre
 voci stavano in questo elenco e sono rientrate: la monetizzazione (F7); la complication
 (F8), che è esposizione passiva in più e non chiede impegno; e la ripetizione
 distanziata (F13), ma **invisibile** — nessun arretrato da smaltire, nessun voto, solo
@@ -590,21 +590,11 @@ se lo sapevi o se non hai nemmeno alzato il polso.
 |---|---|
 | apri l'app su quel kanji | +0,30 |
 | arrivi fino a letture e parola | +0,25 |
-| tocchi «Non me lo ricordavo» nella notifica | +0,60 |
-
-**Il bottone (F17).** I due gesti qui sopra il motore li deduce, e dedurre è debole:
-aprire può essere curiosità, non aprire può essere «lo sapevo» o «non ho nemmeno
-guardato». Da quando il significato compare dentro la notifica, poi, aprire l'app dopo
-un richiamo è diventato raro. Per questo sotto il kanji da solo c'è un bottone, uno solo
-e facoltativo: «Non me lo ricordavo». È l'unico segnale che chiede un gesto, ed è il più
-chiaro: lì lo deduciamo, qui ce lo dici tu. Da solo porta il kanji al supporto alto.
-
-Non apre l'app. Il sistema consegna la risposta al delegate in background
-(`UNNotificationAction` senza `.foreground`); il motore la segna, la sessione resta
-com'è e la coda si rifà. Il bottone lo aggiunge la long look solo sulla forma `recall`
-(`notificationActions` in `didReceive`), così la categoria resta una. Il suo contrario,
-«lo sapevo», non c'è: il silenzio resta neutro, come prima. Il ritmo di base non cambia,
-e senza Premium il segnale si raccoglie ma non si usa, come gli altri.
+**Il richiamo nella notifica (F17).** Sul kanji da solo la long look mostra il
+significato dopo tre secondi: prima pensi, poi controlli, senza aprire niente. Dal 27
+al 30 settembre sotto c'era anche un bottone, «Non me lo ricordavo», che dava al motore
+un segnale detto a parole; l'utente l'ha tolto con la sua meccanica. Restano i due gesti
+dedotti qui sopra, e il silenzio neutro.
 
 Il punteggio sta fra 0 e 1, non si mostra mai, e **si dimezza ogni due settimane**: una
 fatica di marzo non deve perseguitare un kanji a maggio. Sotto 0,25 è `low`, sotto 0,60
@@ -944,7 +934,7 @@ Non è un parere legale.
 | **F14** | Micro-sequenza | ✅ e decide anche come: il kanji, il richiamo, la parola |
 | **F15** | Ritmo personale | ✅ col Premium ogni kanji si fa il suo ritmo, senza che tu dica niente |
 | **F16** | Profondità di vocabolario | ✅ fino a tre parole per kanji, che girano un contesto dopo l'altro |
-| **F17** | Non me lo ricordavo | ✅ la risposta nel richiamo, e un bottone per dire che non la sapevi |
+| **F17** | Il richiamo nella notifica | ✅ il significato dopo tre secondi (il bottone «Non me lo ricordavo», tolto il 30/9) |
 | **F18** | Jev nei dati | ✅ fuori le parole volgari, e sotto il kanji il significato che serve |
 | **F19** | Parole che insegnano | ✅ la prima parola fa vedere il kanji, col significato d'uso comune |
 

@@ -21,9 +21,6 @@ final class KanjiNotificationController: WKUserNotificationHostingController<Rem
         kanji = destination.flatMap { AppContainer.shared.deck[$0.codepoint] }
         content = destination?.content ?? .introduce
         reference = destination?.reference ?? .none
-        // Solo sul kanji da solo: col significato già scritto o dentro una parola,
-        // "non me lo ricordavo" non vorrebbe dire niente.
-        notificationActions = content == .recall ? [ReminderPayload.forgotAction] : []
     }
 
     override var body: ReminderGlanceView {
