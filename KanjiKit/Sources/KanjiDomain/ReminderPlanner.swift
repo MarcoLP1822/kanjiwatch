@@ -49,6 +49,33 @@ public enum ReminderPlanner {
     /// resta un promemoria di recupero anche dopo giorni di silenzio.
     public static let recoveryOffsetsInHours = [12, 24, 48, 96]
 
+    /// I kanji saltati oggi, di nuovo in coda: uno per intervallo a partire da adesso,
+    /// ciascuno nella forma in cui era arrivato. Solo dentro la fascia di oggi: quelli
+    /// che non ci stanno li riporta comunque il motore, nei giorni dopo.
+    public static func replays(
+        of missed: [ReminderDestination],
+        now: Date,
+        settings: ReminderSettings,
+        calendar: Calendar = .current
+    ) -> [ScheduledReminder] {
+        guard settings.intervalMinutes > 0,
+            let end = FireDates.windowEnd(containing: now, activeHours: settings.activeHours, calendar: calendar)
+        else { return [] }
+        var replays: [ScheduledReminder] = []
+        for (index, destination) in missed.enumerated() {
+            guard let at = calendar.date(byAdding: .minute, value: settings.intervalMinutes * (index + 1), to: now)
+            else { break }
+            // Al minuto, come le altre: il sistema le consegna al minuto.
+            let minute = calendar.dateInterval(of: .minute, for: at)?.start ?? at
+            guard minute < end else { break }
+            replays.append(
+                ScheduledReminder(
+                    fireDate: minute, codepoint: destination.codepoint, content: destination.content,
+                    reference: destination.reference))
+        }
+        return replays
+    }
+
     /// Quando, lo decide il ritmo della giornata; cosa, l'Ambient Engine.
     ///
     /// La coda si rigenera sempre per intero, e la vecchia non serve più a niente:

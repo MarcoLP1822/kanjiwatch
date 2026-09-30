@@ -77,6 +77,45 @@ public struct PlannedNotification: Equatable, Sendable {
 public protocol ReminderScheduling {
     func replacePending(with notifications: [PlannedNotification], isPassive: Bool) async
     func cancelAll() async
+    /// Le notifiche arrivate e ancora nel Centro notifiche: quelle che non hai aperto.
+    func delivered() async -> [DeliveredReminder]
+    func removeDelivered(_ identifiers: [String]) async
+}
+
+extension ReminderScheduling {
+    public func delivered() async -> [DeliveredReminder] { [] }
+    public func removeDelivered(_ identifiers: [String]) async {}
+}
+
+/// Una notifica arrivata che è ancora lì, nel Centro notifiche.
+public struct DeliveredReminder: Equatable, Sendable {
+    public let identifier: String
+    public let date: Date
+    public let destination: ReminderDestination
+
+    public init(identifier: String, date: Date, destination: ReminderDestination) {
+        self.identifier = identifier
+        self.date = date
+        self.destination = destination
+    }
+}
+
+/// I kanji di oggi arrivati senza che tu li aprissi. Si decide qui, e non nella view,
+/// perché la regola è di dominio: conta solo oggi, conta un kanji una volta, e il kanji
+/// che l'app ti sta mostrando l'hai visto.
+public enum MissedToday {
+    public static func destinations(
+        from delivered: [DeliveredReminder],
+        showing codepoint: String?,
+        now: Date,
+        calendar: Calendar = .current
+    ) -> [ReminderDestination] {
+        var seen = Set<String>()
+        return delivered
+            .filter { calendar.isDate($0.date, inSameDayAs: now) && $0.destination.codepoint != codepoint }
+            .sorted { $0.date < $1.date }
+            .compactMap { seen.insert($0.destination.codepoint).inserted ? $0.destination : nil }
+    }
 }
 
 /// Un valore che sopravvive al riavvio dell'app. Due implementazioni: UserDefaults

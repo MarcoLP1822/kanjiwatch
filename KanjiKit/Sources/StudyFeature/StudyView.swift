@@ -148,7 +148,11 @@ public struct StudyView: View {
                 glyph: model.glyph,
                 nextArrival: model.snapshot.nextArrival,
                 dailyLimitReached: model.snapshot.dailyLimitReached,
-                onNext: model.next
+                missed: model.missedKanji,
+                missedEvery: model.missed.every,
+                onNext: model.next,
+                onReviewMissed: model.reviewMissed,
+                onScheduleMissed: model.scheduleMissed
             )
             // Niente margine in alto: sotto la barra c'è già spazio, e così "Un altro
             // adesso" sale senza rimpicciolire niente.
@@ -223,7 +227,13 @@ struct WaitingContent: View {
     let glyph: StrokeGlyph?
     let nextArrival: Date?
     let dailyLimitReached: Bool
+    /// A giornata finita, i kanji di oggi che non hai aperto; vuoto altrimenti.
+    var missed: [Kanji] = []
+    /// Ogni quanti minuti si possono rimandare; nil se oggi non c'è più posto.
+    var missedEvery: Int? = nil
     let onNext: () -> Void
+    var onReviewMissed: () -> Void = {}
+    var onScheduleMissed: () -> Void = {}
 
     var body: some View {
         VStack(spacing: DS.Spacing.m) {
@@ -247,15 +257,19 @@ struct WaitingContent: View {
                 arrival
                     .font(.dsBody)
                     .foregroundStyle(.dsInkSecondary)
-                if dailyLimitReached {
+                if dailyLimitReached, missed.isEmpty {
                     // Solo senza Premium: col Premium NEXT va oltre il limite, e qui
-                    // resta il bottone.
+                    // resta il bottone. Coi kanji saltati da mostrare, conta di più quello.
                     Text("With Premium you can keep going whenever you like: find it in Settings.", bundle: .module)
                         .font(.dsLabel)
                         .foregroundStyle(.dsInkSecondary)
                 }
             }
             .multilineTextAlignment(.center)
+
+            if !missed.isEmpty {
+                missedPanel
+            }
 
             if !dailyLimitReached {
                 OneMoreButton(action: onNext)
@@ -264,8 +278,42 @@ struct WaitingContent: View {
         .frame(maxWidth: .infinity)
     }
 
+    /// Proposta dall'utente: a giornata finita, quanti ne hai saltati e se vuoi
+    /// vederli ora o farteli rimandare. Non passano dal tetto del giorno: sono kanji che
+    /// la giornata aveva già avuto.
+    private var missedPanel: some View {
+        VStack(spacing: DS.Spacing.s) {
+            Text("You skipped \(missed.count) kanji today. Want to see them now?", bundle: .module)
+                .font(.dsBody)
+                .foregroundStyle(.dsInk)
+                .multilineTextAlignment(.center)
+            Text(verbatim: missed.prefix(8).map(\.character).joined(separator: " "))
+                .font(.system(size: 24))
+                .foregroundStyle(.dsInkSecondary)
+                .dsJapanese()
+                .accessibilityHidden(true)
+            Button(action: onReviewMissed) {
+                Text("Now", bundle: .module)
+            }
+            .buttonStyle(.dsPrimary)
+            if let missedEvery {
+                Button(action: onScheduleMissed) {
+                    if missed.count == 1 {
+                        Text("Schedule it in \(missedEvery) min", bundle: .module)
+                    } else {
+                        Text("Schedule every \(missedEvery) min", bundle: .module)
+                    }
+                }
+                .buttonStyle(.dsSecondary)
+            }
+        }
+    }
+
+    /// "Per oggi" solo quando fino a domani non arriva più niente, anche col Premium; se
+    /// arriva ancora qualcosa oggi — magari un kanji saltato, rimandato — è "per ora".
     private var headline: Text {
-        dailyLimitReached
+        let dayIsOver = nextArrival.map { !Calendar.current.isDateInToday($0) } ?? dailyLimitReached
+        return dayIsOver
             ? Text("That's all for today", bundle: .module)
             : Text("That's all for now", bundle: .module)
     }

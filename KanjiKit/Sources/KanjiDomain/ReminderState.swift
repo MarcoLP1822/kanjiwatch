@@ -11,17 +11,23 @@ public struct ReminderState: Equatable, Sendable, Codable {
     public var today: DailyCount
     /// Da quando riparte l'intervallo: l'ultimo NEXT. Vale solo per la sua giornata.
     public var anchor: Date?
+    /// I kanji saltati oggi, rimandati su richiesta ("Programmali ogni 15 min"). Stanno
+    /// a parte perché il piano rifà `scheduled` da zero a ogni occasione, e perché non
+    /// sono contatti nuovi: la giornata li aveva già avuti, e non contano nel tetto.
+    public var replays: [ScheduledReminder]
 
     public init(
         scheduled: [ScheduledReminder] = [],
         session: StudySession = .none,
         today: DailyCount = .none,
-        anchor: Date? = nil
+        anchor: Date? = nil,
+        replays: [ScheduledReminder] = []
     ) {
         self.scheduled = scheduled
         self.session = session
         self.today = today
         self.anchor = anchor
+        self.replays = replays
     }
 
     public init(from decoder: any Decoder) throws {
@@ -32,6 +38,12 @@ public struct ReminderState: Equatable, Sendable, Codable {
         session = try container.decodeIfPresent(StudySession.self, forKey: .session) ?? .none
         today = try container.decodeIfPresent(DailyCount.self, forKey: .today) ?? .none
         anchor = try container.decodeIfPresent(Date.self, forKey: .anchor)
+        replays = try container.decodeIfPresent([ScheduledReminder].self, forKey: .replays) ?? []
+    }
+
+    /// Notifiche e recuperi insieme, in ordine: quello che il polso riceverà.
+    public var upcoming: [ScheduledReminder] {
+        (scheduled + replays).sorted { $0.fireDate < $1.fireDate }
     }
 
     /// Primo avvio: nessuna coda e nessun kanji in gioco. Il primo se lo sceglie

@@ -56,6 +56,17 @@
         }
       }
     },
+    "Now" : {
+      "comment" : "Bottone principale sotto i kanji saltati: il primo si apre subito.",
+      "localizations" : {
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ora"
+          }
+        }
+      }
+    },
     "One more now" : {
       "comment" : "Bottone secondario: un altro kanji subito, senza aspettare la notifica.",
       "localizations" : {
@@ -63,6 +74,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Un altro adesso"
+          }
+        }
+      }
+    },
+    "Schedule every %lld min" : {
+      "comment" : "Bottone secondario sotto i kanji saltati: tornano come notifiche, uno per intervallo.",
+      "localizations" : {
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Programmali ogni %lld min"
+          }
+        }
+      }
+    },
+    "Schedule it in %lld min" : {
+      "comment" : "Come «Schedule every %lld min», con un kanji saltato solo.",
+      "localizations" : {
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Programmalo tra %lld min"
           }
         }
       }
@@ -118,6 +151,47 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Col Premium vai avanti quando vuoi: lo trovi in Impostazioni."
+          }
+        }
+      }
+    },
+    "You skipped %lld kanji today. Want to see them now?" : {
+      "comment" : "A giornata finita: i kanji di oggi arrivati con una notifica che non hai aperto.",
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "You skipped 1 kanji today. Want to see it now?"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "You skipped %lld kanji today. Want to see them now?"
+                }
+              }
+            }
+          }
+        },
+        "it" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Oggi hai saltato 1 kanji. Vuoi vederlo ora?"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Oggi hai saltato %lld kanji. Vuoi vederli ora?"
+                }
+              }
+            }
           }
         }
       }

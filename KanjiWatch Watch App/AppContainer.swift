@@ -31,6 +31,15 @@ final class AppContainer {
         model.onReadingsFirstShown = { [weak self] in
             Task { await self?.askForPermission() }
         }
+        model.onTurnShown = { [weak self] codepoint in
+            Task { await self?.clearDelivered(codepoint) }
+        }
+        model.onReviewMissed = { [weak self] destination in
+            Task { await self?.reviewMissed(destination) }
+        }
+        model.onScheduleMissed = { [weak self] missed in
+            Task { await self?.scheduleMissed(missed) }
+        }
         return model
     }()
 
@@ -131,6 +140,45 @@ final class AppContainer {
         await rescheduleAndPublish()
     }
 
+    // MARK: - Kanji saltati
+
+    /// Il kanji che l'app ti mostra l'hai visto: se la sua notifica è ancora nel Centro
+    /// notifiche, non è più un kanji saltato.
+    private func clearDelivered(_ codepoint: String) async {
+        let identifiers = await scheduler.delivered().filter { $0.destination.codepoint == codepoint }.map(\.identifier)
+        await scheduler.removeDelivered(identifiers)
+    }
+
+    /// Le notifiche di oggi ancora nel Centro notifiche, tolto il kanji sullo schermo.
+    private func refreshMissed() async {
+        let now = Date()
+        let delivered = await scheduler.delivered()
+        // Solo kanji che il mazzo conosce: una notifica di un grado spento non si riapre.
+        let missed = MissedToday.destinations(
+            from: delivered, showing: stateStore.load().session.codepoint, now: now
+        ).filter { deck[$0.codepoint] != nil }
+        let settings = effectiveSettings.load()
+        let fits = !ReminderPlanner.replays(of: missed, now: now, settings: settings).isEmpty
+        study.show(missed: .init(kanji: missed, every: fits ? settings.intervalMinutes : nil))
+    }
+
+    /// "Ora": come toccarne la notifica, che così sparisce dal Centro notifiche.
+    private func reviewMissed(_ destination: ReminderDestination) async {
+        await clearDelivered(destination.codepoint)
+        open(destination)
+    }
+
+    /// "Programmali": tornano come notifiche, uno per intervallo, dentro la fascia di
+    /// oggi. Quelli che non ci stanno restano dove sono, e il motore li riporta comunque.
+    private func scheduleMissed(_ missed: [ReminderDestination]) async {
+        let replays = ReminderPlanner.replays(of: missed, now: Date(), settings: effectiveSettings.load())
+        var state = stateStore.load()
+        state.replays = (state.replays + replays).sorted { $0.fireDate < $1.fireDate }
+        stateStore.save(state)
+        for replay in replays { await clearDelivered(replay.codepoint) }
+        await rescheduleAndPublish()
+    }
+
     func makePaywall() -> PaywallViewModel {
         PaywallViewModel(
             gateway: subscriptions,
@@ -176,6 +224,7 @@ final class AppContainer {
             await rescheduleReminders().execute()
             study.refresh()
             publishComplication()
+            await refreshMissed()
         }
         lastReschedule = current
         await current.value
@@ -191,7 +240,7 @@ final class AppContainer {
                 current: study.kanji,
                 currentContent: state.session.content,
                 currentReference: state.session.reference,
-                upcoming: state.scheduled,
+                upcoming: state.upcoming,
                 deck: deck
             )
         )

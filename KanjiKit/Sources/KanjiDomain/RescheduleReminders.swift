@@ -63,6 +63,7 @@ public struct RescheduleReminders {
         guard isAuthorized else {
             // Non arriverà niente: la schermata d'attesa non deve promettere un orario.
             current.scheduled = []
+            current.replays = []
             state.save(current)
             ambient.save(exposure)
             await scheduler.cancelAll()
@@ -85,7 +86,9 @@ public struct RescheduleReminders {
         ambient.save(exposure)
         guard !reminders.isEmpty else { return .emptyDeck }
 
-        let notifications = reminders.compactMap { reminder in
+        // I recuperi arrivano presto: stanno dentro il limite di sistema anche a costo
+        // delle ultime notifiche del piano, che la prossima rischedulazione rimette.
+        let notifications = current.upcoming.prefix(ReminderPlanner.systemLimit).compactMap { reminder in
             deck[reminder.codepoint].map {
                 PlannedNotification(
                     fireDate: reminder.fireDate, kanji: $0, content: reminder.content, reference: reminder.reference)

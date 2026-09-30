@@ -17,6 +17,23 @@ public final class StudyViewModel {
     public private(set) var glyph: StrokeGlyph?
     public private(set) var state: StudyState
 
+    /// I kanji di oggi arrivati senza che tu li aprissi, e ogni quanti minuti si
+    /// possono rimandare (nil se nella fascia di oggi non ci stanno più). Li passa chi
+    /// conosce il Centro notifiche; qui si decide solo quando mostrarli.
+    public struct Missed: Equatable, Sendable {
+        public let kanji: [ReminderDestination]
+        public let every: Int?
+
+        public init(kanji: [ReminderDestination], every: Int?) {
+            self.kanji = kanji
+            self.every = every
+        }
+
+        public static let none = Missed(kanji: [], every: nil)
+    }
+
+    public private(set) var missed: Missed = .none
+
     private var loop: StudyLoop
     @ObservationIgnored private var drawing: Task<Void, Never>?
 
@@ -27,6 +44,13 @@ public final class StudyViewModel {
     /// avvio davanti a una schermata che non gli dice niente.
     @ObservationIgnored public var onReadingsFirstShown: (() -> Void)?
     @ObservationIgnored private var hasShownReadings = false
+    /// Un kanji è sullo schermo: la sua notifica, se è ancora nel Centro notifiche,
+    /// non è più un kanji saltato.
+    @ObservationIgnored public var onTurnShown: ((String) -> Void)?
+    /// "Ora": il primo dei kanji saltati, come se ne toccassi la notifica.
+    @ObservationIgnored public var onReviewMissed: ((ReminderDestination) -> Void)?
+    /// "Programmali": tornano come notifiche, uno per intervallo.
+    @ObservationIgnored public var onScheduleMissed: (([ReminderDestination]) -> Void)?
 
     /// "Riduci movimento": i tratti compaiono interi, uno alla volta, con le stesse pause.
     /// L'ordine resta leggibile, che è lo scopo, senza niente che scorra sullo schermo.
@@ -46,6 +70,38 @@ public final class StudyViewModel {
     // Un deinit isolato al MainActor, qui, costerebbe più di quanto vale.
 
     public var kanji: Kanji { snapshot.current }
+
+    /// La giornata non porta più niente fino a domani: è il momento di dire cosa ti è
+    /// sfuggito. Prima no — i saltati di metà mattina tornano da soli, e contarli a ogni
+    /// kanji diventerebbe l'arretrato che quest'app non ha.
+    public var dayIsOver: Bool {
+        guard snapshot.isDone else { return false }
+        guard let next = snapshot.nextArrival else { return true }
+        return !Calendar.current.isDateInToday(next)
+    }
+
+    /// I kanji saltati da mostrare adesso: solo a giornata finita.
+    public var missedKanji: [Kanji] {
+        dayIsOver ? missed.kanji.compactMap { loop.deck[$0.codepoint] } : []
+    }
+
+    public func show(missed: Missed) {
+        self.missed = missed
+    }
+
+    public func reviewMissed() {
+        guard let first = missed.kanji.first else { return }
+        // Subito: un secondo tocco non deve aprirlo due volte.
+        missed = .none
+        onReviewMissed?(first)
+    }
+
+    public func scheduleMissed() {
+        let kanji = missed.kanji
+        guard !kanji.isEmpty else { return }
+        missed = .none
+        onScheduleMissed?(kanji)
+    }
 
     public func send(_ event: StudyState.Event) {
         let previous = state.phase
@@ -116,6 +172,7 @@ public final class StudyViewModel {
         drawing?.cancel()
         glyph = try? StrokeGlyph(kanji: new.current, viewBox: loop.deck.viewBox)
         state = StudyState(strokeCount: new.current.strokeCount)
+        onTurnShown?(new.current.codepoint)
     }
 
     private func perform(_ effect: StudyState.Effect) {

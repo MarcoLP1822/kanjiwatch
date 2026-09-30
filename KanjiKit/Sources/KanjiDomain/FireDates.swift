@@ -63,6 +63,18 @@ public enum FireDates {
         return dates
     }
 
+    /// La fine della fascia attiva in cui cade `date`; nil se `date` ne è fuori.
+    public static func windowEnd(containing date: Date, activeHours: ActiveHours, calendar: Calendar = .current) -> Date? {
+        let today = calendar.startOfDay(for: date)
+        let yesterday = calendar.date(byAdding: .day, value: -1, to: today) ?? today
+        for day in [yesterday, today] {
+            if let w = window(startingOn: day, activeHours: activeHours, calendar: calendar), w.start <= date, date < w.end {
+                return w.end
+            }
+        }
+        return nil
+    }
+
     /// Inizio e fine (esclusa) della finestra che parte nel giorno indicato.
     /// Le ore si impostano con il calendario, non sommando secondi: nel giorno del
     /// cambio d'ora l'una non equivale all'altra.

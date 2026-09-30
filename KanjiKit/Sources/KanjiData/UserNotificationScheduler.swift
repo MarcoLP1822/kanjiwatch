@@ -54,8 +54,23 @@ public struct UserNotificationScheduler: ReminderScheduling, NotificationAuthori
         center.removeAllPendingNotificationRequests()
     }
 
+    /// Solo le nostre, e solo quelle che sappiamo riaprire.
+    public func delivered() async -> [DeliveredReminder] {
+        await center.deliveredNotifications().compactMap { notification in
+            ReminderPayload.destination(from: notification.request.content.userInfo).map {
+                DeliveredReminder(identifier: notification.request.identifier, date: notification.date, destination: $0)
+            }
+        }
+    }
+
+    public func removeDelivered(_ identifiers: [String]) async {
+        guard !identifiers.isEmpty else { return }
+        center.removeDeliveredNotifications(withIdentifiers: identifiers)
+    }
+
+    /// Orario e kanji: un recupero può cadere nello stesso minuto di una notifica.
     private func identifier(for notification: PlannedNotification) -> String {
-        "kanji-\(Int(notification.fireDate.timeIntervalSince1970))"
+        "kanji-\(Int(notification.fireDate.timeIntervalSince1970))-\(notification.codepoint)"
     }
 
     private func content(for notification: PlannedNotification, isPassive: Bool) -> UNNotificationContent {

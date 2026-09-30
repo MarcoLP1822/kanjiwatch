@@ -37,6 +37,7 @@ extension ReminderState {
         // Senza, un kanji uscito dal mazzo resterebbe in coda per sempre: a ogni
         // rischedulazione tornerebbe in testa e verrebbe scartato di nuovo.
         scheduled.removeAll { deck[$0.codepoint] == nil }
+        replays.removeAll { deck[$0.codepoint] == nil }
     }
 
     /// Le notifiche arrivate dall'ultima volta contano nella loro giornata, e la più
@@ -44,15 +45,18 @@ extension ReminderState {
     ///
     /// Restituisce quelle arrivate, perché chi tiene lo storico delle esposizioni ha
     /// bisogno di sapere quali sono: così la regola di apprendimento non finisce
-    /// dentro lo stato delle notifiche.
+    /// dentro lo stato delle notifiche. I recuperi arrivano come le altre ma non
+    /// contano nella giornata: sono kanji che aveva già avuto.
     @discardableResult
     public mutating func recordDeliveries(now: Date, calendar: Calendar) -> [ScheduledReminder] {
         let delivered = scheduled.filter { $0.fireDate <= now }
-        guard !delivered.isEmpty else { return [] }
+        let replayed = replays.filter { $0.fireDate <= now }
+        guard !delivered.isEmpty || !replayed.isEmpty else { return [] }
         scheduled.removeAll { $0.fireDate <= now }
+        replays.removeAll { $0.fireDate <= now }
         today.add(delivered.count { calendar.isDate($0.fireDate, inSameDayAs: now) }, on: now, calendar: calendar)
 
-        if let latest = delivered.max(by: { $0.fireDate < $1.fireDate }),
+        if let latest = (delivered + replayed).max(by: { $0.fireDate < $1.fireDate }),
             latest.fireDate > (session.since ?? .distantPast)
         {
             session = StudySession(
@@ -63,7 +67,7 @@ extension ReminderState {
                 reference: latest.reference
             )
         }
-        return delivered
+        return delivered + replayed
     }
 
     /// NEXT premuto guardando `onScreen`. Non inventa un kanji in più: prende quello
@@ -90,7 +94,17 @@ extension ReminderState {
         }
 
         let next: ReminderDestination
-        if let upcoming = scheduled.min(by: { $0.fireDate < $1.fireDate }) {
+        if let replay = replays.min(by: { $0.fireDate < $1.fireDate }),
+            replay.fireDate <= (scheduled.map(\.fireDate).min() ?? .distantFuture)
+        {
+            // Il prossimo è un kanji saltato: si anticipa, ma la giornata l'aveva già
+            // contato, quindi non conta di nuovo.
+            replays.removeAll { $0 == replay }
+            session = StudySession(
+                codepoint: replay.codepoint, isDone: false, since: now, content: replay.content,
+                reference: replay.reference)
+            return .showing(replay.codepoint)
+        } else if let upcoming = scheduled.min(by: { $0.fireDate < $1.fireDate }) {
             next = upcoming.destination
             // Anticipata vuol dire consumata: lasciarla in coda la farebbe arrivare
             // una seconda volta, contata e mostrata di nuovo.
@@ -282,7 +296,7 @@ public struct StudyLoop {
             startedAt: value.session.since,
             isDone: value.session.isDone,
             reference: value.session.reference,
-            nextArrival: value.scheduled.map(\.fireDate).min(),
+            nextArrival: value.upcoming.first?.fireDate,
             dailyLimitReached: !nextPastLimit()
                 && value.today.count(on: moment, calendar: calendar) >= settings.load().dailyLimit
         )

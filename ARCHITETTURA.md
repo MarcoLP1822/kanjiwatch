@@ -401,6 +401,33 @@ va bene. Resta la rete di sicurezza di prima: delle 64 notifiche le ultime 4 non
 l'intervallo, sono a **12h, 24h, 48h, 96h**, così anche dopo giorni di silenzio arriva un
 promemoria di recupero.
 
+### I kanji saltati (F20)
+
+Una notifica, quando arriva la sua ora, conta come vista: è il pilastro su cui stanno
+il tetto del giorno, il ritmo 5-3-2, i kanji nuovi e le date di ritorno, e non si
+tocca. Ma dopo quattro giorni al polso l'utente ha chiesto di poter recuperare quelle che
+non ha aperto — era occupato, ne sono arrivate quattro di fila. Da qui una regola sola,
+che al pilastro non tocca niente:
+
+- **Saltato** vuol dire *ancora nel Centro notifiche*: una notifica toccata il sistema la
+  toglie da sé, e quando l'app mostra un kanji ne toglie la notifica anche lei
+  (`onTurnShown`). Contano solo quelle di oggi, un kanji una volta (`MissedToday`).
+- **A giornata finita** — quando fino a domani non arriva più niente — l'attesa dice
+  «Oggi hai saltato 3 kanji. Vuoi vederli ora?», coi kanji e due bottoni. Prima no: i
+  saltati di metà mattina tornano da soli, e contarli a ogni kanji sarebbe l'arretrato
+  che l'app non ha. Il giorno dopo si riparte da zero.
+- **«Ora»** li apre uno dopo l'altro, come se ne toccassi le notifiche.
+- **«Programmali ogni 60 min»** li rimette in coda come *recuperi* (`ReminderState.replays`),
+  uno per intervallo, solo dentro la fascia di oggi; quelli che non ci stanno li riporta
+  comunque il motore. Stanno a parte perché il piano rifà `scheduled` da zero a ogni
+  occasione.
+
+Né l'uno né l'altro contano nel tetto del giorno: sono kanji che la giornata aveva già
+avuto. Un recupero che arriva segna la comparsa, come ogni notifica, e prende il posto
+del kanji in gioco; «Un altro adesso» lo anticipa senza contarlo. Tutto quello che il
+sistema riceve passa da `ReminderState.upcoming`, recuperi compresi, dentro il limite di
+64.
+
 ### Fasce di silenzio — nell'MVP, non nella fase 5
 
 Senza filtro orario l'app ti sveglia alle 3 di notte e la disinstalli il secondo giorno.
@@ -937,6 +964,7 @@ Non è un parere legale.
 | **F17** | Il richiamo nella notifica | ✅ il significato dopo tre secondi (il bottone «Non me lo ricordavo», tolto il 30/9) |
 | **F18** | Jev nei dati | ✅ fuori le parole volgari, e sotto il kanji il significato che serve |
 | **F19** | Parole che insegnano | ✅ la prima parola fa vedere il kanji, col significato d'uso comune |
+| **F20** | Kanji saltati | ✅ a giornata finita, quelli non aperti: vederli ora o farseli rimandare |
 
 F2 è già un'app che usi a mano. F5 è il momento in cui diventa quello che avevi in
 mente. Non invertire: se parti dalle notifiche, debugghi lo scheduler prima di aver

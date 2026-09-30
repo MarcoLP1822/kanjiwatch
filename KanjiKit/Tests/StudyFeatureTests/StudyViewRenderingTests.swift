@@ -71,6 +71,16 @@ struct StudyViewRenderingTests {
             .background(.dsBackground),
             named: "study-day-over"
         )
+        // A giornata finita, i kanji saltati con i due bottoni.
+        let missed = try renderWatchSized(
+            WaitingContent(
+                kanji: model.kanji, glyph: model.glyph, nextArrival: nil, dailyLimitReached: true,
+                missed: [model.kanji, model.kanji], missedEvery: 15, onNext: {}
+            )
+            .padding(DS.Spacing.m)
+            .background(.dsBackground),
+            named: "study-day-over-missed"
+        )
 
         // Un tema sumi-e cambia la schermata intera: carta al posto della notte.
         let senape = try renderWatchSized(
@@ -78,7 +88,7 @@ struct StudyViewRenderingTests {
         #expect(inkPixels(senape) > inkPixels(kanji) * 10)
 
         // Nessun passo può essere una schermata vuota, e nessuno uguale a un altro.
-        let ink = [kanji, readings, waiting, dayOver].map(inkPixels)
+        let ink = [kanji, readings, waiting, dayOver, missed].map(inkPixels)
         #expect(ink.allSatisfy { $0 > 500 })
         #expect(Set(ink).count == ink.count)
     }
